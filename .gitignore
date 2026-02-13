@@ -5,6 +5,7 @@ node_modules/
 .env
 
 # Database
+database/
 database/*.db
 database/*.db-*
 

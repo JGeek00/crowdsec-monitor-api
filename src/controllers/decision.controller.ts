@@ -8,7 +8,7 @@ export class DecisionController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { limit = 100, offset = 0, type, scope, value, simulated } = req.query;
+      const { limit = 100, offset = 0, unpaged = false, type, scope, value, simulated } = req.query;
 
       const where: any = {};
       
@@ -25,29 +25,53 @@ export class DecisionController {
       }
       
       if (simulated !== undefined) {
-        where.simulated = simulated === 'true';
+        where.simulated = simulated;
       }
 
-      const decisions = await Decision.findAll({
-        where,
-        limit: parseInt(limit as string, 10),
-        offset: parseInt(offset as string, 10),
-        order: [['created_at', 'DESC']],
-      });
-
+      // Get total count
       const total = await Decision.count({ where });
 
-      res.json({
+      // Validate offset is not greater than total (only when paginated)
+      if (!unpaged && (offset as number) > total) {
+        res.status(400).json({
+          success: false,
+          message: `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`,
+        });
+        return;
+      }
+      
+      const queryOptions: any = {
+        where,
+        order: [['created_at', 'DESC']],
+      };
+
+      // Apply pagination only if not unpaged
+      if (!unpaged) {
+        queryOptions.limit = limit;
+        queryOptions.offset = offset;
+      }
+
+      const decisions = await Decision.findAll(queryOptions);
+
+      const response: any = {
         success: true,
         data: decisions,
-        pagination: {
+      };
+
+      // Include pagination info only when paginated
+      if (!unpaged) {
+        const page = Math.floor((offset as number) / (limit as number)) + 1;
+        response.pagination = {
+          page,
+          amount: decisions.length,
           total,
-          limit: parseInt(limit as string, 10),
-          offset: parseInt(offset as string, 10),
-        },
-      });
+        };
+      } else {
+        response.total = total;
+      }
+
+      res.json(response);
     } catch (error) {
-      console.error('Error fetching decisions:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching decisions',
@@ -77,7 +101,6 @@ export class DecisionController {
         data: decision,
       });
     } catch (error) {
-      console.error('Error fetching decision:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching decision',
@@ -106,7 +129,6 @@ export class DecisionController {
         note: 'Returns recent decisions. Active status cannot be determined without parsing duration strings.',
       });
     } catch (error) {
-      console.error('Error fetching active decisions:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching active decisions',
@@ -149,7 +171,6 @@ export class DecisionController {
         },
       });
     } catch (error) {
-      console.error('Error fetching decision stats:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching decision statistics',

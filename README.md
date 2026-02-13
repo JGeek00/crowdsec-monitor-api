@@ -67,7 +67,7 @@ docker run -d \
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Check API status |
+| GET | `/api/v1/health` | Check API status |
 
 **Response:**
 ```json
@@ -82,13 +82,20 @@ docker run -d \
 
 | Method | Endpoint | Description | Query Parameters |
 |--------|----------|-------------|------------------|
-| GET | `/api/alerts` | Get all alerts | `limit`, `offset`, `scenario`, `simulated` |
-| GET | `/api/alerts/:id` | Get alert by ID | - |
-| GET | `/api/alerts/stats` | Get alert statistics | - |
+| GET | `/api/v1/alerts` | Get all alerts | `limit`, `offset`, `unpaged`, `scenario`, `simulated` |
+| GET | `/api/v1/alerts/:id` | Get alert by ID | - |
+| GET | `/api/v1/alerts/stats` | Get alert statistics | - |
 
-**Example Request:**
+**Pagination Parameters:**
+- `limit` (optional): Number of items to return (default: 100). Must be a positive integer.
+- `offset` (optional): Starting index (default: 0). Must be a non-negative integer and not greater than total items.
+- `unpaged` (optional): Set to `true` to disable pagination and return all results. Must be a boolean (true/false).
+
+> **Note:** All parameters are validated using express-validator. Invalid values return a 400 Bad Request with detailed error messages.
+
+**Example Request:****
 ```bash
-curl http://localhost:3000/api/alerts?limit=10&scenario=ssh-bf
+curl http://localhost:3000/api/v1/alerts?limit=10&scenario=ssh-bf
 ```
 
 **Example Response:**
@@ -122,14 +129,21 @@ curl http://localhost:3000/api/alerts?limit=10&scenario=ssh-bf
 
 | Method | Endpoint | Description | Query Parameters |
 |--------|----------|-------------|------------------|
-| GET | `/api/decisions` | Get all decisions | `limit`, `offset`, `type`, `scope`, `value`, `simulated` |
-| GET | `/api/decisions/:id` | Get decision by ID | - |
-| GET | `/api/decisions/active` | Get recent decisions (last 100) | - |
-| GET | `/api/decisions/stats` | Get decision statistics | - |
+| GET | `/api/v1/decisions` | Get all decisions | `limit`, `offset`, `unpaged`, `type`, `scope`, `value`, `simulated` |
+| GET | `/api/v1/decisions/:id` | Get decision by ID | - |
+| GET | `/api/v1/decisions/active` | Get recent decisions (last 100) | - |
+| GET | `/api/v1/decisions/stats` | Get decision statistics | - |
 
-**Example Request:**
+**Pagination Parameters:**
+- `limit` (optional): Number of items to return (default: 100). Must be a positive integer.
+- `offset` (optional): Starting index (default: 0). Must be a non-negative integer and not greater than total items.
+- `unpaged` (optional): Set to `true` to disable pagination and return all results. Must be a boolean (true/false).
+
+> **Note:** All parameters are validated using express-validator. Invalid values return a 400 Bad Request with detailed error messages.
+
+**Example Request:****
 ```bash
-curl http://localhost:3000/api/decisions?type=ban&limit=20
+curl http://localhost:3000/api/v1/decisions?type=ban&limit=20
 ```
 
 **Example Response:**
@@ -157,35 +171,6 @@ curl http://localhost:3000/api/decisions?type=ban&limit=20
 }
 ```
 
-### Synchronization
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/sync` | Sync all data from CrowdSec LAPI |
-| POST | `/api/sync/alerts` | Sync only alerts |
-| GET | `/api/sync/test` | Test connection to CrowdSec LAPI |
-
-**Example Request:**
-```bash
-curl -X POST http://localhost:3000/api/sync
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "message": "Sync completed",
-  "data": {
-    "alerts": {
-      "synced": 15,
-      "skipped": 85,
-      "errors": 0,
-      "decisions": 8
-    }
-  }
-}
-```
-
 ## 🔄 How Synchronization Works
 
 The API automatically syncs data from CrowdSec LAPI based on the configured `SYNC_SCHEDULE`:
@@ -199,19 +184,6 @@ The API automatically syncs data from CrowdSec LAPI based on the configured `SYN
 
 The database is **not a cache** - it's a permanent incremental storage that grows over time with your security data.
 
-## 📊 Database Schema
-
-The API uses SQLite3 with two main tables:
-
-### Alerts Table
-- Stores security alerts detected by CrowdSec
-- Includes source information, scenario details, events, and metadata
-- Indexed fields: `scenario`, `simulated`, `created_at`, `start_at`
-
-### Decisions Table
-- Stores decisions (bans, captchas, etc.)
-- Linked to alerts via `alert_id` foreign key
-- Indexed fields: `alert_id`, `type`, `scope`, `value`, `simulated`, `created_at`
 
 ## 🔒 Security
 
@@ -220,35 +192,6 @@ The API uses SQLite3 with two main tables:
 - **CORS**: Cross-origin requests controlled
 - **Environment Variables**: Sensitive data stored securely
 
-## 🛠️ Development Setup
-
-If you want to run the API without Docker:
-
-1. **Prerequisites**
-   - Node.js >= 16.x
-   - npm or yarn
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Configure environment**
-```bash
-cp .env.example .env
-# Edit .env with your settings
-```
-
-4. **Development mode**
-```bash
-npm run dev
-```
-
-5. **Production build**
-```bash
-npm run build
-npm start
-```
 
 ## 📝 API Response Format
 

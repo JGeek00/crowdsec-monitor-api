@@ -1,2 +1,2 @@
 export { crowdSecAPI } from './crowdsec-api.service';
-export { cacheService } from './cache.service';
+export { databaseService } from './database.service';

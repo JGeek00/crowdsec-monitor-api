@@ -1,5 +1,7 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { alertController } from '../controllers/alert.controller';
+import { paginationValidators, alertQueryValidators } from '../validators';
+import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
 
@@ -8,7 +10,12 @@ const router = Router();
  * @desc    Get all alerts
  * @access  Public
  */
-router.get('/', (req, res) => alertController.getAll(req, res));
+router.get(
+  '/',
+  [...paginationValidators, ...alertQueryValidators],
+  handleValidationErrors,
+  (req: Request, res: Response) => alertController.getAll(req, res)
+);
 
 /**
  * @route   GET /api/alerts/stats

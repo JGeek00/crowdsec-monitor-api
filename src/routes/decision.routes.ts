@@ -1,5 +1,7 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { decisionController } from '../controllers/decision.controller';
+import { paginationValidators, decisionQueryValidators } from '../validators';
+import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
 
@@ -8,7 +10,12 @@ const router = Router();
  * @desc    Get all decisions
  * @access  Public
  */
-router.get('/', (req, res) => decisionController.getAll(req, res));
+router.get(
+  '/',
+  [...paginationValidators, ...decisionQueryValidators],
+  handleValidationErrors,
+  (req: Request, res: Response) => decisionController.getAll(req, res)
+);
 
 /**
  * @route   GET /api/decisions/active

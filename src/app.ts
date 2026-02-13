@@ -21,7 +21,7 @@ export const createApp = (): Application => {
     max: 100, // Limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
   });
-  app.use('/api/', limiter);
+  app.use('/api/v1/', limiter);
 
   // Body parsing middleware
   app.use(express.json());
@@ -35,7 +35,7 @@ export const createApp = (): Application => {
   }
 
   // Routes
-  app.use('/api', routes);
+  app.use('/api/v1', routes);
 
   // Root endpoint
   app.get('/', (req, res) => {
@@ -44,10 +44,9 @@ export const createApp = (): Application => {
       message: 'CrowdSec Monitor API',
       version: '1.0.0',
       endpoints: {
-        health: '/api/health',
-        alerts: '/api/alerts',
-        decisions: '/api/decisions',
-        sync: '/api/sync',
+        health: '/api/v1/health',
+        alerts: '/api/v1/alerts',
+        decisions: '/api/v1/decisions',
       },
     });
   });

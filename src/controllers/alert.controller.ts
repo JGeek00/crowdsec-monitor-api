@@ -8,7 +8,7 @@ export class AlertController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { limit = 100, offset = 0, scenario, simulated } = req.query;
+      const { limit = 100, offset = 0, unpaged = false, scenario, simulated } = req.query;
 
       const where: any = {};
       
@@ -17,29 +17,53 @@ export class AlertController {
       }
       
       if (simulated !== undefined) {
-        where.simulated = simulated === 'true';
+        where.simulated = simulated;
       }
 
-      const alerts = await Alert.findAll({
-        where,
-        limit: parseInt(limit as string, 10),
-        offset: parseInt(offset as string, 10),
-        order: [['created_at', 'DESC']],
-      });
-
+      // Get total count
       const total = await Alert.count({ where });
 
-      res.json({
+      // Validate offset is not greater than total (only when paginated)
+      if (!unpaged && (offset as number) > total) {
+        res.status(400).json({
+          success: false,
+          message: `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`,
+        });
+        return;
+      }
+      
+      const queryOptions: any = {
+        where,
+        order: [['created_at', 'DESC']],
+      };
+
+      // Apply pagination only if not unpaged
+      if (!unpaged) {
+        queryOptions.limit = limit;
+        queryOptions.offset = offset;
+      }
+
+      const alerts = await Alert.findAll(queryOptions);
+
+      const response: any = {
         success: true,
         data: alerts,
-        pagination: {
+      };
+
+      // Include pagination info only when paginated
+      if (!unpaged) {
+        const page = Math.floor((offset as number) / (limit as number)) + 1;
+        response.pagination = {
+          page,
+          amount: alerts.length,
           total,
-          limit: parseInt(limit as string, 10),
-          offset: parseInt(offset as string, 10),
-        },
-      });
+        };
+      } else {
+        response.total = total;
+      }
+
+      res.json(response);
     } catch (error) {
-      console.error('Error fetching alerts:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching alerts',
@@ -69,7 +93,6 @@ export class AlertController {
         data: alert,
       });
     } catch (error) {
-      console.error('Error fetching alert:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching alert',
@@ -107,7 +130,6 @@ export class AlertController {
         },
       });
     } catch (error) {
-      console.error('Error fetching alert stats:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching alert statistics',

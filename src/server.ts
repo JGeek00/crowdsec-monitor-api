@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { config } from './config';
 import { initDatabase } from './config/database';
 import { createApp } from './app';
-import { cacheService } from './services/cache.service';
+import { databaseService } from './services/database.service';
 import { crowdSecAPI } from './services/crowdsec-api.service';
 
 /**
@@ -61,14 +61,14 @@ const startServer = async (): Promise<void> => {
     // Initial data sync
     if (isConnected) {
       console.log('Performing initial data sync...');
-      await cacheService.syncAll();
+      await databaseService.syncAll();
     }
 
     // Setup cron job for periodic sync
     console.log(`Setting up automatic sync (schedule: ${config.sync.schedule})...`);
     cron.schedule(config.sync.schedule, async () => {
       console.log('Running scheduled sync...');
-      await cacheService.syncAll();
+      await databaseService.syncAll();
     });
 
     // Create and start Express app
