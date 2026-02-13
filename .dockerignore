@@ -1,0 +1,48 @@
+# Docker ignore file
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# TypeScript build output
+dist/
+
+# Database
+database/*.db
+database/*.db-*
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation (optional, comment if you want to include)
+# README.md
+# ARCHITECTURE.md
+# QUICKSTART.md
+
+# Tests
+coverage/
+*.test.ts
+*.spec.ts
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+test-api.sh

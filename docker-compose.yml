@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  crowdsec-monitor-api:
+    build: .
+    container_name: crowdsec-monitor-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL}
+      - CROWDSEC_USER=${CROWDSEC_USER}
+      - CROWDSEC_PASSWORD=${CROWDSEC_PASSWORD}
+      - DB_PATH=/app/database/crowdsec.db
+      - SYNC_SCHEDULE=${SYNC_SCHEDULE:-*/5 * * * *}
+    volumes:
+      - ./database:/app/database
+    networks:
+      - crowdsec-network
+
+networks:
+  crowdsec-network:
+    driver: bridge
