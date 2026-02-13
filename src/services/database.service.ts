@@ -1,6 +1,7 @@
 import { Alert, Decision } from '../models';
 import { crowdSecAPI } from './crowdsec-api.service';
 import { CrowdSecAlert, CrowdSecDecision } from '../types/crowdsec.types';
+import { calculateExpiration } from '../utils/duration';
 
 /**
  * Service for managing database operations and syncing data from CrowdSec LAPI.
@@ -33,12 +34,19 @@ export class DatabaseService {
 
       for (const alert of alerts) {
         try {
-          // Use findOrCreate to atomically handle duplicates
-          const [alertInstance, alertCreated] = await Alert.findOrCreate({
-            where: { crowdsec_alert_id: alert.id },
-            defaults: {
+          // Check if alert already exists
+          const existingAlert = await Alert.findByPk(alert.id);
+          
+          let alertInstance;
+          if (existingAlert) {
+            // Alert already exists, skip creation
+            alertInstance = existingAlert;
+            skipped++;
+          } else {
+            // Create new alert
+            alertInstance = await Alert.create({
+              id: alert.id,
               uuid: alert.uuid,
-              crowdsec_alert_id: alert.id,
               scenario: alert.scenario,
               scenario_version: alert.scenario_version,
               scenario_hash: alert.scenario_hash,
@@ -58,47 +66,46 @@ export class DatabaseService {
               stop_at: new Date(alert.stop_at),
               created_at: new Date(),
               updated_at: new Date(),
-            }
-          });
-
-          if (alertCreated) {
+            });
             synced++;
-          } else {
-            skipped++;
           }
 
           // Process decisions for this alert
           if (alert.decisions && alert.decisions.length > 0) {
             for (const decision of alert.decisions) {
               try {
-                // Use findOrCreate to atomically handle duplicates
-                const [, decisionCreated] = await Decision.findOrCreate({
-                  where: { crowdsec_decision_id: decision.id },
-                  defaults: {
-                    crowdsec_decision_id: decision.id,
-                    alert_id: alertInstance.id,
-                    origin: decision.origin,
-                    type: decision.type,
-                    scope: decision.scope,
-                    value: decision.value,
-                    duration: decision.duration,
-                    scenario: decision.scenario,
-                    simulated: decision.simulated,
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                  }
-                });
-
-                if (decisionCreated) {
-                  decisionsCount++;
+                // Check if decision already exists
+                const existingDecision = await Decision.findByPk(decision.id);
+                
+                if (existingDecision) {
+                  // Decision already exists, skip
+                  continue;
                 }
+                
+                // Create new decision
+                await Decision.create({
+                  id: decision.id,
+                  alert_id: alertInstance.id,
+                  origin: decision.origin,
+                  type: decision.type,
+                  scope: decision.scope,
+                  value: decision.value,
+                  expiration: calculateExpiration(decision.duration),
+                  scenario: decision.scenario,
+                  simulated: decision.simulated,
+                  created_at: new Date(),
+                  updated_at: new Date(),
+                });
+                decisionsCount++;
               } catch (decisionError) {
-                // Skip decision if there's any error (including unique constraint violations)
+                // Skip decision if there's any error
+                console.error(`Error syncing decision ${decision.id}:`, decisionError);
               }
             }
           }
         } catch (error) {
-          // Skip alert if there's any error (including unique constraint violations)
+          // Skip alert if there's any error
+          console.error(`Error syncing alert ${alert.id}:`, error);
           errors++;
         }
       }

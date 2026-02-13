@@ -29,7 +29,6 @@ export interface EventData {
 export interface AlertAttributes {
   id: number;
   uuid: string;
-  crowdsec_alert_id: number;
   scenario: string;
   scenario_version: string;
   scenario_hash: string;
@@ -56,7 +55,6 @@ export interface AlertCreationAttributes extends Optional<AlertAttributes, 'id' 
 export class Alert extends Model<AlertAttributes, AlertCreationAttributes> implements AlertAttributes {
   public id!: number;
   public uuid!: string;
-  public crowdsec_alert_id!: number;
   public scenario!: string;
   public scenario_version!: string;
   public scenario_hash!: string;
@@ -85,16 +83,11 @@ Alert.init(
   {
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true,
+      allowNull: false,
     },
     uuid: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    crowdsec_alert_id: {
-      type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
     },

@@ -4,10 +4,11 @@ import { Op } from 'sequelize';
 
 /**
  * Get all decisions with filtering and pagination
+ * @param only_active - Optional boolean to filter only active decisions (expiration > now)
  */
 export async function getAllDecisions(req: Request, res: Response): Promise<void> {
   try {
-    const { limit = 100, offset = 0, unpaged = false, type, scope, value, simulated, scenario, ip_address, country, ip_owner } = req.query;
+    const { limit = 100, offset = 0, unpaged = false, type, scope, value, simulated, scenario, ip_address, country, ip_owner, only_active } = req.query;
 
     const where: any = {};
     
@@ -25,6 +26,16 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     
     if (simulated !== undefined) {
       where.simulated = simulated;
+    }
+
+    // Filter by only active decisions (expiration > now)
+    if (only_active) {
+      const isActive = typeof only_active === 'boolean' ? only_active : only_active === 'true';
+      if (isActive) {
+        where.expiration = {
+          [Op.gt]: new Date(),
+        };
+      }
     }
 
     // Filter by scenario (single or multiple)

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllDecisions, getDecisionById, getActiveDecisions, getDecisionStats } from '../controllers';
+import { getAllDecisions, getDecisionById, getDecisionStats } from '../controllers';
 import { paginationValidators, decisionQueryValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
@@ -7,7 +7,7 @@ const router = Router();
 
 /**
  * @route   GET /api/decisions
- * @desc    Get all decisions
+ * @desc    Get all decisions (use ?only_active=true to filter active only)
  * @access  Public
  */
 router.get(
@@ -16,13 +16,6 @@ router.get(
   handleValidationErrors,
   getAllDecisions
 );
-
-/**
- * @route   GET /api/decisions/active
- * @desc    Get active decisions
- * @access  Public
- */
-router.get('/active', getActiveDecisions);
 
 /**
  * @route   GET /api/decisions/stats

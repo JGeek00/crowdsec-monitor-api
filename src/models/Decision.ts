@@ -3,13 +3,12 @@ import { sequelize } from '../config/database';
 
 export interface DecisionAttributes {
   id: number;
-  crowdsec_decision_id: number;
   alert_id: number;
   origin: string;
   type: string;
   scope: string;
   value: string;
-  duration: string;
+  expiration: Date;
   scenario: string;
   simulated: boolean;
   created_at: Date;
@@ -20,13 +19,12 @@ export interface DecisionCreationAttributes extends Optional<DecisionAttributes,
 
 export class Decision extends Model<DecisionAttributes, DecisionCreationAttributes> implements DecisionAttributes {
   public id!: number;
-  public crowdsec_decision_id!: number;
   public alert_id!: number;
   public origin!: string;
   public type!: string;
   public scope!: string;
   public value!: string;
-  public duration!: string;
+  public expiration!: Date;
   public scenario!: string;
   public simulated!: boolean;
   public created_at!: Date;
@@ -40,13 +38,8 @@ Decision.init(
   {
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true,
-    },
-    crowdsec_decision_id: {
-      type: DataTypes.INTEGER,
       allowNull: false,
-      unique: true,
     },
     alert_id: {
       type: DataTypes.INTEGER,
@@ -74,8 +67,8 @@ Decision.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    duration: {
-      type: DataTypes.STRING,
+    expiration: {
+      type: DataTypes.DATE,
       allowNull: false,
     },
     scenario: {
