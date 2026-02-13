@@ -34,7 +34,6 @@ export class DecisionController {
       // Validate offset is not greater than total (only when paginated)
       if (!unpaged && (offset as number) > total) {
         res.status(400).json({
-          success: false,
           message: `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`,
         });
         return;
@@ -54,8 +53,7 @@ export class DecisionController {
       const decisions = await Decision.findAll(queryOptions);
 
       const response: any = {
-        success: true,
-        data: decisions,
+        items: decisions,
       };
 
       // Include pagination info only when paginated
@@ -72,11 +70,15 @@ export class DecisionController {
 
       res.json(response);
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching decisions',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 
@@ -90,22 +92,22 @@ export class DecisionController {
 
       if (!decision) {
         res.status(404).json({
-          success: false,
           message: 'Decision not found',
         });
         return;
       }
 
-      res.json({
-        success: true,
-        data: decision,
-      });
+      res.json(decision);
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching decision',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 
@@ -123,17 +125,20 @@ export class DecisionController {
       });
 
       res.json({
-        success: true,
-        data: decisions,
+        items: decisions,
         count: decisions.length,
         note: 'Returns recent decisions. Active status cannot be determined without parsing duration strings.',
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching active decisions',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 
@@ -163,19 +168,20 @@ export class DecisionController {
       });
 
       res.json({
-        success: true,
-        data: {
-          total,
-          byType,
-          byScope,
-        },
+        total,
+        byType,
+        byScope,
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching decision statistics',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 }

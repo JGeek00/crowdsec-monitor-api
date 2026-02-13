@@ -25,7 +25,6 @@ Check if the API is running and responsive.
 **Response:**
 ```json
 {
-  "success": true,
   "message": "API is running",
   "timestamp": "2026-02-13T10:30:45.123Z"
 }
@@ -40,7 +39,6 @@ Quick check of CrowdSec LAPI connection status and last successful data sync.
 **Response (Connected):**
 ```json
 {
-  "success": true,
   "status": "connected",
   "message": "CrowdSec LAPI is reachable and authenticated",
   "lastSuccessfulSync": "2026-02-13T10:25:30.123Z",
@@ -51,7 +49,6 @@ Quick check of CrowdSec LAPI connection status and last successful data sync.
 **Response (Disconnected):**
 ```json
 {
-  "success": false,
   "status": "disconnected",
   "message": "Unable to connect to CrowdSec LAPI",
   "lastSuccessfulSync": "2026-02-13T10:25:30.123Z",
@@ -90,8 +87,7 @@ curl "http://localhost:3000/api/v1/alerts?limit=10&scenario=ssh-bf"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": [
+  "items": [
     {
       "id": 1,
       "uuid": "abc-123-def",
@@ -157,27 +153,23 @@ curl "http://localhost:3000/api/v1/alerts/1"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "uuid": "abc-123-def",
-    "scenario": "crowdsecurity/ssh-bf",
-    "message": "Ip 192.168.1.100 performed ssh-bf attack",
-    "source": {
-      "ip": "192.168.1.100",
-      "scope": "Ip",
-      "cn": "US"
-    },
-    "simulated": false,
-    "events_count": 6
-  }
+  "id": 1,
+  "uuid": "abc-123-def",
+  "scenario": "crowdsecurity/ssh-bf",
+  "message": "Ip 192.168.1.100 performed ssh-bf attack",
+  "source": {
+    "ip": "192.168.1.100",
+    "scope": "Ip",
+    "cn": "US"
+  },
+  "simulated": false,
+  "events_count": 6
 }
 ```
 
 **Error Response (404):**
 ```json
 {
-  "success": false,
   "message": "Alert not found"
 }
 ```
@@ -196,22 +188,47 @@ curl "http://localhost:3000/api/v1/alerts/stats"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "total": 150,
-    "simulated": 25,
-    "real": 125,
-    "topScenarios": [
-      {
-        "scenario": "crowdsecurity/ssh-bf",
-        "count": 45
-      },
-      {
-        "scenario": "crowdsecurity/http-probing",
-        "count": 30
-      }
-    ]
-  }
+  "total": 150,
+  "simulated": 25,
+  "real": 125,
+  "topScenarios": [
+    {
+      "scenario": "crowdsecurity/ssh-bf",
+      "count": 45
+    },
+    {
+      "scenario": "crowdsecurity/http-probing",
+      "count": 30
+    }
+  ],
+  "topCountries": [
+    {
+      "country": "CN",
+      "count": 35
+    },
+    {
+      "country": "US",
+      "count": 28
+    },
+    {
+      "country": "RU",
+      "count": 22
+    }
+  ],
+  "topOrganizations": [
+    {
+      "organization": "Alibaba Cloud",
+      "count": 18
+    },
+    {
+      "organization": "Amazon Web Services",
+      "count": 15
+    },
+    {
+      "organization": "Digital Ocean",
+      "count": 12
+    }
+  ]
 }
 ```
 
@@ -242,8 +259,7 @@ curl "http://localhost:3000/api/v1/decisions?type=ban&limit=20"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": [
+  "items": [
     {
       "id": 1,
       "crowdsec_decision_id": 98765,
@@ -291,25 +307,21 @@ curl "http://localhost:3000/api/v1/decisions/1"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "crowdsec_decision_id": 98765,
-    "alert_id": 1,
-    "type": "ban",
-    "scope": "Ip",
-    "value": "192.168.1.100",
-    "duration": "4h",
-    "scenario": "crowdsecurity/ssh-bf",
-    "simulated": false
-  }
+  "id": 1,
+  "crowdsec_decision_id": 98765,
+  "alert_id": 1,
+  "type": "ban",
+  "scope": "Ip",
+  "value": "192.168.1.100",
+  "duration": "4h",
+  "scenario": "crowdsecurity/ssh-bf",
+  "simulated": false
 }
 ```
 
 **Error Response (404):**
 ```json
 {
-  "success": false,
   "message": "Decision not found"
 }
 ```
@@ -330,8 +342,7 @@ curl "http://localhost:3000/api/v1/decisions/active"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": [...],
+  "items": [...],
   "count": 100,
   "note": "Returns recent decisions. Active status cannot be determined without parsing duration strings."
 }
@@ -351,30 +362,27 @@ curl "http://localhost:3000/api/v1/decisions/stats"
 **Example Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "total": 75,
-    "byType": [
-      {
-        "type": "ban",
-        "count": 65
-      },
-      {
-        "type": "captcha",
-        "count": 10
-      }
-    ],
-    "byScope": [
-      {
-        "scope": "Ip",
-        "count": 70
-      },
-      {
-        "scope": "Range",
-        "count": 5
-      }
-    ]
-  }
+  "total": 75,
+  "byType": [
+    {
+      "type": "ban",
+      "count": 65
+    },
+    {
+      "type": "captcha",
+      "count": 10
+    }
+  ],
+  "byScope": [
+    {
+      "scope": "Ip",
+      "count": 70
+    },
+    {
+      "scope": "Range",
+      "count": 5
+    }
+  ]
 }
 ```
 
@@ -384,12 +392,13 @@ curl "http://localhost:3000/api/v1/decisions/stats"
 
 All API responses follow a consistent structure.
 
-### Success Response
+### Success Response (List Endpoints)
+
+For endpoints that return lists (e.g., `/alerts`, `/decisions`):
 
 ```json
 {
-  "success": true,
-  "data": { ... },
+  "items": [...],
   "pagination": {
     "page": 1,
     "amount": 10,
@@ -406,21 +415,51 @@ All API responses follow a consistent structure.
 **Without pagination (unpaged=true):**
 ```json
 {
-  "success": true,
-  "data": [...],
+  "items": [...],
   "total": 100
 }
 ```
+
+### Success Response (Single Item)
+
+For endpoints that return a single resource (e.g., `/alerts/:id`, `/decisions/:id`):
+
+```json
+{
+  "id": 1,
+  "field1": "value1",
+  "field2": "value2"
+}
+```
+
+The resource data is returned directly at the root level.
+
+### Success Response (Stats/Aggregations)
+
+For endpoints that return statistics or aggregations:
+
+```json
+{
+  "total": 100,
+  "field1": [...],
+  "field2": [...]
+}
+```
+
+Statistics are returned directly at the root level.
 
 ### Error Response
 
 ```json
 {
-  "success": false,
   "message": "Error description",
-  "error": "Detailed error message"
+  "error": "Detailed error message (only in development mode)"
 }
 ```
+
+**Notes:**
+- The `error` field with detailed error information is only included when `NODE_ENV !== 'production'`
+- In production mode, only generic error messages are returned for security reasons
 
 **Common HTTP Status Codes:**
 - `200`: Success
@@ -437,7 +476,6 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
 
 ```json
 {
-  "success": false,
   "message": "Validation error",
   "errors": [
     {
@@ -451,6 +489,8 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
   ]
 }
 ```
+
+**Note:** Validation errors always include detailed information as they are client-side errors, not security-sensitive server errors.
 
 ---
 

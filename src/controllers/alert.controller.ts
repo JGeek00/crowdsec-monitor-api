@@ -26,7 +26,6 @@ export class AlertController {
       // Validate offset is not greater than total (only when paginated)
       if (!unpaged && (offset as number) > total) {
         res.status(400).json({
-          success: false,
           message: `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`,
         });
         return;
@@ -46,8 +45,7 @@ export class AlertController {
       const alerts = await Alert.findAll(queryOptions);
 
       const response: any = {
-        success: true,
-        data: alerts,
+        items: alerts,
       };
 
       // Include pagination info only when paginated
@@ -64,11 +62,15 @@ export class AlertController {
 
       res.json(response);
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching alerts',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 
@@ -82,22 +84,22 @@ export class AlertController {
 
       if (!alert) {
         res.status(404).json({
-          success: false,
           message: 'Alert not found',
         });
         return;
       }
 
-      res.json({
-        success: true,
-        data: alert,
-      });
+      res.json(alert);
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching alert',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 
@@ -120,21 +122,60 @@ export class AlertController {
         limit: 10,
       });
 
+      // Get all alerts with source information for grouping
+      const allAlerts = await Alert.findAll({
+        attributes: ['source'],
+      });
+
+      // Group by country
+      const countryMap = new Map<string, number>();
+      const organizationMap = new Map<string, number>();
+
+      allAlerts.forEach(alert => {
+        if (alert.source) {
+          // Count by country
+          const country = alert.source.cn;
+          if (country) {
+            countryMap.set(country, (countryMap.get(country) || 0) + 1);
+          }
+
+          // Count by organization
+          const organization = alert.source.as_name;
+          if (organization) {
+            organizationMap.set(organization, (organizationMap.get(organization) || 0) + 1);
+          }
+        }
+      });
+
+      // Convert maps to sorted arrays
+      const topCountries = Array.from(countryMap.entries())
+        .map(([country, count]) => ({ country, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      const topOrganizations = Array.from(organizationMap.entries())
+        .map(([organization, count]) => ({ organization, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
       res.json({
-        success: true,
-        data: {
-          total,
-          simulated,
-          real,
-          topScenarios,
-        },
+        total,
+        simulated,
+        real,
+        topScenarios,
+        topCountries,
+        topOrganizations,
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
+      const response: any = {
         message: 'Error fetching alert statistics',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      };
+      
+      if (process.env.NODE_ENV !== 'production') {
+        response.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      res.status(500).json(response);
     }
   }
 }

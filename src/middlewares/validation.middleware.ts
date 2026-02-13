@@ -14,7 +14,6 @@ export const handleValidationErrors = (
   
   if (!errors.isEmpty()) {
     res.status(400).json({
-      success: false,
       message: 'Validation error',
       errors: errors.array().map(err => ({
         field: err.type === 'field' ? err.path : undefined,
