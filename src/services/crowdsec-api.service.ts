@@ -188,6 +188,38 @@ export class CrowdSecAPIService {
   }
 
   /**
+   * Quick status check - verifies LAPI is reachable without re-authenticating
+   * Uses existing token if valid, makes minimal request with since=1m
+   */
+  async checkStatus(): Promise<boolean> {
+    try {
+      // If we don't have a valid token, try to authenticate
+      if (!this.isTokenValid()) {
+        const authenticated = await this.ensureAuthenticated();
+        if (!authenticated) {
+          return false;
+        }
+      }
+
+      // Make a minimal request for alerts in the last minute to check connection
+      // Body may be empty/null if no alerts, but we only care about 200 status
+      const headers = {
+        Authorization: `Bearer ${this.token}`,
+      };
+      
+      await this.client.get('/v1/alerts?since=1m&scope=Ip&scope=Range', { 
+        headers,
+        timeout: 3000, // Short timeout for quick check
+      });
+      
+      return true;
+    } catch (error) {
+      // Token might be invalid, don't log as error
+      return false;
+    }
+  }
+
+  /**
    * Handle API errors
    */
   private handleError(error: unknown, action: string): void {

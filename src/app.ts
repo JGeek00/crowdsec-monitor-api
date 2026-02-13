@@ -44,7 +44,8 @@ export const createApp = (): Application => {
       message: 'CrowdSec Monitor API',
       version: '1.0.0',
       endpoints: {
-        health: '/api/v1/health',
+        apiHealth: '/api/v1/api-health',
+        lapiStatus: '/api/v1/lapi-status',
         alerts: '/api/v1/alerts',
         decisions: '/api/v1/decisions',
       },

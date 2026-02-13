@@ -12,8 +12,9 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 - **Automatic Synchronization**: Only new alerts are added, preventing duplicates
 - **Watcher Authentication**: Secure login with machine_id/password and JWT Bearer tokens
 - **RESTful API**: Well-structured endpoints for alerts and decisions
+- **Pagination & Validation**: express-validator with configurable pagination
 - **TypeScript**: Strong typing for improved security and maintainability
-- **Rate Limiting**: Protection against API abuse
+- **Rate Limiting**: Protection against API abuse (100 req/15min)
 - **Security Hardened**: Helmet and CORS configured
 - **Normalized Relations**: Decisions linked to alerts via foreign keys
 - **Optimized Indexes**: Fast queries on common fields
@@ -61,115 +62,6 @@ docker run -d \
 - `0 */6 * * *` - Every 6 hours
 - `0 0 * * *` - Daily at midnight
 
-## 📡 API Endpoints
-
-### Health Check
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/health` | Check API status |
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "API is running",
-  "timestamp": "2026-02-13T10:30:45.123Z"
-}
-```
-
-### Alerts
-
-| Method | Endpoint | Description | Query Parameters |
-|--------|----------|-------------|------------------|
-| GET | `/api/v1/alerts` | Get all alerts | `limit`, `offset`, `unpaged`, `scenario`, `simulated` |
-| GET | `/api/v1/alerts/:id` | Get alert by ID | - |
-| GET | `/api/v1/alerts/stats` | Get alert statistics | - |
-
-**Pagination Parameters:**
-- `limit` (optional): Number of items to return (default: 100). Must be a positive integer.
-- `offset` (optional): Starting index (default: 0). Must be a non-negative integer and not greater than total items.
-- `unpaged` (optional): Set to `true` to disable pagination and return all results. Must be a boolean (true/false).
-
-> **Note:** All parameters are validated using express-validator. Invalid values return a 400 Bad Request with detailed error messages.
-
-**Example Request:****
-```bash
-curl http://localhost:3000/api/v1/alerts?limit=10&scenario=ssh-bf
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "uuid": "abc-123-def",
-      "scenario": "crowdsecurity/ssh-bf",
-      "message": "Ip 192.168.1.100 performed ssh-bf attack",
-      "source": {
-        "ip": "192.168.1.100",
-        "scope": "Ip",
-        "cn": "US"
-      },
-      "simulated": false,
-      "events_count": 6
-    }
-  ],
-  "pagination": {
-    "total": 150,
-    "limit": 10,
-    "offset": 0
-  }
-}
-```
-
-### Decisions
-
-| Method | Endpoint | Description | Query Parameters |
-|--------|----------|-------------|------------------|
-| GET | `/api/v1/decisions` | Get all decisions | `limit`, `offset`, `unpaged`, `type`, `scope`, `value`, `simulated` |
-| GET | `/api/v1/decisions/:id` | Get decision by ID | - |
-| GET | `/api/v1/decisions/active` | Get recent decisions (last 100) | - |
-| GET | `/api/v1/decisions/stats` | Get decision statistics | - |
-
-**Pagination Parameters:**
-- `limit` (optional): Number of items to return (default: 100). Must be a positive integer.
-- `offset` (optional): Starting index (default: 0). Must be a non-negative integer and not greater than total items.
-- `unpaged` (optional): Set to `true` to disable pagination and return all results. Must be a boolean (true/false).
-
-> **Note:** All parameters are validated using express-validator. Invalid values return a 400 Bad Request with detailed error messages.
-
-**Example Request:****
-```bash
-curl http://localhost:3000/api/v1/decisions?type=ban&limit=20
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "crowdsec_decision_id": 98765,
-      "alert_id": 1,
-      "type": "ban",
-      "scope": "Ip",
-      "value": "192.168.1.100",
-      "duration": "4h",
-      "scenario": "crowdsecurity/ssh-bf",
-      "simulated": false
-    }
-  ],
-  "pagination": {
-    "total": 75,
-    "limit": 20,
-    "offset": 0
-  }
-}
-```
 
 ## 🔄 How Synchronization Works
 
@@ -178,9 +70,10 @@ The API automatically syncs data from CrowdSec LAPI based on the configured `SYN
 1. **Connects** to CrowdSec LAPI using Watcher credentials
 2. **Fetches** new alerts from LAPI
 3. **Checks** if alerts already exist (using `crowdsec_alert_id`)
-4. **Inserts** only new alerts and their decisions
+4. **Inserts** only new alerts and their decisions (using Sequelize's `findOrCreate`)
 5. **Skips** existing alerts to prevent duplicates
 6. **Persists** all data indefinitely in SQLite
+7. **Tracks** last successful sync timestamp for monitoring
 
 The database is **not a cache** - it's a permanent incremental storage that grows over time with your security data.
 
@@ -190,34 +83,13 @@ The database is **not a cache** - it's a permanent incremental storage that grow
 - **Rate Limiting**: 100 requests per 15 minutes per IP
 - **Helmet**: Security headers configured
 - **CORS**: Cross-origin requests controlled
+- **Input Validation**: express-validator on all query parameters
 - **Environment Variables**: Sensitive data stored securely
 
 
-## 📝 API Response Format
+## API endpoints documentation
 
-All responses follow this structure:
-
-**Success:**
-```json
-{
-  "success": true,
-  "data": { ... },
-  "pagination": {
-    "total": 100,
-    "limit": 10,
-    "offset": 0
-  }
-}
-```
-
-**Error:**
-```json
-{
-  "success": false,
-  "message": "Error description",
-  "error": "Detailed error (development only)"
-}
-```
+See [API.md](./API.md) for complete response schemas and examples.
 
 ## 📄 License
 

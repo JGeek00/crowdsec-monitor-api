@@ -8,6 +8,15 @@ import { CrowdSecAlert, CrowdSecDecision } from '../types/crowdsec.types';
  * Only new alerts and decisions are added; existing ones are skipped to avoid duplicates.
  */
 export class DatabaseService {
+  private lastSuccessfulSync: Date | null = null;
+
+  /**
+   * Get the timestamp of the last successful sync
+   */
+  getLastSuccessfulSync(): Date | null {
+    return this.lastSuccessfulSync;
+  }
+
   /**
    * Sync alerts from CrowdSec LAPI to local database
    * Only adds new alerts incrementally, does not update existing ones
@@ -95,6 +104,10 @@ export class DatabaseService {
       }
 
       console.log(`✓ Alerts sync completed: ${synced} new alerts added, ${skipped} existing alerts skipped, ${decisionsCount} decisions synced, ${errors} errors`);
+      
+      // Update last successful sync timestamp
+      this.lastSuccessfulSync = new Date();
+      
       return { synced, skipped, errors, decisions: decisionsCount };
     } catch (error) {
       console.error('Error syncing alerts:', error);
