@@ -110,9 +110,8 @@ curl "http://localhost:3000/api/v1/alerts?ip_owner=Digital%20Ocean&country=US"
 {
   "items": [
     {
-      "id": 1,
+      "id": 12345,
       "uuid": "abc-123-def",
-      "crowdsec_alert_id": 12345,
       "scenario": "crowdsecurity/ssh-bf",
       "scenario_version": "0.1",
       "scenario_hash": "abc123",
@@ -267,6 +266,7 @@ Retrieve all decisions with optional filtering and pagination.
 | `limit` | integer | No | 100 | Number of items to return (must be positive) |
 | `offset` | integer | No | 0 | Starting index (must be non-negative) |
 | `unpaged` | boolean | No | false | Disable pagination and return all results |
+| `only_active` | boolean | No | false | Filter only active decisions (expiration date is in the future) |
 | `type` | string | No | - | Filter by decision type (ban, captcha, etc.) |
 | `scope` | string | No | - | Filter by scope (Ip, Range, etc.) |
 | `value` | string | No | - | Filter by value (IP address, range, etc.) |
@@ -280,6 +280,9 @@ Retrieve all decisions with optional filtering and pagination.
 ```bash
 # Single filters
 curl "http://localhost:3000/api/v1/decisions?type=ban&limit=20"
+
+# Get only active decisions (not expired)
+curl "http://localhost:3000/api/v1/decisions?only_active=true"
 
 # Multiple scenarios
 curl "http://localhost:3000/api/v1/decisions?scenario=ssh-bf&scenario=http-probing"
@@ -296,7 +299,7 @@ curl "http://localhost:3000/api/v1/decisions?ip_owner=Alibaba&ip_owner=Tencent"
 
 # Combined filters
 curl "http://localhost:3000/api/v1/decisions?scenario=ssh-bf&country=RU&limit=10"
-curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban"
+curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban&only_active=true"
 ```
 
 **Example Response:**
@@ -304,14 +307,13 @@ curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban"
 {
   "items": [
     {
-      "id": 1,
-      "crowdsec_decision_id": 98765,
+      "id": 98765,
       "alert_id": 1,
       "origin": "cscli",
       "type": "ban",
       "scope": "Ip",
       "value": "192.168.1.100",
-      "duration": "4h",
+      "expiration": "2026-02-13T14:25:30.123Z",
       "scenario": "crowdsecurity/ssh-bf",
       "simulated": false,
       "created_at": "2026-02-13T10:25:30.123Z",
@@ -333,6 +335,89 @@ curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban"
 
 ---
 
+### POST `/api/v1/decisions`
+
+Create a decision in CrowdSec LAPI. This is a simplified endpoint that creates an alert with a decision.
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ip` | string | Yes | IPv4 or IPv6 address to apply the decision to |
+| `duration` | string | Yes | Duration in CrowdSec format (e.g., 2m, 10h, 1d, 3w) |
+| `reason` | string | Yes | Human-readable reason for the decision (letters, numbers, spaces, dots, commas) |
+| `type` | string | Yes | Decision type: `ban`, `captcha`, `throttle`, or `allow` |
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/decisions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip": "192.168.100.200",
+    "duration": "1h",
+    "reason": "Manual ban from API",
+    "type": "ban"
+  }'
+```
+
+**Example Response (201 Created):**
+```json
+{
+  "message": "Decision created successfully",
+  "alert_ids": ["12345"],
+  "decision": {
+    "ip": "192.168.100.200",
+    "type": "ban",
+    "duration": "1h",
+    "reason": "Manual ban from API"
+  }
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "errors": [
+    {
+      "msg": "ip must be a valid IPv4 or IPv6 address",
+      "param": "ip",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "message": "Error creating decision",
+  "error": "Connection refused"
+}
+```
+
+**Notes:**
+- The endpoint creates a complete alert structure in CrowdSec LAPI with the decision
+- Uses scenario `manual/crowdsec-monitor` for alerts created via API
+- The `origin` field is set to the configured `CROWDSEC_USER` environment variable
+- Returns the alert ID(s) created in LAPI
+- All validations are performed before forwarding to LAPI
+
+**Duration Format:**
+Accepts CrowdSec duration format with units:
+- `s` - seconds (e.g., `30s`)
+- `m` - minutes (e.g., `5m`)
+- `h` - hours (e.g., `2h`)
+- `d` - days (e.g., `1d`)
+- `w` - weeks (e.g., `3w`)
+
+**Decision Types:**
+- `ban` - Block the IP completely
+- `captcha` - Challenge with a CAPTCHA
+- `throttle` - Rate limit the IP
+- `allow` - Explicitly allow the IP
+
+---
+
 ### GET `/api/v1/decisions/:id`
 
 Retrieve a specific decision by ID.
@@ -350,13 +435,12 @@ curl "http://localhost:3000/api/v1/decisions/1"
 **Example Response:**
 ```json
 {
-  "id": 1,
-  "crowdsec_decision_id": 98765,
+  "id": 98765,
   "alert_id": 1,
   "type": "ban",
   "scope": "Ip",
   "value": "192.168.1.100",
-  "duration": "4h",
+  "expiration": "2026-02-13T14:25:30.123Z",
   "scenario": "crowdsecurity/ssh-bf",
   "simulated": false
 }
@@ -366,28 +450,6 @@ curl "http://localhost:3000/api/v1/decisions/1"
 ```json
 {
   "message": "Decision not found"
-}
-```
-
----
-
-### GET `/api/v1/decisions/active`
-
-Get recent decisions (last 100).
-
-**Note:** Since CrowdSec only provides duration as a string (e.g., "4h", "1d"), we cannot accurately determine if a decision is still active without parsing it. This endpoint returns the last 100 decisions ordered by creation date.
-
-**Example Request:**
-```bash
-curl "http://localhost:3000/api/v1/decisions/active"
-```
-
-**Example Response:**
-```json
-{
-  "items": [...],
-  "count": 100,
-  "note": "Returns recent decisions. Active status cannot be determined without parsing duration strings."
 }
 ```
 

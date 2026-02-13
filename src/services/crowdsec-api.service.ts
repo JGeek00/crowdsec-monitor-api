@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '../config';
-import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse } from '../types/crowdsec.types';
+import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload } from '../types/crowdsec.types';
+import { API_SCENARIO_NAME } from '../constants/scenarios';
 
 export class CrowdSecAPIService {
   private client: AxiosInstance;
@@ -27,7 +28,7 @@ export class CrowdSecAPIService {
       const response = await this.client.post<CrowdSecLoginResponse>('/v1/watchers/login', {
         machine_id: config.crowdsec.user,
         password: config.crowdsec.password,
-        scenarios: ['manual/crowdsec-monitor'],
+        scenarios: [API_SCENARIO_NAME],
       });
 
       if (response.data && response.data.token) {
@@ -163,6 +164,30 @@ export class CrowdSecAPIService {
     } catch (error) {
       this.handleError(error, 'fetching decisions from alerts');
       return [];
+    }
+  }
+
+  /**
+   * Create one or more alerts in CrowdSec LAPI
+   * @param alerts - Array of alerts to create
+   * @returns Array of created alert IDs or empty array on error
+   */
+  async createAlerts(alerts: CrowdSecCreateAlertPayload): Promise<string[]> {
+    try {
+      const headers = await this.getAuthHeaders();
+      
+      const response = await this.client.post('/v1/alerts', alerts, { headers });
+      
+      // LAPI returns array of created alert IDs
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`✓ Created ${response.data.length} alert(s) in CrowdSec LAPI`);
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      this.handleError(error, 'creating alerts');
+      throw error;
     }
   }
 

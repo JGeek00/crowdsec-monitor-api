@@ -69,3 +69,46 @@ export interface CrowdSecAPIResponse<T> {
   data: T;
   message?: string;
 }
+
+// Types for creating alerts (POST /v1/alerts)
+
+export interface CrowdSecCreateDecision {
+  type: string;
+  duration: string;
+  value: string;
+  origin: string;
+  scenario: string;
+  scope: string;
+  simulated?: boolean;
+}
+
+export interface CrowdSecCreateSource {
+  scope: string;
+  value: string;
+  ip?: string;
+  range?: string;
+  as_name?: string;
+  as_number?: string;
+  cn?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface CrowdSecCreateAlert {
+  scenario: string;
+  campaign_name?: string;
+  message: string;
+  events_count: number;
+  start_at: string;
+  stop_at: string;
+  capacity: number;
+  leakspeed: string;
+  simulated: boolean;
+  events: CrowdSecEvent[];
+  scenario_hash: string;
+  scenario_version: string;
+  source: CrowdSecCreateSource;
+  decisions?: CrowdSecCreateDecision[];
+}
+
+export type CrowdSecCreateAlertPayload = CrowdSecCreateAlert[];

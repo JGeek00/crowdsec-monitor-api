@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getAllDecisions, getDecisionById, getDecisionStats } from '../controllers';
-import { paginationValidators, decisionQueryValidators } from '../validators';
+import { getAllDecisions, getDecisionById, getDecisionStats, createDecision } from '../controllers';
+import { paginationValidators, decisionQueryValidators, createDecisionValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
@@ -15,6 +15,18 @@ router.get(
   [...paginationValidators, ...decisionQueryValidators],
   handleValidationErrors,
   getAllDecisions
+);
+
+/**
+ * @route   POST /api/decisions
+ * @desc    Create a decision in CrowdSec LAPI
+ * @access  Public
+ */
+router.post(
+  '/',
+  createDecisionValidators,
+  handleValidationErrors,
+  createDecision
 );
 
 /**

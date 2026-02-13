@@ -1,0 +1,1 @@
+export const API_SCENARIO_NAME = 'manual/crowdsec-monitor';
