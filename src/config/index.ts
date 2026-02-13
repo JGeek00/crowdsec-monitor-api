@@ -14,6 +14,7 @@ export const config = {
   },
   database: {
     path: process.env.DB_PATH || './database/crowdsec.db',
+    retention: process.env.DATA_RETENTION || undefined,
   },
   sync: {
     schedule: process.env.SYNC_SCHEDULE || '*/5 * * * *', // Every 5 minutes by default

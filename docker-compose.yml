@@ -10,16 +10,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL}
-      - CROWDSEC_USER=${CROWDSEC_USER}
-      - CROWDSEC_PASSWORD=${CROWDSEC_PASSWORD}
+      - CROWDSEC_LAPI_URL=http://localhost:8080
+      - CROWDSEC_USER=crowdsec_user
+      - CROWDSEC_PASSWORD=crowdsec_password
       - DB_PATH=/app/database/crowdsec.db
-      - SYNC_SCHEDULE=${SYNC_SCHEDULE:-*/5 * * * *}
+      - SYNC_SCHEDULE=*/5 * * * * # Optional, default is every 5 minutes
+      - DATA_RETENTION=2w # Optional, default is indefinite
     volumes:
       - ./database:/app/database
-    networks:
-      - crowdsec-network
-
-networks:
-  crowdsec-network:
-    driver: bridge

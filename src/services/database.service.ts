@@ -1,7 +1,9 @@
 import { Alert, Decision } from '../models';
 import { crowdSecAPI } from './crowdsec-api.service';
 import { CrowdSecAlert, CrowdSecDecision } from '../types/crowdsec.types';
-import { calculateExpiration } from '../utils/duration';
+import { calculateExpiration, calculateRetentionCutoff } from '../utils/duration';
+import { config } from '../config';
+import { Op } from 'sequelize';
 
 /**
  * Service for managing database operations and syncing data from CrowdSec LAPI.
@@ -112,6 +114,9 @@ export class DatabaseService {
 
       console.log(`✓ Alerts sync completed: ${synced} new alerts added, ${skipped} existing alerts skipped, ${decisionsCount} decisions synced, ${errors} errors`);
       
+      // Auto-cleanup old data if retention is configured
+      await this.cleanupOldData();
+      
       // Update last successful sync timestamp
       this.lastSuccessfulSync = new Date();
       
@@ -119,6 +124,50 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error syncing alerts:', error);
       return { synced: 0, skipped: 0, errors: 1, decisions: 0 };
+    }
+  }
+
+  /**
+   * Clean up old data based on configured retention period
+   * Deletes alerts and decisions older than the retention period
+   */
+  async cleanupOldData(): Promise<{ deletedAlerts: number; deletedDecisions: number }> {
+    const cutoffDate = calculateRetentionCutoff(config.database.retention);
+    
+    if (!cutoffDate) {
+      // Retention not configured, skip cleanup
+      return { deletedAlerts: 0, deletedDecisions: 0 };
+    }
+
+    try {
+      console.log(`Starting data cleanup for records older than ${cutoffDate.toISOString()}...`);
+      
+      // Delete old decisions first (due to foreign key constraint)
+      const deletedDecisions = await Decision.destroy({
+        where: {
+          created_at: {
+            [Op.lt]: cutoffDate,
+          },
+        },
+      });
+
+      // Delete old alerts
+      const deletedAlerts = await Alert.destroy({
+        where: {
+          created_at: {
+            [Op.lt]: cutoffDate,
+          },
+        },
+      });
+
+      if (deletedAlerts > 0 || deletedDecisions > 0) {
+        console.log(`✓ Cleanup completed: ${deletedAlerts} alerts and ${deletedDecisions} decisions deleted`);
+      }
+
+      return { deletedAlerts, deletedDecisions };
+    } catch (error) {
+      console.error('Error during data cleanup:', error);
+      return { deletedAlerts: 0, deletedDecisions: 0 };
     }
   }
 

@@ -36,6 +36,7 @@ docker run -d \
   -e CROWDSEC_LAPI_URL=http://your-crowdsec-server:8080 \
   -e CROWDSEC_USER=your_machine_id \
   -e CROWDSEC_PASSWORD=your_password \
+  -e DATA_RETENTION=7d \
   -e SYNC_SCHEDULE="*/5 * * * *" \
   -v $(pwd)/database:/app/database \
   --name crowdsec-monitor-api \
@@ -52,7 +53,20 @@ docker run -d \
 | `CROWDSEC_USER` | CrowdSec machine ID | - | Yes |
 | `CROWDSEC_PASSWORD` | CrowdSec password | - | Yes |
 | `DB_PATH` | SQLite database path | `./database/crowdsec.db` | No |
+| `DATA_RETENTION` | Auto-delete old data period | - (disabled) | No |
 | `SYNC_SCHEDULE` | Cron schedule for sync | `*/5 * * * *` | No |
+
+#### Data Retention Examples
+
+Configure `DATA_RETENTION` to automatically delete old alerts and decisions:
+- `1d` - Keep only last 24 hours
+- `7d` - Keep only last 7 days
+- `2w` - Keep only last 2 weeks
+- `1m` - Keep only last 30 days
+- `3m` - Keep only last 90 days
+- `1y` - Keep only last year
+
+If not set, data is retained indefinitely.
 
 #### Sync Schedule Examples
 
@@ -69,13 +83,13 @@ The API automatically syncs data from CrowdSec LAPI based on the configured `SYN
 
 1. **Connects** to CrowdSec LAPI using Watcher credentials
 2. **Fetches** new alerts from LAPI
-3. **Checks** if alerts already exist (using `crowdsec_alert_id`)
-4. **Inserts** only new alerts and their decisions (using Sequelize's `findOrCreate`)
+3. **Checks** if alerts already exist (by alert ID)
+4. **Inserts** only new alerts and their decisions
 5. **Skips** existing alerts to prevent duplicates
-6. **Persists** all data indefinitely in SQLite
+6. **Cleans up** old data based on `DATA_RETENTION` (if configured)
 7. **Tracks** last successful sync timestamp for monitoring
 
-The database is **not a cache** - it's a permanent incremental storage that grows over time with your security data.
+The database is **not a cache** - it's a permanent incremental storage. Configure `DATA_RETENTION` to automatically remove old data and prevent the database from growing indefinitely.
 
 
 ## 🔒 Security

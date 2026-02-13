@@ -64,3 +64,56 @@ export function calculateExpiration(duration: string, baseDate: Date = new Date(
   const durationMs = parseDuration(duration);
   return new Date(baseDate.getTime() + durationMs);
 }
+
+/**
+ * Parse retention period string and convert to milliseconds
+ * Supports formats like: "1d", "3w", "2m", "1y" for days, weeks, months, years
+ * 
+ * @param retention - Retention period string (e.g., "1d", "3w", "2m", "1y")
+ * @returns Duration in milliseconds, or null if invalid/not specified
+ */
+export function parseRetentionPeriod(retention: string | undefined): number | null {
+  if (!retention || typeof retention !== 'string') {
+    return null;
+  }
+
+  const regex = /^(\d+)(d|w|m|y)$/i;
+  const match = regex.exec(retention.trim());
+
+  if (!match) {
+    console.warn(`Invalid retention period format: ${retention}. Expected format: <number><unit> (e.g., 1d, 3w, 2m, 1y)`);
+    return null;
+  }
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+
+  switch (unit) {
+    case 'd': // days
+      return value * 24 * 60 * 60 * 1000;
+    case 'w': // weeks
+      return value * 7 * 24 * 60 * 60 * 1000;
+    case 'm': // months (approximated as 30 days)
+      return value * 30 * 24 * 60 * 60 * 1000;
+    case 'y': // years (approximated as 365 days)
+      return value * 365 * 24 * 60 * 60 * 1000;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Calculate the cutoff date for data retention
+ * 
+ * @param retention - Retention period string (e.g., "1d", "3w", "2m", "1y")
+ * @returns Date before which data should be deleted, or null if retention not configured
+ */
+export function calculateRetentionCutoff(retention: string | undefined): Date | null {
+  const retentionMs = parseRetentionPeriod(retention);
+  
+  if (retentionMs === null) {
+    return null;
+  }
+
+  return new Date(Date.now() - retentionMs);
+}
