@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express';
-import { alertController } from '../controllers/alert.controller';
+import { Router } from 'express';
+import { getAllAlerts, getAlertById, getAlertStats } from '../controllers';
 import { paginationValidators, alertQueryValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
@@ -14,7 +14,7 @@ router.get(
   '/',
   [...paginationValidators, ...alertQueryValidators],
   handleValidationErrors,
-  (req: Request, res: Response) => alertController.getAll(req, res)
+  getAllAlerts
 );
 
 /**
@@ -22,13 +22,13 @@ router.get(
  * @desc    Get alerts statistics
  * @access  Public
  */
-router.get('/stats', (req, res) => alertController.getStats(req, res));
+router.get('/stats', getAlertStats);
 
 /**
  * @route   GET /api/alerts/:id
  * @desc    Get alert by ID
  * @access  Public
  */
-router.get('/:id', (req, res) => alertController.getById(req, res));
+router.get('/:id', getAlertById);
 
 export default router;

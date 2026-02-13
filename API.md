@@ -76,12 +76,33 @@ Retrieve all alerts with optional filtering and pagination.
 | `limit` | integer | No | 100 | Number of items to return (must be positive) |
 | `offset` | integer | No | 0 | Starting index (must be non-negative) |
 | `unpaged` | boolean | No | false | Disable pagination and return all results |
-| `scenario` | string | No | - | Filter by scenario name (partial match) |
+| `scenario` | string/array | No | - | Filter by scenario name (partial match). Accepts single or multiple values |
 | `simulated` | boolean | No | - | Filter by simulated status |
+| `ip_address` | string/array | No | - | Filter by source IP address. Accepts single or multiple IPv4/IPv6 addresses |
+| `country` | string/array | No | - | Filter by source country (2-letter ISO code). Accepts single or multiple values |
+| `ip_owner` | string/array | No | - | Filter by IP owner/organization name (partial match). Accepts single or multiple values |
 
 **Example Request:**
 ```bash
+# Single filters
 curl "http://localhost:3000/api/v1/alerts?limit=10&scenario=ssh-bf"
+
+# Multiple scenarios
+curl "http://localhost:3000/api/v1/alerts?scenario=ssh-bf&scenario=http-probing"
+
+# Filter by IP addresses
+curl "http://localhost:3000/api/v1/alerts?ip_address=192.168.1.100&ip_address=10.0.0.1"
+
+# Filter by countries
+curl "http://localhost:3000/api/v1/alerts?country=US&country=CN"
+
+# Filter by IP owner/organization
+curl "http://localhost:3000/api/v1/alerts?ip_owner=Amazon"
+curl "http://localhost:3000/api/v1/alerts?ip_owner=Amazon&ip_owner=Google"
+
+# Combined filters
+curl "http://localhost:3000/api/v1/alerts?country=RU&scenario=ssh-bf&limit=20"
+curl "http://localhost:3000/api/v1/alerts?ip_owner=Digital%20Ocean&country=US"
 ```
 
 **Example Response:**
@@ -250,10 +271,32 @@ Retrieve all decisions with optional filtering and pagination.
 | `scope` | string | No | - | Filter by scope (Ip, Range, etc.) |
 | `value` | string | No | - | Filter by value (IP address, range, etc.) |
 | `simulated` | boolean | No | - | Filter by simulated status |
+| `scenario` | string/array | No | - | Filter by scenario name (partial match). Accepts single or multiple values |
+| `ip_address` | string/array | No | - | Filter by IP address in decision value. Accepts single or multiple IPv4/IPv6 addresses |
+| `country` | string/array | No | - | Filter by country from related alert (2-letter ISO code). Accepts single or multiple values |
+| `ip_owner` | string/array | No | - | Filter by IP owner/organization from related alert (partial match). Accepts single or multiple values |
 
 **Example Request:**
 ```bash
+# Single filters
 curl "http://localhost:3000/api/v1/decisions?type=ban&limit=20"
+
+# Multiple scenarios
+curl "http://localhost:3000/api/v1/decisions?scenario=ssh-bf&scenario=http-probing"
+
+# Filter by IP addresses
+curl "http://localhost:3000/api/v1/decisions?ip_address=192.168.1.100"
+
+# Filter by countries (from related alert)
+curl "http://localhost:3000/api/v1/decisions?country=CN&type=ban"
+
+# Filter by IP owner/organization (from related alert)
+curl "http://localhost:3000/api/v1/decisions?ip_owner=Amazon"
+curl "http://localhost:3000/api/v1/decisions?ip_owner=Alibaba&ip_owner=Tencent"
+
+# Combined filters
+curl "http://localhost:3000/api/v1/decisions?scenario=ssh-bf&country=RU&limit=10"
+curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban"
 ```
 
 **Example Response:**
@@ -474,6 +517,7 @@ Statistics are returned directly at the root level.
 
 When query parameters fail validation, the API returns a 400 Bad Request with detailed error information:
 
+**Example validation error:**
 ```json
 {
   "message": "Validation error",
@@ -490,7 +534,34 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
 }
 ```
 
-**Note:** Validation errors always include detailed information as they are client-side errors, not security-sensitive server errors.
+**Common validation errors for new parameters:**
+```json
+{
+  "message": "Validation error",
+  "errors": [
+    {
+      "field": "ip_address",
+      "message": "ip_address must be a valid IPv4 or IPv6 address"
+    },
+    {
+      "field": "country",
+      "message": "country must be a 2-letter country code (ISO 3166-1 alpha-2)"
+    }
+  ]
+}
+```
+
+**Examples of invalid values:**
+- `ip_address=999.999.999.999` → Invalid IPv4 format
+- `ip_address=invalid` → Not a valid IP address
+- `country=USA` → Must be 2 letters (use `US`)
+- `country=X` → Must be exactly 2 letters
+
+**Note:** 
+- Validation errors always include detailed information as they are client-side errors, not security-sensitive server errors
+- The `scenario` and `ip_owner` parameters accept any string and are not validated for format
+- `ip_address`, `country`, `scenario`, and `ip_owner` parameters accept both single values and arrays
+- `ip_owner` performs partial match (case-insensitive) on the organization/AS name field
 
 ---
 
