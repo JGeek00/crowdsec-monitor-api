@@ -1,0 +1,34 @@
+name: Deploy Image to GHCR
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+jobs:
+  build-push-image:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './'
+    steps:
+      - name: "Checkout GitHub Action"
+        uses: actions/checkout@main
+
+      - name: "Login to GitHub Container Registry"
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GH_TOKEN}}
+
+      - name: "Extract version from package.json"
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: "Build and push Docker image"
+        run: |
+          docker build . --tag ghcr.io/jgeek00/crowdsec-monitor-api:latest --tag ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
+          docker push ghcr.io/jgeek00/crowdsec-monitor-api:latest
+          docker push ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
