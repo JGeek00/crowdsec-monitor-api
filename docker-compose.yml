@@ -15,5 +15,6 @@ services:
       - SYNC_SCHEDULE=*/5 * * * * # Optional, default is every 5 minutes
       - DATA_RETENTION=2w # Optional, default is indefinite
       - API_PASSWORD= # Optional, leave empty to disable authentication
+      - RATE_LIMIT= # Optional, format: <requests>/<minutes>, leave empty to disable rate limiting
     volumes:
       - ./database:/app/database

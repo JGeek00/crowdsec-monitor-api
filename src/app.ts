@@ -16,12 +16,17 @@ export const createApp = (): Application => {
   app.use(cors());
 
   // Rate limiting
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.',
-  });
-  app.use('/api/v1/', limiter);
+  if (config.rateLimit) {
+    const limiter = rateLimit({
+      windowMs: config.rateLimit.windowMs,
+      max: config.rateLimit.max,
+      message: 'Too many requests from this IP, please try again later.',
+    });
+    app.use('/api/v1/', limiter);
+    console.log(`Rate limiting enabled: ${config.rateLimit.max} requests per ${config.rateLimit.windowMs / 60000} minutes`);
+  } else {
+    console.log('Rate limiting disabled');
+  }
 
   // Body parsing middleware
   app.use(express.json());

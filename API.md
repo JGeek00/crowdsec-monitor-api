@@ -795,9 +795,10 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
 
 ## Rate Limiting
 
-The API is protected by rate limiting:
-- **Limit**: 100 requests per 15 minutes per IP address
-- **Scope**: Applied to all `/api/v1/*` endpoints
+The API supports optional rate limiting via the `RATE_LIMIT` environment variable:
+- **Format**: `<requests>/<minutes>` (e.g., `100/15` for 100 requests per 15 minutes)
+- **Scope**: Applied to all `/api/v1/*` endpoints when enabled
+- **Default**: Disabled if `RATE_LIMIT` is not set
 
 When rate limit is exceeded:
 ```json
