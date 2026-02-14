@@ -12,7 +12,7 @@ services:
       - CROWDSEC_USER=crowdsec_user
       - CROWDSEC_PASSWORD=crowdsec_password
       - DB_PATH=/app/database/crowdsec.db
-      - SYNC_SCHEDULE=*/5 * * * * # Optional, default is every 5 minutes
+      - SYNC_INTERVAL_SECONDS=30 # Optional, interval in seconds (default 30 seconds)
       - DATA_RETENTION=2w # Optional, default is indefinite
       - API_PASSWORD= # Optional, leave empty to disable authentication
       - RATE_LIMIT= # Optional, format: <requests>/<minutes>, leave empty to disable rate limiting

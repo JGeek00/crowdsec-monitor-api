@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { defaults } from './defaults';
 
 dotenv.config();
 
@@ -30,23 +31,27 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
 
 export const config = {
   server: {
-    port: parseInt(process.env.PORT || '3000', 10),
-    nodeEnv: process.env.NODE_ENV || 'development',
+    port: parseInt(process.env.PORT || String(defaults.server.port), 10),
+    nodeEnv: process.env.NODE_ENV || defaults.server.nodeEnv,
   },
   crowdsec: {
-    lapiUrl: process.env.CROWDSEC_LAPI_URL || 'http://localhost:8080',
-    user: process.env.CROWDSEC_USER || '',
-    password: process.env.CROWDSEC_PASSWORD || '',
+    lapiUrl: process.env.CROWDSEC_LAPI_URL || defaults.crowdsec.lapiUrl,
+    user: process.env.CROWDSEC_USER || defaults.crowdsec.user,
+    password: process.env.CROWDSEC_PASSWORD || defaults.crowdsec.password,
   },
   database: {
-    path: process.env.DB_PATH || './database/crowdsec.db',
+    path: process.env.DB_PATH || defaults.database.path,
     retention: process.env.DATA_RETENTION || undefined,
   },
   sync: {
-    schedule: process.env.SYNC_SCHEDULE || '*/5 * * * *', // Every 5 minutes by default
+    intervalSeconds: process.env.SYNC_INTERVAL_SECONDS 
+      ? parseInt(process.env.SYNC_INTERVAL_SECONDS, 10) 
+      : defaults.sync.intervalSeconds,
   },
   auth: {
     apiPassword: process.env.API_PASSWORD || undefined,
   },
   rateLimit: parseRateLimit(process.env.RATE_LIMIT),
 };
+
+export { defaults } from './defaults';

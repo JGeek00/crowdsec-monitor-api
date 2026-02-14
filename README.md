@@ -37,7 +37,7 @@ docker run -d \
   -e CROWDSEC_USER=your_machine_id \
   -e CROWDSEC_PASSWORD=your_password \
   -e DATA_RETENTION=7d \
-  -e SYNC_SCHEDULE="*/5 * * * *" \
+  -e SYNC_INTERVAL_SECONDS=30 \
   -v $(pwd)/database:/app/database \
   --name crowdsec-monitor-api \
   crowdsec-monitor-api
@@ -52,7 +52,7 @@ docker run -d \
 | `CROWDSEC_PASSWORD` | CrowdSec password | - | Yes |
 | `DB_PATH` | SQLite database path | `./database/crowdsec.db` | No |
 | `DATA_RETENTION` | Auto-delete old data period | disabled | No |
-| `SYNC_SCHEDULE` | Cron schedule for sync | `*/5 * * * *` | No |
+| `SYNC_INTERVAL_SECONDS` | Interval in seconds between syncs | `30` | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |
 
@@ -68,13 +68,6 @@ Configure `DATA_RETENTION` to automatically delete old alerts and decisions:
 
 If not set, data is retained indefinitely.
 
-#### Sync Schedule Examples
-
-- `*/5 * * * *` - Every 5 minutes (default)
-- `*/15 * * * *` - Every 15 minutes
-- `0 * * * *` - Every hour
-- `0 */6 * * *` - Every 6 hours
-- `0 0 * * *` - Daily at midnight
 
 #### API Authentication (Optional)
 
@@ -121,7 +114,7 @@ docker run -d \
 
 ## 🔄 How Synchronization Works
 
-The API automatically syncs data from CrowdSec LAPI based on the configured `SYNC_SCHEDULE`:
+The API automatically syncs data from CrowdSec LAPI based on the configured `SYNC_INTERVAL_SECONDS` interval:
 
 1. **Connects** to CrowdSec LAPI using Watcher credentials
 2. **Fetches** new alerts from LAPI

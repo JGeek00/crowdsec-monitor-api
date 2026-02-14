@@ -1,8 +1,7 @@
-import cron from 'node-cron';
 import { config } from './config';
 import { initDatabase } from './config/database';
 import { createApp } from './app';
-import { databaseService } from './services/database.service';
+import { databaseService, schedulerService } from './services';
 import { crowdSecAPI } from './services/crowdsec-api.service';
 import packageJson from '../package.json';
 
@@ -65,12 +64,18 @@ const startServer = async (): Promise<void> => {
       await databaseService.syncAll();
     }
 
-    // Setup cron job for periodic sync
-    console.log(`Setting up automatic sync (schedule: ${config.sync.schedule})...`);
-    cron.schedule(config.sync.schedule, async () => {
-      console.log('Running scheduled sync...');
-      await databaseService.syncAll();
-    });
+    // Setup automatic sync with interval-based scheduler
+    console.log(`Setting up automatic sync (interval: ${config.sync.intervalSeconds}s)...`);
+    schedulerService.schedule(
+      async () => {
+        console.log('Running scheduled sync...');
+        await databaseService.syncAll();
+      },
+      {
+        intervalSeconds: config.sync.intervalSeconds,
+        runImmediately: false, // Already ran initial sync
+      }
+    );
 
     // Create and start Express app
     const app = createApp();
@@ -81,6 +86,7 @@ const startServer = async (): Promise<void> => {
       console.log(`✓ Environment: ${config.server.nodeEnv}`);
       console.log(`✓ Version: ${packageJson.version}`);
       console.log(`✓ API available at: http://localhost:${config.server.port}/api`);
+      console.log(`✓ Refreshing data every ${config.sync.intervalSeconds} seconds`);
       console.log('=================================');
     });
   } catch (error) {
@@ -92,13 +98,28 @@ const startServer = async (): Promise<void> => {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  schedulerService.stop();
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error: Error) => {
   console.error('Uncaught Exception:', error);
+  schedulerService.stop();
   process.exit(1);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  schedulerService.stop();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  schedulerService.stop();
+  process.exit(0);
 });
 
 // Start the server
