@@ -8,7 +8,8 @@ import { Alert } from '../../models';
  */
 export const deleteAlert = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const id = parseInt(idParam, 10);
 
     if (isNaN(id)) {
       res.status(400).json({

@@ -6,7 +6,7 @@ import { Alert } from '../../models';
  */
 export async function getAlertById(req: Request, res: Response): Promise<void> {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const alert = await Alert.findByPk(id);
 
     if (!alert) {
