@@ -8,8 +8,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
       - CROWDSEC_LAPI_URL=http://localhost:8080
       - CROWDSEC_USER=crowdsec_user
       - CROWDSEC_PASSWORD=crowdsec_password
