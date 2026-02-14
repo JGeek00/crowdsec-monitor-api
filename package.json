@@ -9,9 +9,10 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --exec ts-node src/server.ts",
-    "build": "npm run build:compile && npm run build:obfuscate",
-    "build:compile": "tsc --sourceMap false --declaration false --declarationMap false",
-    "build:obfuscate": "node scripts/obfuscate.js",
+    "build:dev": "tsc",
+    "build:prod": "npm run build:prod:compile && npm run build:prod:obfuscate",
+    "build:prod:compile": "tsc --sourceMap false --declaration false --declarationMap false",
+    "build:prod:obfuscate": "node scripts/obfuscate.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

@@ -15,7 +15,7 @@ COPY src ./src
 COPY scripts ./scripts
 
 # Build application
-RUN npm run build
+RUN npm run build:prod
 
 # Production stage
 FROM node:24-alpine

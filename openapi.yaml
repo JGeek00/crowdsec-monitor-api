@@ -1,0 +1,914 @@
+openapi: 3.0.3
+info:
+  title: CrowdSec Monitor API
+  description: |
+    REST API to monitor and query data from CrowdSec LAPI (Local API).
+    
+    The API provides persistent storage and query interface for CrowdSec security alerts and decisions,
+    automatically syncing data from your CrowdSec LAPI instance and storing it in a local SQLite database.
+    
+    ## Authentication
+    
+    API authentication is **optional** and controlled by the `API_PASSWORD` environment variable:
+    - If `API_PASSWORD` is not set: All endpoints are accessible without authentication
+    - If `API_PASSWORD` is set: Protected endpoints require Bearer token authentication
+    
+    Protected endpoints:
+    - All `/alerts/*` endpoints
+    - All `/decisions/*` endpoints
+    - `/lapi-status` endpoint
+    
+    Public endpoints:
+    - `/api-health` (always accessible)
+  version: 1.0.0
+  contact:
+    name: JGeek00
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development server
+  - url: https://your-domain.com/api/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+  - {}
+
+tags:
+  - name: Health
+    description: API health and status checks
+  - name: Alerts
+    description: CrowdSec security alerts operations
+  - name: Decisions
+    description: CrowdSec security decisions operations
+
+paths:
+  /api-health:
+    get:
+      tags:
+        - Health
+      summary: Check API health
+      description: Returns API status and current timestamp. Always accessible without authentication.
+      security: []
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API is running
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-02-14T10:30:45.123Z'
+
+  /lapi-status:
+    get:
+      tags:
+        - Health
+      summary: Check CrowdSec LAPI connection
+      description: Quick check of CrowdSec LAPI connection status and last successful data sync. Requires authentication if API_PASSWORD is configured.
+      responses:
+        '200':
+          description: LAPI is connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [connected, disconnected, error]
+                    example: connected
+                  message:
+                    type: string
+                    example: CrowdSec LAPI is reachable and authenticated
+                  lastSuccessfulSync:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    example: '2026-02-14T10:25:30.123Z'
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-02-14T10:30:45.123Z'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '503':
+          description: LAPI is disconnected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: disconnected
+                  message:
+                    type: string
+                    example: Unable to connect to CrowdSec LAPI
+                  lastSuccessfulSync:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /alerts:
+    get:
+      tags:
+        - Alerts
+      summary: List all alerts
+      description: Retrieve all alerts with optional filtering and pagination
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Unpaged'
+        - name: scenario
+          in: query
+          description: Filter by scenario name (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: ssh-bf
+        - name: simulated
+          in: query
+          description: Filter by simulated status
+          schema:
+            type: boolean
+        - name: ip_address
+          in: query
+          description: Filter by source IP address (accepts multiple IPv4/IPv6 addresses)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: 192.168.1.100
+        - name: country
+          in: query
+          description: Filter by source country (2-letter ISO code, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: US
+        - name: ip_owner
+          in: query
+          description: Filter by IP owner/organization name (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: Amazon
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AlertListPaginated'
+                  - $ref: '#/components/schemas/AlertListUnpaged'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /alerts/{id}:
+    get:
+      tags:
+        - Alerts
+      summary: Get alert by ID
+      description: Retrieve a single alert by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Alert ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Alert details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Alert not found
+    delete:
+      tags:
+        - Alerts
+      summary: Delete alert by ID
+      description: |
+        Delete an alert from CrowdSec LAPI (including all associated decisions).
+        The alert is immediately deleted from the local database, then the API syncs with LAPI.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Alert ID to delete
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Alert deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Alert deleted successfully
+                  nbDeleted:
+                    type: string
+                    example: '1'
+        '400':
+          description: Invalid alert ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid alert ID
+                  message:
+                    type: string
+                    example: Alert ID must be a valid number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Alert not found
+                  message:
+                    type: string
+                    example: Alert with ID 123 was not found
+
+  /alerts/stats:
+    get:
+      tags:
+        - Alerts
+      summary: Get alerts statistics
+      description: Get aggregated statistics about alerts
+      responses:
+        '200':
+          description: Alert statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertStats'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /decisions:
+    get:
+      tags:
+        - Decisions
+      summary: List all decisions
+      description: Retrieve all decisions with optional filtering and pagination
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Unpaged'
+        - name: only_active
+          in: query
+          description: Filter only active decisions (expiration date is in the future)
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          description: Filter by decision type
+          schema:
+            type: string
+            enum: [ban, captcha, throttle, allow]
+        - name: scope
+          in: query
+          description: Filter by scope
+          schema:
+            type: string
+            example: Ip
+        - name: value
+          in: query
+          description: Filter by value (IP address, range, etc.)
+          schema:
+            type: string
+        - name: simulated
+          in: query
+          description: Filter by simulated status
+          schema:
+            type: boolean
+        - name: scenario
+          in: query
+          description: Filter by scenario name (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+        - name: ip_address
+          in: query
+          description: Filter by IP address (accepts multiple IPv4/IPv6 addresses)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+        - name: country
+          in: query
+          description: Filter by country from related alert (2-letter ISO code, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+        - name: ip_owner
+          in: query
+          description: Filter by IP owner from related alert (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+      responses:
+        '200':
+          description: List of decisions
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DecisionListPaginated'
+                  - $ref: '#/components/schemas/DecisionListUnpaged'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Decisions
+      summary: Create a decision
+      description: |
+        Create a decision in CrowdSec LAPI. This is a simplified endpoint that creates an alert with a decision.
+        After successful creation, the API automatically syncs the local database with LAPI.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ip
+                - duration
+                - reason
+                - type
+              properties:
+                ip:
+                  type: string
+                  description: IPv4 or IPv6 address to apply the decision to
+                  example: 192.168.100.200
+                duration:
+                  type: string
+                  description: Duration in CrowdSec format (e.g., 2m, 10h, 1d, 3w)
+                  example: 1h
+                reason:
+                  type: string
+                  description: Human-readable reason for the decision
+                  example: Manual ban from API
+                type:
+                  type: string
+                  enum: [ban, captcha, throttle, allow]
+                  description: Decision type
+                  example: ban
+      responses:
+        '201':
+          description: Decision created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Decision created successfully
+                  alert_ids:
+                    type: array
+                    items:
+                      type: string
+                    example: ['12345']
+                  decision:
+                    type: object
+                    properties:
+                      ip:
+                        type: string
+                        example: 192.168.100.200
+                      type:
+                        type: string
+                        example: ban
+                      duration:
+                        type: string
+                        example: 1h
+                      reason:
+                        type: string
+                        example: Manual ban from API
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Error creating decision
+                  error:
+                    type: string
+                    example: Connection refused
+
+  /decisions/{id}:
+    get:
+      tags:
+        - Decisions
+      summary: Get decision by ID
+      description: Retrieve a single decision by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Decision ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Decision details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Decision'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Decision not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Decision not found
+    delete:
+      tags:
+        - Decisions
+      summary: Delete decision by ID
+      description: |
+        Delete a decision from CrowdSec LAPI. The associated alert is NOT deleted.
+        In the local database, the decision expiration date is set to the current time (not deleted).
+        After deletion, the API automatically syncs with LAPI.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Decision ID to delete
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Decision deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Decision deleted successfully
+                  nbDeleted:
+                    type: string
+                    example: '1'
+        '400':
+          description: Invalid decision ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid decision ID
+                  message:
+                    type: string
+                    example: Decision ID must be a valid number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Decision not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Decision not found
+                  message:
+                    type: string
+                    example: Decision with ID 456 was not found
+
+  /decisions/stats:
+    get:
+      tags:
+        - Decisions
+      summary: Get decisions statistics
+      description: Get aggregated statistics about decisions
+      responses:
+        '200':
+          description: Decision statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionStats'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Bearer token authentication (optional).
+        Only required if `API_PASSWORD` environment variable is configured.
+        Use the value of `API_PASSWORD` as the bearer token.
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      description: Number of items to return (must be positive)
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    Offset:
+      name: offset
+      in: query
+      description: Starting index (must be non-negative)
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Unpaged:
+      name: unpaged
+      in: query
+      description: Disable pagination and return all results
+      schema:
+        type: boolean
+        default: false
+
+  schemas:
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Alert ID (from CrowdSec)
+        uuid:
+          type: string
+          format: uuid
+        scenario:
+          type: string
+          example: crowdsecurity/ssh-bf
+        scenario_version:
+          type: string
+        scenario_hash:
+          type: string
+        message:
+          type: string
+        capacity:
+          type: integer
+        leakspeed:
+          type: string
+        simulated:
+          type: boolean
+        remediation:
+          type: boolean
+        events_count:
+          type: integer
+        machine_id:
+          type: string
+        source:
+          $ref: '#/components/schemas/SourceInfo'
+        labels:
+          type: array
+          items:
+            type: string
+        meta:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              value:
+                type: string
+        events:
+          type: array
+          items:
+            type: object
+        crowdsec_created_at:
+          type: string
+          format: date-time
+        start_at:
+          type: string
+          format: date-time
+        stop_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SourceInfo:
+      type: object
+      properties:
+        as_name:
+          type: string
+        as_number:
+          type: string
+        cn:
+          type: string
+          description: Country code (2-letter ISO)
+        ip:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        range:
+          type: string
+        scope:
+          type: string
+        value:
+          type: string
+
+    Decision:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Decision ID (from CrowdSec)
+        alert_id:
+          type: integer
+        origin:
+          type: string
+        type:
+          type: string
+          enum: [ban, captcha, throttle, allow]
+        scope:
+          type: string
+        value:
+          type: string
+        expiration:
+          type: string
+          format: date-time
+        scenario:
+          type: string
+        simulated:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AlertListPaginated:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              description: Current page number
+            amount:
+              type: integer
+              description: Number of items in current response
+            total:
+              type: integer
+              description: Total number of items available
+
+    AlertListUnpaged:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        total:
+          type: integer
+          description: Total number of items
+
+    AlertStats:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 150
+        simulated:
+          type: integer
+          example: 25
+        real:
+          type: integer
+          example: 125
+        topScenarios:
+          type: array
+          items:
+            type: object
+            properties:
+              scenario:
+                type: string
+                example: crowdsecurity/ssh-bf
+              count:
+                type: integer
+                example: 45
+        topCountries:
+          type: array
+          items:
+            type: object
+            properties:
+              country:
+                type: string
+                example: CN
+              count:
+                type: integer
+                example: 35
+        topOrganizations:
+          type: array
+          items:
+            type: object
+            properties:
+              organization:
+                type: string
+                example: Alibaba Cloud
+              count:
+                type: integer
+                example: 18
+
+    DecisionListPaginated:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Decision'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            amount:
+              type: integer
+            total:
+              type: integer
+
+    DecisionListUnpaged:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Decision'
+        total:
+          type: integer
+
+    DecisionStats:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 75
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: ban
+              count:
+                type: integer
+                example: 65
+        byScope:
+          type: array
+          items:
+            type: object
+            properties:
+              scope:
+                type: string
+                example: Ip
+              count:
+                type: integer
+                example: 70
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or invalid credentials
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unauthorized
+              message:
+                type: string
+                example: Authorization header is required
+          examples:
+            missing_header:
+              value:
+                error: Unauthorized
+                message: Authorization header is required
+            invalid_format:
+              value:
+                error: Unauthorized
+                message: 'Authorization header must be in format: Bearer <token>'
+            invalid_credentials:
+              value:
+                error: Unauthorized
+                message: Invalid credentials
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    msg:
+                      type: string
+                    param:
+                      type: string
+                    location:
+                      type: string
+          example:
+            errors:
+              - msg: limit must be a positive integer
+                param: limit
+                location: query

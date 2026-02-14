@@ -14,7 +14,7 @@ npm run dev
 The production build process compiles TypeScript and obfuscates the resulting JavaScript code for enhanced security:
 
 ```bash
-npm run build
+npm run build:prod
 ```
 
 This command performs two steps:
