@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   crowdsec-monitor-api:
-    build: .
+    image: ghcr.io/jgeek00/crowdsec-monitor-api:latest
     container_name: crowdsec-monitor-api
     restart: unless-stopped
     ports:
