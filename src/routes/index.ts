@@ -3,14 +3,15 @@ import alertRoutes from './alert.routes';
 import decisionRoutes from './decision.routes';
 import { crowdSecAPI } from '../services/crowdsec-api.service';
 import { databaseService } from '../services/database.service';
+import { optionalAuth } from '../middlewares';
 
 const router = Router();
 
-// Mount routes
-router.use('/alerts', alertRoutes);
-router.use('/decisions', decisionRoutes);
+// Mount routes with optional authentication
+router.use('/alerts', optionalAuth, alertRoutes);
+router.use('/decisions', optionalAuth, decisionRoutes);
 
-// API Health check endpoint
+// API Health check endpoint (public)
 router.get('/api-health', (req: Request, res: Response) => {
   res.json({
     message: 'API is running',
@@ -18,8 +19,8 @@ router.get('/api-health', (req: Request, res: Response) => {
   });
 });
 
-// CrowdSec LAPI status endpoint
-router.get('/lapi-status', async (req: Request, res: Response) => {
+// CrowdSec LAPI status endpoint (requires authentication if API_PASSWORD is set)
+router.get('/lapi-status', optionalAuth, async (req: Request, res: Response) => {
   try {
     const isConnected = await crowdSecAPI.checkStatus();
     const lastSync = databaseService.getLastSuccessfulSync();

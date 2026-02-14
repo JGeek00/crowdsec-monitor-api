@@ -12,7 +12,56 @@ http://localhost:3000/api/v1
 
 ## Authentication
 
-The API does not require authentication for read operations. All endpoints communicate with CrowdSec LAPI using Watcher credentials configured via environment variables.
+### Optional Bearer Token Authentication
+
+API authentication is **optional** and controlled by the `API_PASSWORD` environment variable:
+
+- **If `API_PASSWORD` is not set**: All endpoints are accessible without authentication
+- **If `API_PASSWORD` is set**: Alerts and Decisions endpoints require Bearer token authentication
+
+**Authenticated Request Example:**
+```bash
+curl -H "Authorization: Bearer your_password_here" \
+  http://localhost:3000/api/v1/alerts
+```
+
+**Authentication Errors:**
+
+**401 Unauthorized - Missing Authorization Header:**
+```json
+{
+  "error": "Unauthorized",
+  "message": "Authorization header is required"
+}
+```
+
+**401 Unauthorized - Invalid Format:**
+```json
+{
+  "error": "Unauthorized",
+  "message": "Authorization header must be in format: Bearer <token>"
+}
+```
+
+**401 Unauthorized - Invalid Credentials:**
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid credentials"
+}
+```
+
+**Protected Endpoints:**
+- All `/alerts/*` endpoints (when `API_PASSWORD` is set)
+- All `/decisions/*` endpoints (when `API_PASSWORD` is set)
+- `/lapi-status` endpoint (when `API_PASSWORD` is set)
+
+**Public Endpoints:**
+- `/api-health` (always accessible without authentication)
+
+**Note:** The `/api-health` endpoint is always public for basic availability checks. The `/lapi-status` endpoint requires authentication when `API_PASSWORD` is configured.
+
+**Backend Communication:** All endpoints communicate with CrowdSec LAPI using Watcher credentials configured via environment variables.
 
 ---
 
@@ -35,6 +84,8 @@ Check if the API is running and responsive.
 ### GET `/api/v1/lapi-status`
 
 Quick check of CrowdSec LAPI connection status and last successful data sync.
+
+**Authentication:** Required if `API_PASSWORD` is set
 
 **Response (Connected):**
 ```json

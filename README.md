@@ -55,6 +55,7 @@ docker run -d \
 | `DB_PATH` | SQLite database path | `./database/crowdsec.db` | No |
 | `DATA_RETENTION` | Auto-delete old data period | - (disabled) | No |
 | `SYNC_SCHEDULE` | Cron schedule for sync | `*/5 * * * *` | No |
+| `API_PASSWORD` | Optional API authentication password | - (disabled) | No |
 
 #### Data Retention Examples
 
@@ -76,6 +77,27 @@ If not set, data is retained indefinitely.
 - `0 */6 * * *` - Every 6 hours
 - `0 0 * * *` - Daily at midnight
 
+#### API Authentication (Optional)
+
+You can optionally secure your API with a password using the `API_PASSWORD` environment variable:
+
+- If `API_PASSWORD` is **not set**: API endpoints are accessible without authentication
+- If `API_PASSWORD` is **set**: All alert and decision endpoints require Bearer token authentication
+
+**Example request with authentication:**
+```bash
+curl -H "Authorization: Bearer your_password_here" \
+  http://localhost:3000/api/v1/alerts
+```
+
+**Security Note:** This is a **basic authentication mechanism** intended for simple deployments. For production environments, consider implementing more robust authentication methods such as:
+- Basic Auth with HTTPS
+- OAuth2 / OpenID Connect
+- External Identity Provider (Auth0, Keycloak, etc.)
+- API Gateway with advanced authentication
+
+The `/api/v1/api-health` endpoint is always accessible without authentication.
+
 
 ## 🔄 How Synchronization Works
 
@@ -85,7 +107,7 @@ The API automatically syncs data from CrowdSec LAPI based on the configured `SYN
 2. **Fetches** new alerts from LAPI
 3. **Checks** if alerts already exist (by alert ID)
 4. **Inserts** only new alerts and their decisions
-5. **Skips** existing alerts to prevent duplicates
+5. **Overwrites** existing alerts to keep track of updates
 6. **Cleans up** old data based on `DATA_RETENTION` (if configured)
 7. **Tracks** last successful sync timestamp for monitoring
 
@@ -94,6 +116,7 @@ The database is **not a cache** - it's a permanent incremental storage. Configur
 
 ## 🔒 Security
 
+- **Optional Authentication**: Bearer token authentication with `API_PASSWORD` (optional)
 - **Rate Limiting**: 100 requests per 15 minutes per IP
 - **Helmet**: Security headers configured
 - **CORS**: Cross-origin requests controlled

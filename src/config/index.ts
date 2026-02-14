@@ -19,4 +19,7 @@ export const config = {
   sync: {
     schedule: process.env.SYNC_SCHEDULE || '*/5 * * * *', // Every 5 minutes by default
   },
+  auth: {
+    apiPassword: process.env.API_PASSWORD || undefined,
+  },
 };

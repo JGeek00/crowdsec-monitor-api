@@ -16,5 +16,6 @@ services:
       - DB_PATH=/app/database/crowdsec.db
       - SYNC_SCHEDULE=*/5 * * * * # Optional, default is every 5 minutes
       - DATA_RETENTION=2w # Optional, default is indefinite
+      - API_PASSWORD= # Optional, leave empty to disable authentication
     volumes:
       - ./database:/app/database
