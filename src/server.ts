@@ -4,6 +4,7 @@ import { initDatabase } from './config/database';
 import { createApp } from './app';
 import { databaseService } from './services/database.service';
 import { crowdSecAPI } from './services/crowdsec-api.service';
+import packageJson from '../package.json';
 
 /**
  * Validate required environment variables
@@ -78,6 +79,7 @@ const startServer = async (): Promise<void> => {
       console.log('=================================');
       console.log(`✓ Server running on port ${config.server.port}`);
       console.log(`✓ Environment: ${config.server.nodeEnv}`);
+      console.log(`✓ Version: ${packageJson.version}`);
       console.log(`✓ API available at: http://localhost:${config.server.port}/api`);
       console.log('=================================');
     });
