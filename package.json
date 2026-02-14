@@ -2,7 +2,7 @@
   "name": "crowdsec-monitor-api",
   "version": "1.0.0",
   "description": "REST API server for CrowdSec LAPI",
-  "license": "ISC",
+  "license": "MIT",
   "author": "JGeek00",
   "type": "commonjs",
   "main": "dist/server.js",

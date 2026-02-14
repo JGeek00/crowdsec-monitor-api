@@ -130,7 +130,7 @@ See [API.md](./API.md) for complete response schemas and examples.
 
 ## 📄 License
 
-ISC
+MIT
 
 ## 👤 Author
 
