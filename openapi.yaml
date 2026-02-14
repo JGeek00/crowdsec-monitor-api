@@ -44,6 +44,8 @@ tags:
     description: CrowdSec security alerts operations
   - name: Decisions
     description: CrowdSec security decisions operations
+  - name: Statistics
+    description: Statistics and aggregated data operations
 
 paths:
   /api-health:
@@ -573,6 +575,215 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /statistics:
+    get:
+      tags:
+        - Statistics
+      summary: Get comprehensive statistics
+      description: Get comprehensive statistics including alerts in the last 24 hours, active decisions, activity history, and top items (countries, scenarios, IP owners, and targets)
+      parameters:
+        - name: since
+          in: query
+          description: Filter data from this date (format yyyy-mm-dd, must be a past date)
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2026-02-13'
+        - name: amount
+          in: query
+          description: Number of top items to return for each category
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+      responses:
+        '200':
+          description: Comprehensive statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComprehensiveStatistics'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/countries:
+    get:
+      tags:
+        - Statistics
+      summary: Get countries statistics
+      description: Get complete list of all countries with alert counts, sorted by count (descending)
+      responses:
+        '200':
+          description: List of countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CountryStatItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/countries/{item}:
+    get:
+      tags:
+        - Statistics
+      summary: Get country history
+      description: Get historical activity for a specific country, showing alert counts grouped by date
+      parameters:
+        - name: item
+          in: path
+          required: true
+          description: Country code (2-letter ISO, case insensitive)
+          schema:
+            type: string
+          example: us
+      responses:
+        '200':
+          description: Country history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/scenarios:
+    get:
+      tags:
+        - Statistics
+      summary: Get scenarios statistics
+      description: Get complete list of all scenarios with alert counts, sorted by count (descending)
+      responses:
+        '200':
+          description: List of scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScenarioStatItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/scenarios/{item}:
+    get:
+      tags:
+        - Statistics
+      summary: Get scenario history
+      description: Get historical activity for a specific scenario, showing alert counts grouped by date
+      parameters:
+        - name: item
+          in: path
+          required: true
+          description: Scenario name (exact match, URL-encode if needed)
+          schema:
+            type: string
+          example: crowdsecurity/ssh-bruteforce
+      responses:
+        '200':
+          description: Scenario history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/ip-owners:
+    get:
+      tags:
+        - Statistics
+      summary: Get IP owners statistics
+      description: Get complete list of all IP owners (AS names) with alert counts, sorted by count (descending)
+      responses:
+        '200':
+          description: List of IP owners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IpOwnerStatItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/ip-owners/{item}:
+    get:
+      tags:
+        - Statistics
+      summary: Get IP owner history
+      description: Get historical activity for a specific IP owner, showing alert counts grouped by date
+      parameters:
+        - name: item
+          in: path
+          required: true
+          description: IP owner/AS name (exact match, URL-encode if needed)
+          schema:
+            type: string
+          example: Amazon.com, Inc.
+      responses:
+        '200':
+          description: IP owner history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/targets:
+    get:
+      tags:
+        - Statistics
+      summary: Get targets statistics
+      description: Get complete list of all target FQDNs (from target_fqdn in events metadata) with alert counts, sorted by count (descending)
+      responses:
+        '200':
+          description: List of targets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TargetStatItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /statistics/targets/{item}:
+    get:
+      tags:
+        - Statistics
+      summary: Get target history
+      description: Get historical activity for a specific target FQDN, showing alert counts grouped by date
+      parameters:
+        - name: item
+          in: path
+          required: true
+          description: Target FQDN (exact match, URL-encode if needed)
+          schema:
+            type: string
+          example: example.com
+      responses:
+        '200':
+          description: Target history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -653,7 +864,10 @@ components:
               key:
                 type: string
               value:
-                type: string
+                type: array
+                items:
+                  type: string
+                description: Array of string values (always returned as array, even for single values)
         events:
           type: array
           items:
@@ -665,12 +879,6 @@ components:
           type: string
           format: date-time
         stop_at:
-          type: string
-          format: date-time
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
           type: string
           format: date-time
 
@@ -721,12 +929,10 @@ components:
           type: string
         simulated:
           type: boolean
-        created_at:
+        crowdsec_created_at:
           type: string
           format: date-time
-        updated_at:
-          type: string
-          format: date-time
+          description: Creation timestamp from CrowdSec
 
     AlertListPaginated:
       type: object
@@ -860,6 +1066,106 @@ components:
               count:
                 type: integer
                 example: 70
+
+    ComprehensiveStatistics:
+      type: object
+      properties:
+        alertsLast24Hours:
+          type: integer
+          description: Number of alerts in the last 24 hours
+          example: 45
+        activeDecisions:
+          type: integer
+          description: Number of decisions that haven't expired yet
+          example: 32
+        activityHistory:
+          type: array
+          description: Daily activity grouped by date
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                example: '2026-02-14'
+              amountAlerts:
+                type: integer
+                example: 30
+              amountDecisions:
+                type: integer
+                example: 22
+        topCountries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryStatItem'
+        topScenarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioStatItem'
+        topIpOwners:
+          type: array
+          items:
+            $ref: '#/components/schemas/IpOwnerStatItem'
+        topTargets:
+          type: array
+          items:
+            $ref: '#/components/schemas/TargetStatItem'
+
+    CountryStatItem:
+      type: object
+      properties:
+        countryCode:
+          type: string
+          description: 2-letter ISO country code
+          example: US
+        amount:
+          type: integer
+          example: 150
+
+    ScenarioStatItem:
+      type: object
+      properties:
+        scenario:
+          type: string
+          example: crowdsecurity/ssh-bruteforce
+        amount:
+          type: integer
+          example: 200
+
+    IpOwnerStatItem:
+      type: object
+      properties:
+        ipOwner:
+          type: string
+          description: AS name from alert source
+          example: Amazon.com, Inc.
+        amount:
+          type: integer
+          example: 100
+
+    TargetStatItem:
+      type: object
+      properties:
+        target:
+          type: string
+          description: Target FQDN extracted from target_fqdn in events metadata
+          example: example.com
+        amount:
+          type: integer
+          example: 45
+
+    HistoryItem:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date in YYYY-MM-DD format
+          example: '2026-02-14'
+        amount:
+          type: integer
+          description: Number of alerts for that date
+          example: 15
 
   responses:
     UnauthorizedError:

@@ -183,13 +183,20 @@ curl "http://localhost:3000/api/v1/alerts?ip_owner=Digital%20Ocean&country=US"
         "longitude": -74.0060
       },
       "labels": ["manual"],
-      "meta": [],
+      "meta": [
+        {
+          "key": "http_status",
+          "value": ["308", "200"]
+        },
+        {
+          "key": "target_user",
+          "value": ["admin"]
+        }
+      ],
       "events": [],
       "crowdsec_created_at": "2026-02-13T10:20:30.123Z",
       "start_at": "2026-02-13T10:15:00.000Z",
-      "stop_at": "2026-02-13T10:20:30.000Z",
-      "created_at": "2026-02-13T10:25:30.123Z",
-      "updated_at": "2026-02-13T10:25:30.123Z"
+      "stop_at": "2026-02-13T10:20:30.000Z"
     }
   ],
   "pagination": {
@@ -423,8 +430,7 @@ curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban&o
       "expiration": "2026-02-13T14:25:30.123Z",
       "scenario": "crowdsecurity/ssh-bf",
       "simulated": false,
-      "created_at": "2026-02-13T10:25:30.123Z",
-      "updated_at": "2026-02-13T10:25:30.123Z"
+      "crowdsec_created_at": "2026-02-13T10:20:30.123Z"
     }
   ],
   "pagination": {
@@ -656,6 +662,502 @@ curl -X DELETE "http://localhost:3000/api/v1/decisions/456"
 - In the local database, the decision expiration date is set to the current time (not deleted)
 - After deletion, the API automatically syncs the local database with LAPI
 - The local database is updated to reflect the current state in LAPI
+
+---
+
+## Statistics Endpoints
+
+### GET `/api/v1/statistics`
+
+Get comprehensive statistics including alerts in the last 24 hours, active decisions, activity history, and top items (countries, scenarios, IP owners, and targets).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `since` | string | No | - | Filter data from this date (format: yyyy-mm-dd). Must be a past date (not today or future) |
+| `amount` | integer | No | 10 | Number of top items to return for each category |
+
+**Example Requests:**
+```bash
+# Get statistics with default settings
+curl "http://localhost:3000/api/v1/statistics"
+
+# Get statistics since a specific date
+curl "http://localhost:3000/api/v1/statistics?since=2026-02-13"
+
+# Get top 20 items for each category
+curl "http://localhost:3000/api/v1/statistics?amount=20"
+
+# Combine both parameters
+curl "http://localhost:3000/api/v1/statistics?since=2026-02-13&amount=15"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "alertsLast24Hours": 45,
+  "activeDecisions": 32,
+  "activityHistory": [
+    {
+      "date": "2026-02-13",
+      "amountAlerts": 15,
+      "amountDecisions": 10
+    },
+    {
+      "date": "2026-02-14",
+      "amountAlerts": 30,
+      "amountDecisions": 22
+    }
+  ],
+  "topCountries": [
+    {
+      "countryCode": "US",
+      "amount": 150
+    },
+    {
+      "countryCode": "CN",
+      "amount": 120
+    }
+  ],
+  "topScenarios": [
+    {
+      "scenario": "crowdsecurity/ssh-bruteforce",
+      "amount": 200
+    },
+    {
+      "scenario": "crowdsecurity/http-probing",
+      "amount": 150
+    }
+  ],
+  "topIpOwners": [
+    {
+      "ipOwner": "Amazon.com, Inc.",
+      "amount": 100
+    },
+    {
+      "ipOwner": "Google LLC",
+      "amount": 80
+    }
+  ],
+  "topTargets": [
+    {
+      "target": "192.168.1.1",
+      "amount": 45
+    },
+    {
+      "target": "10.0.0.1",
+      "amount": 30
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `alertsLast24Hours`: Number of alerts created in the last 24 hours (not affected by `since` parameter)
+- `activeDecisions`: Number of decisions that haven't expired yet
+- `activityHistory`: Daily activity grouped by date, showing alert and decision counts
+- `topCountries`: Top countries by alert count (country code from alert source)
+- `topScenarios`: Top scenarios by count
+- `topIpOwners`: Top IP owners/AS names by count (from alert source)
+- `topTargets`: Top target FQDNs by count (extracted from target_fqdn in events metadata)
+
+**Validation Errors (400 Bad Request):**
+```json
+{
+  "message": "Validation error",
+  "errors": [
+    {
+      "field": "since",
+      "message": "since must be in yyyy-mm-dd format"
+    }
+  ]
+}
+```
+
+```json
+{
+  "message": "Validation error",
+  "errors": [
+    {
+      "field": "since",
+      "message": "since date must be in the past (not today or future dates)"
+    }
+  ]
+}
+```
+
+```json
+{
+  "message": "Validation error",
+  "errors": [
+    {
+      "field": "amount",
+      "message": "amount must be a positive integer"
+    }
+  ]
+}
+```
+
+**Notes:**
+- The `since` parameter filters data for `activityHistory` and all "top" arrays
+- The `alertsLast24Hours` count is always for the last 24 hours regardless of `since`
+- The `activeDecisions` count respects the `since` filter if provided
+- The `amount` parameter limits the number of items in top arrays (countries, scenarios, ipOwners, targets)
+- Without `since` parameter, statistics cover all data in the database
+- Activity history dates are returned in ascending order (oldest first)
+
+---
+
+### GET `/api/v1/statistics/countries`
+
+Get complete list of all countries with alert counts, sorted by count (descending).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/countries"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "countryCode": "US",
+    "amount": 150
+  },
+  {
+    "countryCode": "CN",
+    "amount": 120
+  },
+  {
+    "countryCode": "RU",
+    "amount": 95
+  }
+]
+```
+
+**Notes:**
+- Returns the complete list without pagination or limits
+- Only includes countries that have at least one alert
+- Country codes are 2-letter ISO 3166-1 alpha-2 codes
+- Data is extracted from alert source information
+
+---
+
+### GET `/api/v1/statistics/countries/:item`
+
+Get historical activity for a specific country, showing alert counts grouped by date.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | string | Yes | Country code (2-letter ISO, case insensitive) |
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/countries/us"
+curl "http://localhost:3000/api/v1/statistics/countries/CN"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "date": "2026-02-10",
+    "amount": 15
+  },
+  {
+    "date": "2026-02-11",
+    "amount": 22
+  },
+  {
+    "date": "2026-02-12",
+    "amount": 18
+  },
+  {
+    "date": "2026-02-13",
+    "amount": 30
+  },
+  {
+    "date": "2026-02-14",
+    "amount": 25
+  }
+]
+```
+
+**Notes:**
+- Returns all dates where the country had alerts, sorted chronologically (ascending)
+- Country code comparison is case-insensitive
+- Empty array is returned if the country has no alerts
+- Each alert is counted only once per date, even if it has multiple events
+
+---
+
+### GET `/api/v1/statistics/scenarios`
+
+Get complete list of all scenarios with alert counts, sorted by count (descending).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/scenarios"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "scenario": "crowdsecurity/ssh-bruteforce",
+    "amount": 200
+  },
+  {
+    "scenario": "crowdsecurity/http-probing",
+    "amount": 150
+  },
+  {
+    "scenario": "crowdsecurity/http-bad-user-agent",
+    "amount": 80
+  }
+]
+```
+
+**Notes:**
+- Returns the complete list without pagination or limits
+- Only includes scenarios that have at least one alert
+- Scenarios are CrowdSec detection rule identifiers
+
+---
+
+### GET `/api/v1/statistics/scenarios/:item`
+
+Get historical activity for a specific scenario, showing alert counts grouped by date.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | string | Yes | Scenario name (exact match, URL-encode if needed) |
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/scenarios/crowdsecurity%2Fssh-bruteforce"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "date": "2026-02-10",
+    "amount": 8
+  },
+  {
+    "date": "2026-02-11",
+    "amount": 12
+  },
+  {
+    "date": "2026-02-12",
+    "amount": 10
+  },
+  {
+    "date": "2026-02-13",
+    "amount": 15
+  },
+  {
+    "date": "2026-02-14",
+    "amount": 20
+  }
+]
+```
+
+**Notes:**
+- Returns all dates where the scenario had alerts, sorted chronologically (ascending)
+- Scenario name must match exactly (case-sensitive)
+- Empty array is returned if the scenario has no alerts
+- Remember to URL-encode scenario names containing special characters (e.g., `/` becomes `%2F`)
+
+---
+
+### GET `/api/v1/statistics/ip-owners`
+
+Get complete list of all IP owners (AS names) with alert counts, sorted by count (descending).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/ip-owners"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "ipOwner": "Amazon.com, Inc.",
+    "amount": 100
+  },
+  {
+    "ipOwner": "Google LLC",
+    "amount": 80
+  },
+  {
+    "ipOwner": "Digital Ocean, Inc.",
+    "amount": 65
+  }
+]
+```
+
+**Notes:**
+- Returns the complete list without pagination or limits
+- Only includes IP owners that have at least one alert
+- IP owner is extracted from the AS name field in alert source information
+- Useful for identifying which hosting providers or ISPs generate the most alerts
+
+---
+
+### GET `/api/v1/statistics/ip-owners/:item`
+
+Get historical activity for a specific IP owner, showing alert counts grouped by date.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | string | Yes | IP owner/AS name (exact match, URL-encode if needed) |
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/ip-owners/Amazon.com,%20Inc."
+curl "http://localhost:3000/api/v1/statistics/ip-owners/Google%20LLC"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "date": "2026-02-10",
+    "amount": 5
+  },
+  {
+    "date": "2026-02-11",
+    "amount": 8
+  },
+  {
+    "date": "2026-02-12",
+    "amount": 6
+  },
+  {
+    "date": "2026-02-13",
+    "amount": 10
+  },
+  {
+    "date": "2026-02-14",
+    "amount": 12
+  }
+]
+```
+
+**Notes:**
+- Returns all dates where the IP owner had alerts, sorted chronologically (ascending)
+- IP owner name must match exactly (case-sensitive)
+- Empty array is returned if the IP owner has no alerts
+- Remember to URL-encode names containing special characters or spaces
+
+---
+
+### GET `/api/v1/statistics/targets`
+
+Get complete list of all target FQDNs (Fully Qualified Domain Names) with alert counts, sorted by count (descending).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/targets"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "target": "example.com",
+    "amount": 45
+  },
+  {
+    "target": "subdomain.example.com",
+    "amount": 30
+  },
+  {
+    "target": "api.example.com",
+    "amount": 25
+  }
+]
+```
+
+**Notes:**
+- Returns the complete list without pagination or limits
+- Only includes targets that have at least one alert
+- Targets are extracted from the `target_fqdn` field in alert events metadata
+- Each alert is counted only once per unique target, even if the target appears in multiple events
+- Useful for identifying which domains or subdomains are being targeted the most
+
+---
+
+### GET `/api/v1/statistics/targets/:item`
+
+Get historical activity for a specific target FQDN, showing alert counts grouped by date.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | string | Yes | Target FQDN (exact match, URL-encode if needed) |
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/statistics/targets/example.com"
+curl "http://localhost:3000/api/v1/statistics/targets/api.example.com"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "date": "2026-02-10",
+    "amount": 3
+  },
+  {
+    "date": "2026-02-11",
+    "amount": 5
+  },
+  {
+    "date": "2026-02-12",
+    "amount": 4
+  },
+  {
+    "date": "2026-02-13",
+    "amount": 7
+  },
+  {
+    "date": "2026-02-14",
+    "amount": 6
+  }
+]
+```
+
+**Notes:**
+- Returns all dates where the target had alerts, sorted chronologically (ascending)
+- Target FQDN must match exactly (case-sensitive)
+- Empty array is returned if the target has no alerts
+- Each alert is counted only once per date, even if the target appears in multiple events within that alert
 
 ---
 

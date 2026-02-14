@@ -11,6 +11,7 @@ export interface DecisionAttributes {
   expiration: Date;
   scenario: string;
   simulated: boolean;
+  crowdsec_created_at: Date;
   created_at: Date;
   updated_at: Date;
 }
@@ -27,6 +28,7 @@ export class Decision extends Model<DecisionAttributes, DecisionCreationAttribut
   public expiration!: Date;
   public scenario!: string;
   public simulated!: boolean;
+  public crowdsec_created_at!: Date;
   public created_at!: Date;
   public updated_at!: Date;
 
@@ -80,6 +82,10 @@ Decision.init(
       allowNull: false,
       defaultValue: false,
     },
+    crowdsec_created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -93,6 +99,9 @@ Decision.init(
     sequelize,
     tableName: 'decisions',
     underscored: true,
+    timestamps: false,
+    createdAt: false,
+    updatedAt:false,
     indexes: [
       {
         name: 'idx_decisions_alert_id',
@@ -113,6 +122,10 @@ Decision.init(
       {
         name: 'idx_decisions_simulated',
         fields: ['simulated'],
+      },
+      {
+        name: 'idx_decisions_crowdsec_created_at',
+        fields: ['crowdsec_created_at'],
       },
       {
         name: 'idx_decisions_created_at',

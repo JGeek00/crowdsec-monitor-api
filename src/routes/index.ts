@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import alertRoutes from './alert.routes';
 import decisionRoutes from './decision.routes';
+import statisticsRoutes from './statistics.routes';
 import { crowdSecAPI } from '../services/crowdsec-api.service';
 import { databaseService } from '../services/database.service';
 import { optionalAuth } from '../middlewares';
@@ -10,6 +11,7 @@ const router = Router();
 // Mount routes with optional authentication
 router.use('/alerts', optionalAuth, alertRoutes);
 router.use('/decisions', optionalAuth, decisionRoutes);
+router.use('/statistics', optionalAuth, statisticsRoutes);
 
 // API Health check endpoint (public)
 router.get('/api-health', (req: Request, res: Response) => {

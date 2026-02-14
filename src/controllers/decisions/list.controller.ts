@@ -59,12 +59,16 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     
     let decisions = await Decision.findAll({
       where,
+      attributes: {
+        exclude: ['created_at', 'updated_at']
+      },
       include: includeAlert ? [{
         model: Alert,
         as: 'alert',
         attributes: ['source'],
       }] : [],
-      order: [['created_at', 'DESC']],
+      order: [['crowdsec_created_at', 'DESC']],
+      nest: includeAlert,
     });
 
     // Filter by country in JavaScript (since source is JSON in Alert)

@@ -17,4 +17,7 @@ export const defaults = {
   sync: {
     intervalSeconds: 30, // 30 seconds
   },
+  statistics: {
+    topItemsLimit: 10, // Default limit for top items in statistics
+  },
 };

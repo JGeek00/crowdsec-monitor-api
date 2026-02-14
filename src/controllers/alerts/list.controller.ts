@@ -26,7 +26,10 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     // Fetch all alerts matching basic filters
     let alerts = await Alert.findAll({
       where,
-      order: [['created_at', 'DESC']],
+      attributes: {
+        exclude: ['created_at', 'updated_at']
+      },
+      order: [['crowdsec_created_at', 'DESC']],
     });
 
     // Filter by IP address in JavaScript (since source is JSON)
@@ -72,7 +75,26 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     }
 
     const response: any = {
-      items: paginatedAlerts,
+      items: paginatedAlerts.map(alert => {
+        const json = alert.toJSON();
+        // Parse meta.value if it's a JSON string
+        if (json.meta && Array.isArray(json.meta)) {
+          json.meta = json.meta.map((metaItem: any) => {
+            if (metaItem.value && typeof metaItem.value === 'string') {
+              try {
+                const parsed = JSON.parse(metaItem.value);
+                // Ensure value is always an array
+                metaItem.value = Array.isArray(parsed) ? parsed : [parsed];
+              } catch (e) {
+                // If parse fails, wrap the string in an array
+                metaItem.value = [metaItem.value];
+              }
+            }
+            return metaItem;
+          });
+        }
+        return json;
+      }),
     };
 
     // Include pagination info only when paginated

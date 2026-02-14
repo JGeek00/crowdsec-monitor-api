@@ -108,6 +108,7 @@ export class DatabaseService {
                   expiration: calculateExpiration(decision.duration),
                   scenario: decision.scenario,
                   simulated: decision.simulated,
+                  crowdsec_created_at: new Date(alert.created_at),
                   updated_at: new Date(),
                 };
 

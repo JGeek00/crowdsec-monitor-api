@@ -174,6 +174,9 @@ Alert.init(
     sequelize,
     tableName: 'alerts',
     underscored: true,
+    timestamps: false,
+    createdAt: false,
+    updatedAt:false,
     indexes: [
       {
         name: 'idx_alerts_scenario',
