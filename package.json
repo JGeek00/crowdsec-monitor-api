@@ -1,6 +1,6 @@
 {
   "name": "crowdsec-monitor-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "REST API server for CrowdSec LAPI",
   "license": "MIT",
   "author": "JGeek00",
