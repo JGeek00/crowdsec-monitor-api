@@ -11,6 +11,7 @@ database/*.db-*
 
 # Build output
 dist/
+dist-obfuscated/
 
 # Logs
 logs/

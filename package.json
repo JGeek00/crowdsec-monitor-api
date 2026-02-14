@@ -9,7 +9,9 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --exec ts-node src/server.ts",
-    "build": "tsc",
+    "build": "npm run build:compile && npm run build:obfuscate",
+    "build:compile": "tsc --sourceMap false --declaration false --declarationMap false",
+    "build:obfuscate": "node scripts/obfuscate.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -31,6 +33,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.6",
     "@types/node-cron": "^3.0.11",
+    "javascript-obfuscator": "^4.1.0",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
