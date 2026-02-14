@@ -1,5 +1,5 @@
 // Alert controllers
-export { getAllAlerts, getAlertById, getAlertStats } from './alerts';
+export { getAllAlerts, getAlertById, getAlertStats, deleteAlert } from './alerts';
 
 // Decision controllers
-export { getAllDecisions, getDecisionById, getDecisionStats, createDecision } from './decisions';
+export { getAllDecisions, getDecisionById, getDecisionStats, createDecision, deleteDecision } from './decisions';

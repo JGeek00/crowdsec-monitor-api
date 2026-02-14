@@ -180,13 +180,60 @@ export class CrowdSecAPIService {
       
       // LAPI returns array of created alert IDs
       if (response.data && Array.isArray(response.data)) {
-        console.log(`✓ Created ${response.data.length} alert(s) in CrowdSec LAPI`);
         return response.data;
       }
       
       return [];
     } catch (error) {
       this.handleError(error, 'creating alerts');
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an alert by ID from CrowdSec LAPI
+   * @param id - Alert ID to delete
+   * @returns Number of deleted alerts
+   */
+  async deleteAlert(id: number): Promise<number> {
+    try {
+      const headers = await this.getAuthHeaders();
+      
+      const response = await this.client.delete(`/v1/alerts/${id}`, { headers });
+      
+      // LAPI returns { nbDeleted: "1" }
+      if (response.data && response.data.nbDeleted) {
+        const nbDeleted = parseInt(response.data.nbDeleted, 10);
+        return nbDeleted;
+      }
+      
+      return 0;
+    } catch (error) {
+      this.handleError(error, `deleting alert ${id}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a decision by ID from CrowdSec LAPI
+   * @param id - Decision ID to delete
+   * @returns Number of deleted decisions
+   */
+  async deleteDecision(id: number): Promise<number> {
+    try {
+      const headers = await this.getAuthHeaders();
+      
+      const response = await this.client.delete(`/v1/decisions/${id}`, { headers });
+      
+      // LAPI returns { nbDeleted: "1" }
+      if (response.data && response.data.nbDeleted) {
+        const nbDeleted = parseInt(response.data.nbDeleted, 10);
+        return nbDeleted;
+      }
+      
+      return 0;
+    } catch (error) {
+      this.handleError(error, `deleting decision ${id}`);
       throw error;
     }
   }

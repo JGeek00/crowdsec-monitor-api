@@ -254,6 +254,62 @@ curl "http://localhost:3000/api/v1/alerts/stats"
 
 ---
 
+### DELETE `/api/v1/alerts/:id`
+
+Delete an alert by ID from CrowdSec LAPI.
+
+**URL Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Alert ID to delete |
+
+**Example Request:**
+```bash
+curl -X DELETE "http://localhost:3000/api/v1/alerts/123"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "message": "Alert deleted successfully",
+  "nbDeleted": "1"
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+```json
+{
+  "error": "Invalid alert ID",
+  "message": "Alert ID must be a valid number"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "error": "Alert not found",
+  "message": "Alert with ID 123 was not found"
+}
+```
+
+**500 Internal Server Error:**
+```json
+{
+  "error": "Failed to delete alert",
+  "message": "Error details..."
+}
+```
+
+**Notes:**
+- The alert is deleted from CrowdSec LAPI (including all associated decisions)
+- Immediately deleted from the local database after successful deletion from LAPI
+- After deletion, the API automatically syncs the local database with LAPI
+- The local database is updated to reflect the current state in LAPI
+
+---
+
 ## Decisions Endpoints
 
 ### GET `/api/v1/decisions`
@@ -401,6 +457,8 @@ curl -X POST "http://localhost:3000/api/v1/decisions" \
 - The `origin` field is set to the configured `CROWDSEC_USER` environment variable
 - Returns the alert ID(s) created in LAPI
 - All validations are performed before forwarding to LAPI
+- After successful creation, the API automatically syncs the local database with LAPI
+- The local database is updated to reflect the current state in LAPI
 
 **Duration Format:**
 Accepts CrowdSec duration format with units:
@@ -490,6 +548,63 @@ curl "http://localhost:3000/api/v1/decisions/stats"
   ]
 }
 ```
+
+---
+
+### DELETE `/api/v1/decisions/:id`
+
+Delete a decision by ID from CrowdSec LAPI.
+
+**URL Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Decision ID to delete |
+
+**Example Request:**
+```bash
+curl -X DELETE "http://localhost:3000/api/v1/decisions/456"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "message": "Decision deleted successfully",
+  "nbDeleted": "1"
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+```json
+{
+  "error": "Invalid decision ID",
+  "message": "Decision ID must be a valid number"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "error": "Decision not found",
+  "message": "Decision with ID 456 was not found"
+}
+```
+
+**500 Internal Server Error:**
+```json
+{
+  "error": "Failed to delete decision",
+  "message": "Error details..."
+}
+```
+
+**Notes:**
+- The decision is deleted from CrowdSec LAPI
+- The associated alert is NOT deleted, only the decision
+- In the local database, the decision expiration date is set to the current time (not deleted)
+- After deletion, the API automatically syncs the local database with LAPI
+- The local database is updated to reflect the current state in LAPI
 
 ---
 

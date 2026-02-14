@@ -7,8 +7,8 @@ import { Op } from 'sequelize';
 
 /**
  * Service for managing database operations and syncing data from CrowdSec LAPI.
- * The database stores all alerts and decisions incrementally.
- * Only new alerts and decisions are added; existing ones are skipped to avoid duplicates.
+ * The database stores all alerts and decisions from LAPI.
+ * Existing alerts and decisions are overwritten with the latest data from LAPI.
  */
 export class DatabaseService {
   private lastSuccessfulSync: Date | null = null;
@@ -22,15 +22,15 @@ export class DatabaseService {
 
   /**
    * Sync alerts from CrowdSec LAPI to local database
-   * Only adds new alerts incrementally, does not update existing ones
+   * Overwrites existing alerts and decisions with latest data from LAPI
    * Also syncs related decisions
    */
-  async syncAlerts(): Promise<{ synced: number; skipped: number; errors: number; decisions: number }> {
+  async syncAlerts(): Promise<{ synced: number; updated: number; errors: number; decisions: number }> {
     try {
       console.log('Starting alerts sync...');
       const alerts = await crowdSecAPI.getAlerts();
       let synced = 0;
-      let skipped = 0;
+      let updated = 0;
       let errors = 0;
       let decisionsCount = 0;
 
@@ -39,53 +39,66 @@ export class DatabaseService {
           // Check if alert already exists
           const existingAlert = await Alert.findByPk(alert.id);
           
+          const alertData = {
+            id: alert.id,
+            uuid: alert.uuid,
+            scenario: alert.scenario,
+            scenario_version: alert.scenario_version,
+            scenario_hash: alert.scenario_hash,
+            message: alert.message,
+            capacity: alert.capacity,
+            leakspeed: alert.leakspeed,
+            simulated: alert.simulated,
+            remediation: alert.remediation,
+            events_count: alert.events_count,
+            machine_id: alert.machine_id,
+            source: alert.source,
+            labels: alert.labels,
+            meta: alert.meta || [],
+            events: alert.events || [],
+            crowdsec_created_at: new Date(alert.created_at),
+            start_at: new Date(alert.start_at),
+            stop_at: new Date(alert.stop_at),
+            updated_at: new Date(),
+          };
+
           let alertInstance;
           if (existingAlert) {
-            // Alert already exists, skip creation
+            // Alert exists, update it
+            await existingAlert.update(alertData);
             alertInstance = existingAlert;
-            skipped++;
+            updated++;
           } else {
             // Create new alert
             alertInstance = await Alert.create({
-              id: alert.id,
-              uuid: alert.uuid,
-              scenario: alert.scenario,
-              scenario_version: alert.scenario_version,
-              scenario_hash: alert.scenario_hash,
-              message: alert.message,
-              capacity: alert.capacity,
-              leakspeed: alert.leakspeed,
-              simulated: alert.simulated,
-              remediation: alert.remediation,
-              events_count: alert.events_count,
-              machine_id: alert.machine_id,
-              source: alert.source,
-              labels: alert.labels,
-              meta: alert.meta || [],
-              events: alert.events || [],
-              crowdsec_created_at: new Date(alert.created_at),
-              start_at: new Date(alert.start_at),
-              stop_at: new Date(alert.stop_at),
+              ...alertData,
               created_at: new Date(),
-              updated_at: new Date(),
             });
             synced++;
           }
 
           // Process decisions for this alert
           if (alert.decisions && alert.decisions.length > 0) {
+            // Alert has decisions in LAPI
+            const lapiDecisionIds = alert.decisions.map(d => d.id);
+            
+            // Delete local decisions that are not in LAPI anymore
+            await Decision.destroy({
+              where: {
+                alert_id: alertInstance.id,
+                id: {
+                  [Op.notIn]: lapiDecisionIds,
+                },
+              },
+            });
+
+            // Create or update decisions from LAPI
             for (const decision of alert.decisions) {
               try {
                 // Check if decision already exists
                 const existingDecision = await Decision.findByPk(decision.id);
                 
-                if (existingDecision) {
-                  // Decision already exists, skip
-                  continue;
-                }
-                
-                // Create new decision
-                await Decision.create({
+                const decisionData = {
                   id: decision.id,
                   alert_id: alertInstance.id,
                   origin: decision.origin,
@@ -95,15 +108,32 @@ export class DatabaseService {
                   expiration: calculateExpiration(decision.duration),
                   scenario: decision.scenario,
                   simulated: decision.simulated,
-                  created_at: new Date(),
                   updated_at: new Date(),
-                });
+                };
+
+                if (existingDecision) {
+                  // Decision exists, update it
+                  await existingDecision.update(decisionData);
+                } else {
+                  // Create new decision
+                  await Decision.create({
+                    ...decisionData,
+                    created_at: new Date(),
+                  });
+                }
                 decisionsCount++;
               } catch (decisionError) {
                 // Skip decision if there's any error
                 console.error(`Error syncing decision ${decision.id}:`, decisionError);
               }
             }
+          } else {
+            // Alert has no decisions in LAPI, delete all local decisions for this alert
+            await Decision.destroy({
+              where: {
+                alert_id: alertInstance.id,
+              },
+            });
           }
         } catch (error) {
           // Skip alert if there's any error
@@ -112,7 +142,7 @@ export class DatabaseService {
         }
       }
 
-      console.log(`✓ Alerts sync completed: ${synced} new alerts added, ${skipped} existing alerts skipped, ${decisionsCount} decisions synced, ${errors} errors`);
+      console.log(`✓ Alerts sync completed: ${synced} new, ${updated} updated, ${decisionsCount} decisions synced, ${errors} errors`);
       
       // Auto-cleanup old data if retention is configured
       await this.cleanupOldData();
@@ -120,10 +150,10 @@ export class DatabaseService {
       // Update last successful sync timestamp
       this.lastSuccessfulSync = new Date();
       
-      return { synced, skipped, errors, decisions: decisionsCount };
+      return { synced, updated, errors, decisions: decisionsCount };
     } catch (error) {
       console.error('Error syncing alerts:', error);
-      return { synced: 0, skipped: 0, errors: 1, decisions: 0 };
+      return { synced: 0, updated: 0, errors: 1, decisions: 0 };
     }
   }
 

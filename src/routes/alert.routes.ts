@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllAlerts, getAlertById, getAlertStats } from '../controllers';
+import { getAllAlerts, getAlertById, getAlertStats, deleteAlert } from '../controllers';
 import { paginationValidators, alertQueryValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
@@ -30,5 +30,12 @@ router.get('/stats', getAlertStats);
  * @access  Public
  */
 router.get('/:id', getAlertById);
+
+/**
+ * @route   DELETE /api/alerts/:id
+ * @desc    Delete alert by ID from CrowdSec LAPI
+ * @access  Public
+ */
+router.delete('/:id', deleteAlert);
 
 export default router;

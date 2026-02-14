@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI } from '../../services';
+import { crowdSecAPI, databaseService } from '../../services';
 import { CrowdSecCreateAlertPayload } from '../../types/crowdsec.types';
 import { config } from '../../config';
 import { API_SCENARIO_NAME } from '../../constants/scenarios';
@@ -56,6 +56,9 @@ export async function createDecision(req: Request, res: Response): Promise<void>
 
     // Create alert with decision in CrowdSec LAPI
     const createdIds = await crowdSecAPI.createAlerts(alertPayload);
+
+    // Sync alerts from LAPI after successful creation
+    await databaseService.syncAlerts();
 
     res.status(201).json({
       message: 'Decision created successfully',

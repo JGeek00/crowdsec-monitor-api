@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllDecisions, getDecisionById, getDecisionStats, createDecision } from '../controllers';
+import { getAllDecisions, getDecisionById, getDecisionStats, createDecision, deleteDecision } from '../controllers';
 import { paginationValidators, decisionQueryValidators, createDecisionValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
@@ -42,5 +42,12 @@ router.get('/stats', getDecisionStats);
  * @access  Public
  */
 router.get('/:id', getDecisionById);
+
+/**
+ * @route   DELETE /api/decisions/:id
+ * @desc    Delete decision by ID from CrowdSec LAPI
+ * @access  Public
+ */
+router.delete('/:id', deleteDecision);
 
 export default router;
