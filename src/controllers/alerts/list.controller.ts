@@ -7,7 +7,7 @@ import { Op } from 'sequelize';
  */
 export async function getAllAlerts(req: Request, res: Response): Promise<void> {
   try {
-    const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner } = req.query;
+    const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner, target } = req.query;
 
     const where: any = {};
     
@@ -22,6 +22,55 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     if (simulated !== undefined) {
       where.simulated = simulated;
     }
+
+    // Fetch all alerts for filtering options (from entire database)
+    const allAlerts = await Alert.findAll({
+      attributes: ['scenario', 'source', 'events'],
+      raw: true,
+    });
+
+    // Extract unique filtering options
+    const countriesSet = new Set<string>();
+    const scenariosSet = new Set<string>();
+    const ipOwnersSet = new Set<string>();
+    const targetsSet = new Set<string>();
+
+    allAlerts.forEach((alert: any) => {
+      // Extract scenarios
+      if (alert.scenario) {
+        scenariosSet.add(alert.scenario);
+      }
+
+      // Extract countries, ipOwners from source
+      if (alert.source) {
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) : alert.source;
+        
+        if (source.cn) {
+          countriesSet.add(source.cn);
+        }
+        
+        if (source.as_name) {
+          ipOwnersSet.add(source.as_name);
+        }
+      }
+
+      // Extract targets from events
+      if (alert.events) {
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) : alert.events;
+        
+        if (Array.isArray(events)) {
+          events.forEach((event: any) => {
+            if (event.meta && Array.isArray(event.meta)) {
+              event.meta.forEach((metaItem: any) => {
+                if (metaItem.key === 'target_fqdn' && metaItem.value) {
+                  targetsSet.add(metaItem.value);
+                }
+              });
+            }
+          });
+        }
+      }
+    });
 
     // Fetch all alerts matching basic filters
     let alerts = await Alert.findAll({
@@ -58,6 +107,26 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
       );
     }
 
+    // Filter by target in JavaScript (since events is JSON)
+    if (target) {
+      const targets = Array.isArray(target) ? target : [target];
+      alerts = alerts.filter(alert => {
+        if (alert.events && Array.isArray(alert.events)) {
+          return alert.events.some((event: any) => {
+            if (event.meta && Array.isArray(event.meta)) {
+              return event.meta.some((metaItem: any) => 
+                metaItem.key === 'target_fqdn' && 
+                metaItem.value && 
+                targets.includes(metaItem.value)
+              );
+            }
+            return false;
+          });
+        }
+        return false;
+      });
+    }
+
     const total = alerts.length;
 
     // Validate offset is not greater than total (only when paginated)
@@ -75,6 +144,12 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     }
 
     const response: any = {
+      filtering: {
+        countries: Array.from(countriesSet).sort(),
+        scenarios: Array.from(scenariosSet).sort(),
+        ipOwners: Array.from(ipOwnersSet).sort(),
+        targets: Array.from(targetsSet).sort(),
+      },
       items: paginatedAlerts.map(alert => {
         const json = alert.toJSON();
         // Parse meta.value if it's a JSON string

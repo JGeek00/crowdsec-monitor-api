@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
+import { SourceInfo } from './Alert';
 
 export interface DecisionAttributes {
   id: number;
@@ -11,6 +12,7 @@ export interface DecisionAttributes {
   expiration: Date;
   scenario: string;
   simulated: boolean;
+  source: SourceInfo;
   crowdsec_created_at: Date;
   created_at: Date;
   updated_at: Date;
@@ -28,6 +30,7 @@ export class Decision extends Model<DecisionAttributes, DecisionCreationAttribut
   public expiration!: Date;
   public scenario!: string;
   public simulated!: boolean;
+  public source!: SourceInfo;
   public crowdsec_created_at!: Date;
   public created_at!: Date;
   public updated_at!: Date;
@@ -81,6 +84,10 @@ Decision.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
+    },
+    source: {
+      type: DataTypes.JSON,
+      allowNull: false,
     },
     crowdsec_created_at: {
       type: DataTypes.DATE,

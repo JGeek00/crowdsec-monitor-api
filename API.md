@@ -132,6 +132,7 @@ Retrieve all alerts with optional filtering and pagination.
 | `ip_address` | string/array | No | - | Filter by source IP address. Accepts single or multiple IPv4/IPv6 addresses |
 | `country` | string/array | No | - | Filter by source country (2-letter ISO code). Accepts single or multiple values |
 | `ip_owner` | string/array | No | - | Filter by IP owner/organization name (partial match). Accepts single or multiple values |
+| `target` | string/array | No | - | Filter by target FQDN. Accepts single or multiple values |
 
 **Example Request:**
 ```bash
@@ -151,6 +152,10 @@ curl "http://localhost:3000/api/v1/alerts?country=US&country=CN"
 curl "http://localhost:3000/api/v1/alerts?ip_owner=Amazon"
 curl "http://localhost:3000/api/v1/alerts?ip_owner=Amazon&ip_owner=Google"
 
+# Filter by target FQDN
+curl "http://localhost:3000/api/v1/alerts?target=api.example.com"
+curl "http://localhost:3000/api/v1/alerts?target=api.example.com&target=web.example.com"
+
 # Combined filters
 curl "http://localhost:3000/api/v1/alerts?country=RU&scenario=ssh-bf&limit=20"
 curl "http://localhost:3000/api/v1/alerts?ip_owner=Digital%20Ocean&country=US"
@@ -159,6 +164,25 @@ curl "http://localhost:3000/api/v1/alerts?ip_owner=Digital%20Ocean&country=US"
 **Example Response:**
 ```json
 {
+  "filtering": {
+    "countries": ["CN", "ES", "RU", "US"],
+    "scenarios": [
+      "crowdsecurity/http-bad-user-agent",
+      "crowdsecurity/http-probing",
+      "crowdsecurity/ssh-bf"
+    ],
+    "ipOwners": [
+      "Amazon.com, Inc.",
+      "DigitalOcean, LLC",
+      "Google LLC",
+      "MICROSOFT-CORP-MSN-AS-BLOCK"
+    ],
+    "targets": [
+      "adguard.jgeek00.com",
+      "api.example.com",
+      "ha.jgeek00.com"
+    ]
+  },
   "items": [
     {
       "id": 12345,
@@ -419,6 +443,15 @@ curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban&o
 **Example Response:**
 ```json
 {
+  "filtering": {
+    "countries": ["CN", "ES", "RU", "US"],
+    "ipOwners": [
+      "Amazon.com, Inc.",
+      "DigitalOcean, LLC",
+      "Google LLC",
+      "MICROSOFT-CORP-MSN-AS-BLOCK"
+    ]
+  },
   "items": [
     {
       "id": 98765,
@@ -430,6 +463,16 @@ curl "http://localhost:3000/api/v1/decisions?ip_owner=Digital%20Ocean&type=ban&o
       "expiration": "2026-02-13T14:25:30.123Z",
       "scenario": "crowdsecurity/ssh-bf",
       "simulated": false,
+      "source": {
+        "ip": "192.168.1.100",
+        "scope": "Ip",
+        "value": "192.168.1.100",
+        "cn": "US",
+        "as_name": "ISP Name",
+        "as_number": "12345",
+        "latitude": 40.7128,
+        "longitude": -74.0060
+      },
       "crowdsec_created_at": "2026-02-13T10:20:30.123Z"
     }
   ],
@@ -557,7 +600,17 @@ curl "http://localhost:3000/api/v1/decisions/1"
   "value": "192.168.1.100",
   "expiration": "2026-02-13T14:25:30.123Z",
   "scenario": "crowdsecurity/ssh-bf",
-  "simulated": false
+  "simulated": false,
+  "source": {
+    "ip": "192.168.1.100",
+    "scope": "Ip",
+    "value": "192.168.1.100",
+    "cn": "US",
+    "as_name": "ISP Name",
+    "as_number": "12345",
+    "latitude": 40.7128,
+    "longitude": -74.0060
+  }
 }
 ```
 

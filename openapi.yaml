@@ -179,6 +179,16 @@ paths:
                 items:
                   type: string
           example: Amazon
+        - name: target
+          in: query
+          description: Filter by target FQDN (accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: api.example.com
       responses:
         '200':
           description: List of alerts
@@ -929,6 +939,8 @@ components:
           type: string
         simulated:
           type: boolean
+        source:
+          $ref: '#/components/schemas/SourceInfo'
         crowdsec_created_at:
           type: string
           format: date-time
@@ -937,6 +949,34 @@ components:
     AlertListPaginated:
       type: object
       properties:
+        filtering:
+          type: object
+          description: Available filtering options from entire database
+          properties:
+            countries:
+              type: array
+              items:
+                type: string
+              description: Unique country codes available
+              example: ["CN", "ES", "RU", "US"]
+            scenarios:
+              type: array
+              items:
+                type: string
+              description: Unique scenarios available
+              example: ["crowdsecurity/http-bad-user-agent", "crowdsecurity/ssh-bf"]
+            ipOwners:
+              type: array
+              items:
+                type: string
+              description: Unique IP owners/organizations available
+              example: ["Amazon.com, Inc.", "Google LLC", "MICROSOFT-CORP-MSN-AS-BLOCK"]
+            targets:
+              type: array
+              items:
+                type: string
+              description: Unique target FQDNs available
+              example: ["adguard.jgeek00.com", "api.example.com", "ha.jgeek00.com"]
         items:
           type: array
           items:
@@ -957,6 +997,34 @@ components:
     AlertListUnpaged:
       type: object
       properties:
+        filtering:
+          type: object
+          description: Available filtering options from entire database
+          properties:
+            countries:
+              type: array
+              items:
+                type: string
+              description: Unique country codes available
+              example: ["CN", "ES", "RU", "US"]
+            scenarios:
+              type: array
+              items:
+                type: string
+              description: Unique scenarios available
+              example: ["crowdsecurity/http-bad-user-agent", "crowdsecurity/ssh-bf"]
+            ipOwners:
+              type: array
+              items:
+                type: string
+              description: Unique IP owners/organizations available
+              example: ["Amazon.com, Inc.", "Google LLC", "MICROSOFT-CORP-MSN-AS-BLOCK"]
+            targets:
+              type: array
+              items:
+                type: string
+              description: Unique target FQDNs available
+              example: ["adguard.jgeek00.com", "api.example.com", "ha.jgeek00.com"]
         items:
           type: array
           items:
@@ -1014,6 +1082,22 @@ components:
     DecisionListPaginated:
       type: object
       properties:
+        filtering:
+          type: object
+          description: Available filtering options from entire database
+          properties:
+            countries:
+              type: array
+              items:
+                type: string
+              description: Unique country codes available
+              example: ["CN", "ES", "RU", "US"]
+            ipOwners:
+              type: array
+              items:
+                type: string
+              description: Unique IP owners/organizations available
+              example: ["Amazon.com, Inc.", "Google LLC", "MICROSOFT-CORP-MSN-AS-BLOCK"]
         items:
           type: array
           items:
@@ -1031,6 +1115,22 @@ components:
     DecisionListUnpaged:
       type: object
       properties:
+        filtering:
+          type: object
+          description: Available filtering options from entire database
+          properties:
+            countries:
+              type: array
+              items:
+                type: string
+              description: Unique country codes available
+              example: ["CN", "ES", "RU", "US"]
+            ipOwners:
+              type: array
+              items:
+                type: string
+              description: Unique IP owners/organizations available
+              example: ["Amazon.com, Inc.", "Google LLC", "MICROSOFT-CORP-MSN-AS-BLOCK"]
         items:
           type: array
           items:

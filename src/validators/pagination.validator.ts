@@ -80,6 +80,18 @@ export const alertQueryValidators: ValidationChain[] = [
       return false;
     })
     .withMessage('ip_owner must be a string or array of strings'),
+  
+  query('target')
+    .optional()
+    .custom((value) => {
+      // Accept both single string and array of strings (no content validation)
+      if (typeof value === 'string') return true;
+      if (Array.isArray(value)) {
+        return value.every(item => typeof item === 'string');
+      }
+      return false;
+    })
+    .withMessage('target must be a string or array of strings'),
 ];
 
 /**

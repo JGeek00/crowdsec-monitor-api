@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Decision, Alert } from '../../models';
+import { Decision } from '../../models';
 import { Op } from 'sequelize';
 
 /**
@@ -54,43 +54,57 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
       };
     }
 
-    // Fetch decisions with Alert relation if country or ip_owner filter is present
-    const includeAlert = !!country || !!ip_owner;
-    
+    // Fetch all decisions for filtering options (from entire database)
+    const allDecisions = await Decision.findAll({
+      attributes: ['source'],
+      raw: true,
+    });
+
+    // Extract unique filtering options
+    const countriesSet = new Set<string>();
+    const ipOwnersSet = new Set<string>();
+
+    allDecisions.forEach((decision: any) => {
+      if (decision.source) {
+        const source = typeof decision.source === 'string' ? JSON.parse(decision.source) : decision.source;
+        
+        if (source.cn) {
+          countriesSet.add(source.cn);
+        }
+        
+        if (source.as_name) {
+          ipOwnersSet.add(source.as_name);
+        }
+      }
+    });
+
+    // Fetch decisions with filters
     let decisions = await Decision.findAll({
       where,
       attributes: {
         exclude: ['created_at', 'updated_at']
       },
-      include: includeAlert ? [{
-        model: Alert,
-        as: 'alert',
-        attributes: ['source'],
-      }] : [],
       order: [['crowdsec_created_at', 'DESC']],
-      nest: includeAlert,
     });
 
-    // Filter by country in JavaScript (since source is JSON in Alert)
+    // Filter by country in JavaScript (since source is JSON)
     if (country) {
       const countries = Array.isArray(country) ? country : [country];
       const upperCountries = countries.map(c => String(c).toUpperCase());
       decisions = decisions.filter(decision => 
-        decision.alert && 
-        decision.alert.source && 
-        decision.alert.source.cn && 
-        upperCountries.includes(decision.alert.source.cn.toUpperCase())
+        decision.source && 
+        decision.source.cn && 
+        upperCountries.includes(decision.source.cn.toUpperCase())
       );
     }
 
-    // Filter by IP owner/organization in JavaScript (since source is JSON in Alert)
+    // Filter by IP owner/organization in JavaScript (since source is JSON)
     if (ip_owner) {
       const owners = Array.isArray(ip_owner) ? ip_owner : [ip_owner];
       decisions = decisions.filter(decision => 
-        decision.alert && 
-        decision.alert.source && 
-        decision.alert.source.as_name && 
-        owners.some(owner => decision.alert.source.as_name?.toLowerCase().includes(String(owner).toLowerCase()))
+        decision.source && 
+        decision.source.as_name && 
+        owners.some(owner => decision.source.as_name?.toLowerCase().includes(String(owner).toLowerCase()))
       );
     }
 
@@ -111,6 +125,10 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     }
 
     const response: any = {
+      filtering: {
+        countries: Array.from(countriesSet).sort(),
+        ipOwners: Array.from(ipOwnersSet).sort(),
+      },
       items: paginatedDecisions,
     };
 
