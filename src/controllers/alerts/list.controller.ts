@@ -3,6 +3,40 @@ import { Alert } from '../../models';
 import { Op } from 'sequelize';
 
 /**
+ * Parse meta array values that might be JSON strings
+ * Always returns value as an array
+ */
+function parseMetaValues(meta: any[]): any[] {
+  if (!Array.isArray(meta)) return meta;
+  
+  return meta.map(item => {
+    if (item.value === undefined || item.value === null) {
+      return { ...item, value: [] };
+    }
+
+    // If already an array, return as is
+    if (Array.isArray(item.value)) {
+      return item;
+    }
+
+    // If it's a string, try to parse it
+    if (typeof item.value === 'string') {
+      try {
+        const parsed = JSON.parse(item.value);
+        // If parsed result is an array, use it; otherwise wrap in array
+        return { ...item, value: Array.isArray(parsed) ? parsed : [parsed] };
+      } catch {
+        // If parsing fails, wrap the string in an array
+        return { ...item, value: [item.value] };
+      }
+    }
+
+    // For any other type, wrap in array
+    return { ...item, value: [item.value] };
+  });
+}
+
+/**
  * Get all alerts with filtering and pagination
  */
 export async function getAllAlerts(req: Request, res: Response): Promise<void> {
@@ -152,22 +186,22 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
       },
       items: paginatedAlerts.map(alert => {
         const json = alert.toJSON();
-        // Parse meta.value if it's a JSON string
+        
+        // Parse meta values
         if (json.meta && Array.isArray(json.meta)) {
-          json.meta = json.meta.map((metaItem: any) => {
-            if (metaItem.value && typeof metaItem.value === 'string') {
-              try {
-                const parsed = JSON.parse(metaItem.value);
-                // Ensure value is always an array
-                metaItem.value = Array.isArray(parsed) ? parsed : [parsed];
-              } catch (e) {
-                // If parse fails, wrap the string in an array
-                metaItem.value = [metaItem.value];
-              }
+          json.meta = parseMetaValues(json.meta);
+        }
+
+        // Parse meta values in events
+        if (json.events && Array.isArray(json.events)) {
+          json.events = json.events.map((event: any) => {
+            if (event.meta && Array.isArray(event.meta)) {
+              event.meta = parseMetaValues(event.meta);
             }
-            return metaItem;
+            return event;
           });
         }
+
         return json;
       }),
     };
