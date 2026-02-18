@@ -2,6 +2,27 @@ import { Request, Response } from 'express';
 import { Alert, Decision } from '../../models';
 
 /**
+ * Parse meta array values that might be JSON strings
+ */
+function parseMetaValues(meta: any[]): any[] {
+  if (!Array.isArray(meta)) return meta;
+  
+  return meta.map(item => {
+    if (item.value && typeof item.value === 'string') {
+      try {
+        // Try to parse the value if it's a JSON string
+        const parsed = JSON.parse(item.value);
+        return { ...item, value: parsed };
+      } catch {
+        // If parsing fails, keep the original value
+        return item;
+      }
+    }
+    return item;
+  });
+}
+
+/**
  * Get alert by ID with associated decisions
  */
 export async function getAlertById(req: Request, res: Response): Promise<void> {
@@ -29,6 +50,21 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
 
     // Convert to plain object and remove timestamps
     const plainAlert: any = alert.toJSON();
+
+    // Parse meta values
+    if (plainAlert.meta && Array.isArray(plainAlert.meta)) {
+      plainAlert.meta = parseMetaValues(plainAlert.meta);
+    }
+
+    // Parse meta values in events
+    if (plainAlert.events && Array.isArray(plainAlert.events)) {
+      plainAlert.events = plainAlert.events.map((event: any) => {
+        if (event.meta && Array.isArray(event.meta)) {
+          event.meta = parseMetaValues(event.meta);
+        }
+        return event;
+      });
+    }
 
     // Clean decisions if present
     if (plainAlert.decisions) {

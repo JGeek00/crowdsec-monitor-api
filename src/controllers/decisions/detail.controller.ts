@@ -2,6 +2,27 @@ import { Request, Response } from 'express';
 import { Decision, Alert } from '../../models';
 
 /**
+ * Parse meta array values that might be JSON strings
+ */
+function parseMetaValues(meta: any[]): any[] {
+  if (!Array.isArray(meta)) return meta;
+  
+  return meta.map(item => {
+    if (item.value && typeof item.value === 'string') {
+      try {
+        // Try to parse the value if it's a JSON string
+        const parsed = JSON.parse(item.value);
+        return { ...item, value: parsed };
+      } catch {
+        // If parsing fails, keep the original value
+        return item;
+      }
+    }
+    return item;
+  });
+}
+
+/**
  * Get decision by ID with associated alert
  */
 export async function getDecisionById(req: Request, res: Response): Promise<void> {
@@ -29,6 +50,24 @@ export async function getDecisionById(req: Request, res: Response): Promise<void
 
     // Convert to plain object and remove timestamps
     const plainDecision: any = decision.toJSON();
+
+    // Parse meta values in associated alert
+    if (plainDecision.alert) {
+      if (plainDecision.alert.meta && Array.isArray(plainDecision.alert.meta)) {
+        plainDecision.alert.meta = parseMetaValues(plainDecision.alert.meta);
+      }
+
+      // Parse meta values in alert events
+      if (plainDecision.alert.events && Array.isArray(plainDecision.alert.events)) {
+        plainDecision.alert.events = plainDecision.alert.events.map((event: any) => {
+          if (event.meta && Array.isArray(event.meta)) {
+            event.meta = parseMetaValues(event.meta);
+          }
+          return event;
+        });
+      }
+    }
+
     res.json(plainDecision);
   } catch (error) {
     const response: any = {
