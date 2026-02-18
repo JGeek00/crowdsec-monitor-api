@@ -8,7 +8,7 @@ const router = Router();
 /**
  * @route   GET /api/decisions
  * @desc    Get all decisions (use ?only_active=true to filter active only)
- * @access  Public
+ * @access  Optional authentication
  */
 router.get(
   '/',
@@ -20,7 +20,7 @@ router.get(
 /**
  * @route   POST /api/decisions
  * @desc    Create a decision in CrowdSec LAPI
- * @access  Public
+ * @access  Optional authentication
  */
 router.post(
   '/',
@@ -32,21 +32,21 @@ router.post(
 /**
  * @route   GET /api/decisions/stats
  * @desc    Get decisions statistics
- * @access  Public
+ * @access  Optional authentication
  */
 router.get('/stats', getDecisionStats);
 
 /**
  * @route   GET /api/decisions/:id
  * @desc    Get decision by ID
- * @access  Public
+ * @access  Optional authentication
  */
 router.get('/:id', getDecisionById);
 
 /**
  * @route   DELETE /api/decisions/:id
  * @desc    Delete decision by ID from CrowdSec LAPI
- * @access  Public
+ * @access  Optional authentication
  */
 router.delete('/:id', deleteDecision);
 

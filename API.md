@@ -54,12 +54,12 @@ curl -H "Authorization: Bearer your_password_here" \
 **Protected Endpoints:**
 - All `/alerts/*` endpoints (when `API_PASSWORD` is set)
 - All `/decisions/*` endpoints (when `API_PASSWORD` is set)
-- `/lapi-status` endpoint (when `API_PASSWORD` is set)
+- `/status` endpoint (when `API_PASSWORD` is set)
 
 **Public Endpoints:**
-- `/api-health` (always accessible without authentication)
+- `/health` (always accessible without authentication)
 
-**Note:** The `/api-health` endpoint is always public for basic availability checks. The `/lapi-status` endpoint requires authentication when `API_PASSWORD` is configured.
+**Note:** The `/health` endpoint is always public for basic availability checks. The `/status` endpoint requires authentication when `API_PASSWORD` is configured.
 
 **Backend Communication:** All endpoints communicate with CrowdSec LAPI using Watcher credentials configured via environment variables.
 
@@ -67,9 +67,11 @@ curl -H "Authorization: Bearer your_password_here" \
 
 ## Health & Status Endpoints
 
-### GET `/api/v1/api-health`
+### GET `/api/v1/health`
 
 Check if the API is running and responsive.
+
+**Authentication:** None (public endpoint)
 
 **Response:**
 ```json
@@ -81,37 +83,32 @@ Check if the API is running and responsive.
 
 ---
 
-### GET `/api/v1/lapi-status`
+### GET `/api/v1/status`
 
-Quick check of CrowdSec LAPI connection status and last successful data sync.
+Get comprehensive status information including CrowdSec LAPI connection status, last successful data sync, and API version.
 
 **Authentication:** Required if `API_PASSWORD` is set
 
-**Response (Connected):**
+**Response:**
 ```json
 {
-  "status": "connected",
-  "message": "CrowdSec LAPI is reachable and authenticated",
-  "lastSuccessfulSync": "2026-02-13T10:25:30.123Z",
-  "timestamp": "2026-02-13T10:30:45.123Z"
-}
-```
-
-**Response (Disconnected):**
-```json
-{
-  "status": "disconnected",
-  "message": "Unable to connect to CrowdSec LAPI",
-  "lastSuccessfulSync": "2026-02-13T10:25:30.123Z",
-  "timestamp": "2026-02-13T10:30:45.123Z"
+  "csLapi": {
+    "lapiConnected": true,
+    "lastSuccessfulSync": "2026-02-13T10:25:30.123Z",
+    "timestamp": "2026-02-13T10:30:45.123Z"
+  },
+  "csMonitorApi": {
+    "version": "1.0.0",
+    "newVersionAvailable": null
+  }
 }
 ```
 
 **Notes:**
 - Performs lightweight check using existing authentication token
-- Requests alerts from last minute (`since=1m`) to verify LAPI is responsive
-- Response body may be empty if no recent alerts, but 200 status confirms connectivity
+- `lapiConnected` indicates whether the CrowdSec LAPI is reachable
 - `lastSuccessfulSync` is `null` if no successful sync has occurred yet
+- `newVersionAvailable` is currently not implemented (always `null`)
 
 ---
 

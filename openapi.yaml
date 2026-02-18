@@ -16,10 +16,10 @@ info:
     Protected endpoints:
     - All `/alerts/*` endpoints
     - All `/decisions/*` endpoints
-    - `/lapi-status` endpoint
+    - `/status` endpoint
     
     Public endpoints:
-    - `/api-health` (always accessible)
+    - `/health` (always accessible)
   version: 1.0.0
   contact:
     name: JGeek00
@@ -48,7 +48,7 @@ tags:
     description: Statistics and aggregated data operations
 
 paths:
-  /api-health:
+  /health:
     get:
       tags:
         - Health
@@ -71,58 +71,49 @@ paths:
                     format: date-time
                     example: '2026-02-14T10:30:45.123Z'
 
-  /lapi-status:
+  /status:
     get:
       tags:
         - Health
-      summary: Check CrowdSec LAPI connection
-      description: Quick check of CrowdSec LAPI connection status and last successful data sync. Requires authentication if API_PASSWORD is configured.
+      summary: Get comprehensive status information
+      description: Returns CrowdSec LAPI connection status, last successful data sync, and API version information. Requires authentication if API_PASSWORD is configured.
       responses:
         '200':
-          description: LAPI is connected
+          description: Status information retrieved successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    enum: [connected, disconnected, error]
-                    example: connected
-                  message:
-                    type: string
-                    example: CrowdSec LAPI is reachable and authenticated
-                  lastSuccessfulSync:
-                    type: string
-                    format: date-time
-                    nullable: true
-                    example: '2026-02-14T10:25:30.123Z'
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: '2026-02-14T10:30:45.123Z'
+                  csLapi:
+                    type: object
+                    properties:
+                      lapiConnected:
+                        type: boolean
+                        example: true
+                      lastSuccessfulSync:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        example: '2026-02-14T10:25:30.123Z'
+                      timestamp:
+                        type: string
+                        format: date-time
+                        example: '2026-02-14T10:30:45.123Z'
+                  csMonitorApi:
+                    type: object
+                    properties:
+                      version:
+                        type: string
+                        example: '1.0.0'
+                      newVersionAvailable:
+                        type: string
+                        nullable: true
+                        example: null
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-        '503':
-          description: LAPI is disconnected
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: disconnected
-                  message:
-                    type: string
-                    example: Unable to connect to CrowdSec LAPI
-                  lastSuccessfulSync:
-                    type: string
-                    format: date-time
-                    nullable: true
-                  timestamp:
-                    type: string
-                    format: date-time
+        '500':
+          description: Internal server error
 
   /alerts:
     get:

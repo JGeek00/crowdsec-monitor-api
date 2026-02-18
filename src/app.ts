@@ -44,17 +44,7 @@ export const createApp = (): Application => {
 
   // Root endpoint
   app.get('/', (req, res) => {
-    res.json({
-      success: true,
-      message: 'CrowdSec Monitor API',
-      version: '1.0.0',
-      endpoints: {
-        apiHealth: '/api/v1/api-health',
-        lapiStatus: '/api/v1/lapi-status',
-        alerts: '/api/v1/alerts',
-        decisions: '/api/v1/decisions',
-      },
-    });
+    res.status(404).send();
   });
 
   // Error handling middleware (must be last)
