@@ -3,7 +3,7 @@ import { Decision, Alert } from '../../models';
 
 /**
  * Parse meta array values that might be JSON strings
- * Always returns value as an array
+ * Always returns value as an array of strings
  */
 function parseMetaValues(meta: any[]): any[] {
   if (!Array.isArray(meta)) return meta;
@@ -13,25 +13,29 @@ function parseMetaValues(meta: any[]): any[] {
       return { ...item, value: [] };
     }
 
-    // If already an array, return as is
+    // If already an array, ensure all elements are strings
     if (Array.isArray(item.value)) {
-      return item;
+      return { ...item, value: item.value.map((v: any) => String(v)) };
     }
 
     // If it's a string, try to parse it
     if (typeof item.value === 'string') {
       try {
         const parsed = JSON.parse(item.value);
-        // If parsed result is an array, use it; otherwise wrap in array
-        return { ...item, value: Array.isArray(parsed) ? parsed : [parsed] };
+        // If parsed result is an array, convert all elements to strings
+        if (Array.isArray(parsed)) {
+          return { ...item, value: parsed.map((v: any) => String(v)) };
+        }
+        // If it's not an array, stringify it and wrap in array
+        return { ...item, value: [String(parsed)] };
       } catch {
         // If parsing fails, wrap the string in an array
         return { ...item, value: [item.value] };
       }
     }
 
-    // For any other type, wrap in array
-    return { ...item, value: [item.value] };
+    // For any other type, convert to string and wrap in array
+    return { ...item, value: [String(item.value)] };
   });
 }
 
