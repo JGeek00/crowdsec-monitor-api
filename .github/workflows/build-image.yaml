@@ -32,3 +32,11 @@ jobs:
           docker build . --tag ghcr.io/jgeek00/crowdsec-monitor-api:latest --tag ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
           docker push ghcr.io/jgeek00/crowdsec-monitor-api:latest
           docker push ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
+
+      - name: "Create GitHub Release"
+        uses: softprops/action-gh-release@v1
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          token: ${{ secrets.GH_TOKEN }}

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI } from '../../services/crowdsec-api.service';
 import { databaseService } from '../../services/database.service';
+import { versionCheckerService } from '../../services/version-checker.service';
 import packageJson from '../../../package.json';
 
 export const getStatus = async (req: Request, res: Response) => {
@@ -27,7 +28,7 @@ export const getStatus = async (req: Request, res: Response) => {
       csLapi: lapiStatus,
       csMonitorApi: {
         version: packageJson.version,
-        newVersionAvailable: null, // TODO: implement
+        newVersionAvailable: versionCheckerService.getLatestVersion(),
       }
     });
   } catch (error) {

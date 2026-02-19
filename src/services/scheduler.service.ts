@@ -5,88 +5,123 @@ interface SchedulerOptions {
   runImmediately?: boolean;
 }
 
+interface ScheduledTaskInfo {
+  id: string;
+  task: ScheduledTask;
+  intervalId: NodeJS.Timeout;
+  isRunning: boolean;
+  intervalSeconds: number;
+}
+
 /**
  * Scheduler Service
  * Provides an alternative to cron for high-frequency task scheduling (sub-minute intervals)
  */
 class SchedulerService {
-  private intervalId: NodeJS.Timeout | null = null;
-  private isRunning = false;
-  private task: ScheduledTask | null = null;
+  private tasks: Map<string, ScheduledTaskInfo> = new Map();
 
   /**
    * Schedule a task to run at regular intervals
+   * @param id Unique identifier for the task
    * @param task The function to execute on each interval
    * @param options Scheduler configuration
    */
-  schedule(task: ScheduledTask, options: SchedulerOptions): void {
-    if (this.intervalId) {
-      this.stop();
+  schedule(id: string, task: ScheduledTask, options: SchedulerOptions): void {
+    // Stop existing task with the same id
+    if (this.tasks.has(id)) {
+      this.stopTask(id);
     }
 
-    this.task = task;
     const intervalMs = options.intervalSeconds * 1000;
 
-    console.log(`⏱️  Scheduler started with ${options.intervalSeconds}s interval`);
-
-    // Run immediately if requested
-    if (options.runImmediately) {
-      this.executeTask();
-    }
+    console.log(`⏱️  Scheduler '${id}' started with ${options.intervalSeconds}s interval`);
 
     // Schedule the recurring task
-    this.intervalId = setInterval(() => {
-      this.executeTask();
+    const intervalId = setInterval(() => {
+      this.executeTask(id, task);
     }, intervalMs);
+
+    // Store task info
+    this.tasks.set(id, {
+      id,
+      task,
+      intervalId,
+      isRunning: false,
+      intervalSeconds: options.intervalSeconds,
+    });
+
+    // Run immediately if requested (after storing task info)
+    if (options.runImmediately) {
+      this.executeTask(id, task);
+    }
   }
 
   /**
-   * Execute the scheduled task with error handling
+   * Execute a scheduled task with error handling
    */
-  private async executeTask(): Promise<void> {
-    if (!this.task) {
+  private async executeTask(id: string, task: ScheduledTask): Promise<void> {
+    const taskInfo = this.tasks.get(id);
+    if (!taskInfo) {
       return;
     }
 
     // Prevent concurrent execution
-    if (this.isRunning) {
-      console.warn('⚠️  Previous sync still running, skipping this interval');
+    if (taskInfo.isRunning) {
+      console.warn(`⚠️  Task '${id}' still running, skipping this interval`);
       return;
     }
 
     try {
-      this.isRunning = true;
-      await this.task();
+      taskInfo.isRunning = true;
+      await task();
     } catch (error) {
-      console.error('❌ Scheduled task failed:', error);
+      console.error(`❌ Scheduled task '${id}' failed:`, error);
     } finally {
-      this.isRunning = false;
+      taskInfo.isRunning = false;
     }
   }
 
   /**
-   * Stop the scheduler
+   * Stop a specific task
    */
-  stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-      console.log('⏱️  Scheduler stopped');
+  stopTask(id: string): void {
+    const taskInfo = this.tasks.get(id);
+    if (taskInfo) {
+      clearInterval(taskInfo.intervalId);
+      this.tasks.delete(id);
+      console.log(`⏱️  Scheduler '${id}' stopped`);
     }
   }
 
   /**
-   * Check if scheduler is active
+   * Stop all scheduled tasks
    */
-  isActive(): boolean {
-    return this.intervalId !== null;
+  stopAll(): void {
+    for (const [id] of this.tasks) {
+      this.stopTask(id);
+    }
   }
 
   /**
-   * Check if a task is currently running
+   * Check if a specific task is active
    */
-  isTaskRunning(): boolean {
-    return this.isRunning;
+  isActive(id: string): boolean {
+    return this.tasks.has(id);
+  }
+
+  /**
+   * Check if a specific task is currently running
+   */
+  isTaskRunning(id: string): boolean {
+    const taskInfo = this.tasks.get(id);
+    return taskInfo ? taskInfo.isRunning : false;
+  }
+
+  /**
+   * Get the number of active tasks
+   */
+  getActiveTaskCount(): number {
+    return this.tasks.size;
   }
 }
 

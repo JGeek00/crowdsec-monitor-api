@@ -1,7 +1,7 @@
 import { config } from './config';
 import { initDatabase } from './config/database';
 import { createApp } from './app';
-import { databaseService, schedulerService } from './services';
+import { databaseService, schedulerService, versionCheckerService } from './services';
 import { crowdSecAPI } from './services/crowdsec-api.service';
 import packageJson from '../package.json';
 
@@ -67,6 +67,7 @@ const startServer = async (): Promise<void> => {
     // Setup automatic sync with interval-based scheduler
     console.log(`Setting up automatic sync (interval: ${config.sync.intervalSeconds}s)...`);
     schedulerService.schedule(
+      'data-sync',
       async () => {
         console.log('Running scheduled sync...');
         await databaseService.syncAll();
@@ -74,6 +75,19 @@ const startServer = async (): Promise<void> => {
       {
         intervalSeconds: config.sync.intervalSeconds,
         runImmediately: false, // Already ran initial sync
+      }
+    );
+
+    // Setup version check (every hour = 3600 seconds)
+    console.log('Setting up automatic version check (interval: 1 hour)...');
+    schedulerService.schedule(
+      'version-check',
+      async () => {
+        await versionCheckerService.checkForNewVersion();
+      },
+      {
+        intervalSeconds: 3600, // 1 hour
+        runImmediately: true, // Check immediately on startup
       }
     );
 
@@ -98,27 +112,27 @@ const startServer = async (): Promise<void> => {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  schedulerService.stop();
+  schedulerService.stopAll();
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error: Error) => {
   console.error('Uncaught Exception:', error);
-  schedulerService.stop();
+  schedulerService.stopAll();
   process.exit(1);
 });
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  schedulerService.stop();
+  schedulerService.stopAll();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully...');
-  schedulerService.stop();
+  schedulerService.stopAll();
   process.exit(0);
 });
 
