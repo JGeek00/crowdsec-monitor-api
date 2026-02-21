@@ -18,8 +18,8 @@ export const createDecisionValidators: ValidationChain[] = [
   body('duration')
     .notEmpty()
     .withMessage('duration is required')
-    .matches(/^-?\d+(\.\d+)?(ns|us|µs|ms|s|m|h|d|w)$/)
-    .withMessage('duration must be in CrowdSec format (e.g., 2m, 10h, 1d, 3w)'),
+    .matches(/^(-?\d+(\.\d+)?(d|h|m))+$/)
+    .withMessage('duration must be in format: days(d), hours(h), minutes(m) (e.g., 15m, 4h, 1d, 1d4h15m, 4h15m)'),
 
   body('reason')
     .notEmpty()
