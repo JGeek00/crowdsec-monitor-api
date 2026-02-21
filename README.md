@@ -22,26 +22,12 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 
 ## 🚀 Quick Start with Docker
 
-### Using Docker Compose (Recommended)
-
-1. Copy the file ``docker-compose.yml`` provided on this repository.
-2. Set the correct values on the environment variables.
-3. Run ``docker compose up -d``.
-
-### Using Docker CLI
-
-```bash
-docker run -d \
-  -p 3000:3000 \
-  -e CROWDSEC_LAPI_URL=http://your-crowdsec-server:8080 \
-  -e CROWDSEC_USER=your_machine_id \
-  -e CROWDSEC_PASSWORD=your_password \
-  -e DATA_RETENTION=7d \
-  -e SYNC_INTERVAL_SECONDS=30 \
-  -v $(pwd)/database:/app/database \
-  --name crowdsec-monitor-api \
-  crowdsec-monitor-api
-```
+1. Generate a random key: ``openssl rand -hex 32``
+2. Create the machine on CrowdSec: ``cscli machines add crowdsec-monitor --password <generated_key> -f /dev/null``
+3. Paste the generated key on the `CROWDSEC_PASSWORD` variable of the docker compose file.
+4. Copy the file ``docker-compose.yml`` provided on this repository.
+5. Set the correct values on the environment variables.
+6. Run ``docker compose up -d``.
 
 ### Environment Variables
 
@@ -140,6 +126,9 @@ The database is **not a cache** - it's a permanent incremental storage. Configur
 ## API endpoints documentation
 
 See [API.md](./API.md) for complete response schemas and examples.
+
+## Disclaimer
+This is an third party software that is not related in any way with the official CrowdSec software or with the CrowdSec team.
 
 ## 📄 License
 
