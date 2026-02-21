@@ -27,6 +27,18 @@ jobs:
         id: version
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: "Verify changelog exists"
+        if: github.ref_type == 'tag'
+        run: |
+          CHANGELOG_FILE="changelog/${{ github.ref_name }}.md"
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "ERROR: Changelog file not found: $CHANGELOG_FILE"
+            echo "Please create the changelog file before creating a release."
+            exit 1
+          fi
+          echo "Changelog file found: $CHANGELOG_FILE"
+          echo "CHANGELOG_PATH=$CHANGELOG_FILE" >> $GITHUB_ENV
+
       - name: "Build and push Docker image"
         run: |
           docker build . --tag ghcr.io/jgeek00/crowdsec-monitor-api:latest --tag ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
@@ -39,4 +51,5 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          body_path: ${{ env.CHANGELOG_PATH }}
           token: ${{ secrets.GH_TOKEN }}
