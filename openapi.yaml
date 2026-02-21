@@ -410,7 +410,7 @@ paths:
                   example: 192.168.100.200
                 duration:
                   type: string
-                  description: Duration in CrowdSec format (e.g., 2m, 10h, 1d, 3w)
+                  description: 'Duration format: days(d), hours(h), minutes(m) - can be combined (e.g., 15m, 4h, 1d, 1d4h15m, 4h15m)'
                   example: 1h
                 reason:
                   type: string

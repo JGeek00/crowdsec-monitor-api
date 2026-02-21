@@ -497,7 +497,7 @@ Create a decision in CrowdSec LAPI. This is a simplified endpoint that creates a
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `ip` | string | Yes | IPv4 or IPv6 address to apply the decision to |
-| `duration` | string | Yes | Duration in CrowdSec format (e.g., 2m, 10h, 1d, 3w) |
+| `duration` | string | Yes | Duration format: days(d), hours(h), minutes(m) - can be combined (e.g., 15m, 4h, 1d, 1d4h15m, 4h15m) |
 | `reason` | string | Yes | Human-readable reason for the decision (letters, numbers, spaces, dots, commas) |
 | `type` | string | Yes | Decision type: `ban`, `captcha`, `throttle`, or `allow` |
 
@@ -558,12 +558,12 @@ curl -X POST "http://localhost:3000/api/v1/decisions" \
 - The local database is updated to reflect the current state in LAPI
 
 **Duration Format:**
-Accepts CrowdSec duration format with units:
-- `s` - seconds (e.g., `30s`)
-- `m` - minutes (e.g., `5m`)
-- `h` - hours (e.g., `2h`)
+Accepts duration format with the following units:
+- `m` - minutes (e.g., `15m`)
+- `h` - hours (e.g., `4h`)
 - `d` - days (e.g., `1d`)
-- `w` - weeks (e.g., `3w`)
+
+Units can be combined (e.g., `1d4h15m`, `4h15m`, `2d30m`). All units are optional, but at least one must be present.
 
 **Decision Types:**
 - `ban` - Block the IP completely
