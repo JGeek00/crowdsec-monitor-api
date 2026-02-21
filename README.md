@@ -128,7 +128,7 @@ The database is **not a cache** - it's a permanent incremental storage. Configur
 See [API.md](./API.md) for complete response schemas and examples.
 
 ## Disclaimer
-This is an third party software that is not related in any way with the official CrowdSec software or with the CrowdSec team.
+This is a third party software that is not related in any way with the official CrowdSec software or with the CrowdSec team.
 
 ## 📄 License
 
