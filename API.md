@@ -715,6 +715,150 @@ curl -X DELETE "http://localhost:3000/api/v1/decisions/456"
 
 ---
 
+## Allowlists Endpoints
+
+### GET `/api/v1/allowlists`
+
+List all allowlists from CrowdSec LAPI with their items.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "created_at": "2026-03-02T19:44:58.246Z",
+      "description": "Known IPs",
+      "items": [
+        {
+          "created_at": "2026-03-02T19:45:00.435Z",
+          "expiration": "0001-01-01T00:00:00.000Z",
+          "value": "1.0.0.1"
+        },
+        {
+          "created_at": "2026-03-02T19:45:02.610Z",
+          "expiration": "0001-01-01T00:00:00.000Z",
+          "value": "1.1.1.1"
+        }
+      ],
+      "name": "known_ips",
+      "updated_at": "2026-03-02T19:45:02.611Z"
+    }
+  ],
+  "length": 1
+}
+```
+
+---
+
+### GET `/api/v1/allowlists/{allowlist_name}`
+
+Get a specific allowlist by name from CrowdSec LAPI.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `allowlist_name` | string | Yes | The name of the allowlist to retrieve |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "created_at": "2026-03-02T19:44:58.246Z",
+    "description": "Known IPs",
+    "items": [
+      {
+        "created_at": "2026-03-02T19:45:00.435Z",
+        "expiration": "0001-01-01T00:00:00.000Z",
+        "value": "1.0.0.1"
+      }
+    ],
+    "name": "known_ips",
+    "updated_at": "2026-03-02T19:45:02.611Z"
+  }
+}
+```
+
+**Response (404 Not Found):**
+```json
+{
+  "error": "Allowlist not found",
+  "message": "Allowlist 'unknown_list' was not found"
+}
+```
+
+---
+
+### POST `/api/v1/allowlists/check`
+
+Check if IP addresses are present in any allowlist.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Request Body:**
+```json
+{
+  "ips": [
+    "1.1.1.1",
+    "1.0.0.1",
+    "2.2.2.2"
+  ]
+}
+```
+
+**Request Body Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ips` | array[string] | Yes | Array of IPv4 or IPv6 addresses to check. Array cannot be empty |
+
+**Response (200 OK):**
+```json
+{
+  "results": [
+    {
+      "ip": "1.1.1.1",
+      "allowlist": "known_ips"
+    },
+    {
+      "ip": "1.0.0.1",
+      "allowlist": "known_ips"
+    },
+    {
+      "ip": "2.2.2.2",
+      "allowlist": null
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `ip` (string): The IP address checked
+- `allowlist` (string | null): The name of the allowlist if the IP is whitelisted, `null` otherwise
+
+**Response (400 Bad Request):**
+```json
+{
+  "errors": [
+    {
+      "msg": "each IP must be a valid IPv4 or IPv6 address",
+      "param": "ips",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Notes:**
+- The endpoint returns a result for every IP provided in the request
+- IPs not in any allowlist will have `allowlist` set to `null`
+- Multiple IPs can be checked in a single request
+- IPv4 and IPv6 addresses are supported
+
+---
+
 ## Statistics Endpoints
 
 ### GET `/api/v1/statistics`

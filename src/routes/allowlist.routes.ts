@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { getAllowlists, getAllowlistByName } from '../controllers';
+import { getAllowlists, getAllowlistByName, checkAllowlist } from '../controllers';
+import { checkAllowlistValidators } from '../validators';
+import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
 
@@ -8,6 +10,12 @@ const router = Router();
  * Get all allowlists from CrowdSec LAPI
  */
 router.get('/', getAllowlists);
+
+/**
+ * POST /api/v1/allowlists/check
+ * Check if IPs are in any allowlist
+ */
+router.post('/check', checkAllowlistValidators, handleValidationErrors, checkAllowlist);
 
 /**
  * GET /api/v1/allowlists/:allowlist_name

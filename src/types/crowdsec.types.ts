@@ -126,3 +126,18 @@ export interface CrowdSecAllowlist {
   name: string;
   updated_at: string;
 }
+
+// Types for allowlist check endpoint
+export interface CrowdSecAllowlistCheckResult {
+  target: string;
+  allowlists: string[];
+}
+
+export interface CrowdSecAllowlistCheckResponse {
+  results: CrowdSecAllowlistCheckResult[];
+}
+
+export interface AllowlistCheckResult {
+  ip: string;
+  allowlist: string | null;
+}

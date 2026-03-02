@@ -605,6 +605,70 @@ paths:
         '500':
           description: Internal server error
 
+  /allowlists/check:
+    post:
+      tags:
+        - Allowlists
+      summary: Check if IPs are in any allowlist
+      description: Check if provided IP addresses are present in any allowlist and return their allowlist membership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ips:
+                  type: array
+                  items:
+                    type: string
+                    format: ipv4 or ipv6
+                  description: Array of IP addresses to check
+                  example:
+                    - "1.1.1.1"
+                    - "1.0.0.1"
+                    - "2.2.2.2"
+              required:
+                - ips
+      responses:
+        '200':
+          description: Allowlist check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          format: ipv4 or ipv6
+                          description: The IP address checked
+                          example: "1.1.1.1"
+                        allowlist:
+                          type: string
+                          nullable: true
+                          description: Name of the allowlist if IP is whitelisted, null otherwise
+                          example: "known_ips"
+                    description: Array of IPs with their allowlist status
+                example:
+                  results:
+                    - ip: "1.1.1.1"
+                      allowlist: "known_ips"
+                    - ip: "1.0.0.1"
+                      allowlist: "known_ips"
+                    - ip: "2.2.2.2"
+                      allowlist: null
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+
   /allowlists/{allowlist_name}:
     get:
       tags:

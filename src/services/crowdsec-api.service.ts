@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '../config';
-import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload, CrowdSecAllowlist } from '../types/crowdsec.types';
+import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload, CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '../types/crowdsec.types';
 import { API_SCENARIO_NAME } from '../constants/scenarios';
 
 export class CrowdSecAPIService {
@@ -198,6 +198,51 @@ export class CrowdSecAPIService {
     } catch (error) {
       this.handleError(error, `fetching allowlist ${allowlist_name}`);
       return null;
+    }
+  }
+
+  /**
+   * Check if IPs are in any allowlist
+   * @param ips - Array of IP addresses to check
+   * @returns Array with IP and allowlist name (or null if not in any allowlist)
+   */
+  async checkAllowlist(ips: string[]): Promise<Array<{ ip: string; allowlist: string | null }>> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      const response = await this.client.post<CrowdSecAllowlistCheckResponse>(
+        '/v1/allowlists/check',
+        { targets: ips },
+        { headers }
+      );
+
+      // Create a map of IPs that are in allowlists with their allowlist names
+      const ipAllowlistMap = new Map<string, string>();
+      
+      if (response.data && response.data.results) {
+        for (const result of response.data.results) {
+          if (result.allowlists && result.allowlists.length > 0) {
+            // Extract allowlist name from format "1.1.1.1 from known_ips"
+            const allowlistString = result.allowlists[0];
+            const match = allowlistString.match(/from\s+(\S+)/);
+            if (match && match[1]) {
+              ipAllowlistMap.set(result.target, match[1]);
+            }
+          }
+        }
+      }
+
+      // Return result for all IPs, with allowlist name or null
+      return ips.map(ip => ({
+        ip,
+        allowlist: ipAllowlistMap.get(ip) || null,
+      }));
+    } catch (error) {
+      this.handleError(error, 'checking allowlists');
+      return ips.map(ip => ({
+        ip,
+        allowlist: null,
+      }));
     }
   }
 

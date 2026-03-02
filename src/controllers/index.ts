@@ -5,7 +5,7 @@ export { getAllAlerts, getAlertById, getAlertStats, deleteAlert } from './alerts
 export { getAllDecisions, getDecisionById, getDecisionStats, createDecision, deleteDecision } from './decisions';
 
 // Allowlist controllers
-export { getAllowlists, getAllowlistByName } from './allowlists';
+export { getAllowlists, getAllowlistByName, checkAllowlist } from './allowlists';
 
 // Statistics controllers
 export { 
