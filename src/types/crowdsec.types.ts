@@ -112,3 +112,17 @@ export interface CrowdSecCreateAlert {
 }
 
 export type CrowdSecCreateAlertPayload = CrowdSecCreateAlert[];
+// Types for allowlists
+export interface CrowdSecAllowlistItem {
+  created_at: string;
+  expiration: string;
+  value: string;
+}
+
+export interface CrowdSecAllowlist {
+  created_at: string;
+  description: string;
+  items: CrowdSecAllowlistItem[];
+  name: string;
+  updated_at: string;
+}

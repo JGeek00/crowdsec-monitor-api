@@ -44,6 +44,8 @@ tags:
     description: CrowdSec security alerts operations
   - name: Decisions
     description: CrowdSec security decisions operations
+  - name: Allowlists
+    description: CrowdSec allowlists operations
   - name: Statistics
     description: Statistics and aggregated data operations
 
@@ -575,6 +577,75 @@ paths:
                 $ref: '#/components/schemas/DecisionStats'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+
+  /allowlists:
+    get:
+      tags:
+        - Allowlists
+      summary: List all allowlists
+      description: Retrieve all allowlists from CrowdSec LAPI with their items
+      responses:
+        '200':
+          description: List of allowlists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Allowlist'
+                  length:
+                    type: integer
+                    description: Number of allowlists returned
+                    example: 3
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+
+  /allowlists/{allowlist_name}:
+    get:
+      tags:
+        - Allowlists
+      summary: Get specific allowlist
+      description: Retrieve a specific allowlist from CrowdSec LAPI by its name
+      parameters:
+        - name: allowlist_name
+          in: path
+          required: true
+          description: The name of the allowlist to retrieve
+          schema:
+            type: string
+          example: known_ips
+      responses:
+        '200':
+          description: Allowlist details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Allowlist'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Allowlist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Allowlist not found
+                  message:
+                    type: string
+                    example: "Allowlist 'known_ips' was not found"
+        '500':
+          description: Internal server error
 
   /statistics:
     get:
@@ -1257,6 +1328,51 @@ components:
           type: integer
           description: Number of alerts for that date
           example: 15
+
+    AllowlistItem:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          description: Item creation timestamp
+          example: '2026-03-02T19:45:00.435Z'
+        expiration:
+          type: string
+          format: date-time
+          description: Item expiration timestamp (0001-01-01T00:00:00.000Z means never expires)
+          example: '0001-01-01T00:00:00.000Z'
+        value:
+          type: string
+          description: The allowlist item value (IP address, range, etc.)
+          example: '1.0.0.1'
+
+    Allowlist:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          description: Allowlist creation timestamp
+          example: '2026-03-02T19:44:58.246Z'
+        description:
+          type: string
+          description: Allowlist description
+          example: 'Known IPs'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowlistItem'
+          description: Items contained in the allowlist
+        name:
+          type: string
+          description: Allowlist name/identifier
+          example: 'known_ips'
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-03-02T19:45:02.611Z'
 
   responses:
     UnauthorizedError:

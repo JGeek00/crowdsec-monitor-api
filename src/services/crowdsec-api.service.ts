@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '../config';
-import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload } from '../types/crowdsec.types';
+import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload, CrowdSecAllowlist } from '../types/crowdsec.types';
 import { API_SCENARIO_NAME } from '../constants/scenarios';
 
 export class CrowdSecAPIService {
@@ -164,6 +164,40 @@ export class CrowdSecAPIService {
     } catch (error) {
       this.handleError(error, 'fetching decisions from alerts');
       return [];
+    }
+  }
+
+  /**
+   * Get all allowlists from CrowdSec LAPI
+   */
+  async getAllowlists(): Promise<CrowdSecAllowlist[]> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      const response = await this.client.get('/v1/allowlists', { 
+        params: { with_content: 'true' },
+        headers 
+      });
+      return response.data || [];
+    } catch (error) {
+      this.handleError(error, 'fetching allowlists');
+      return [];
+    }
+  }
+
+  /**
+   * Get a specific allowlist by name from CrowdSec LAPI
+   * @param allowlist_name - The name of the allowlist
+   * @returns The allowlist or null if not found
+   */
+  async getAllowlistByName(allowlist_name: string): Promise<CrowdSecAllowlist | null> {
+    try {
+      const allowlists = await this.getAllowlists();
+      const allowlist = allowlists.find(a => a.name === allowlist_name);
+      return allowlist || null;
+    } catch (error) {
+      this.handleError(error, `fetching allowlist ${allowlist_name}`);
+      return null;
     }
   }
 
