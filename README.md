@@ -20,14 +20,15 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 - **Optimized Indexes**: Fast queries on common fields
 
 
-## 🚀 Quick Start with Docker
+## Deployment
 
-1. Generate a random key: ``openssl rand -hex 32``
-2. Create the machine on CrowdSec: ``cscli machines add crowdsec-monitor --password <generated_key> -f /dev/null``
-3. Paste the generated key on the `CROWDSEC_PASSWORD` variable of the docker compose file.
-4. Copy the file ``docker-compose.yml`` provided on this repository.
-5. Set the correct values on the environment variables.
-6. Run ``docker compose up -d``.
+1. Get the [provided docker-compose file](https://github.com/JGeek00/crowdsec-monitor-api/blob/master/docker-compose.yml). I recommend adding the ``crowdsec-monitor-api`` block on the same docker-compose file where you have your existing CrowdSec instance.
+2. Generate a random key: ``openssl rand -hex 32``
+3. Create the machine on CrowdSec. Open a terminal inside the CrowdSec container and run: ``cscli machines add crowdsec-monitor --password <generated_key> -f /dev/null``.
+4. On the docker-compose file, replace the `<crowdsec container_name>` string with the value that you have given to the `container_name` parameter on the CrwodSec container.
+5. Paste the generated key on the `CROWDSEC_PASSWORD` variable of the docker compose file.
+6. Set the correct values on the environment variables.
+7. Run ``docker compose up -d``.
 
 ### Environment Variables
 
