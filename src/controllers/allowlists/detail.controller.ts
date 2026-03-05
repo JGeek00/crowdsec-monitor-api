@@ -1,5 +1,20 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI } from '../../services';
+import { isValidDate } from '../../utils/date-validator';
+import { CrowdSecAllowlist } from '../../types/crowdsec.types';
+
+/**
+ * Sanitize allowlist items by converting invalid expiration dates to null
+ */
+function sanitizeAllowlist(allowlist: CrowdSecAllowlist): CrowdSecAllowlist {
+  return {
+    ...allowlist,
+    items: allowlist.items.map(item => ({
+      ...item,
+      expiration: isValidDate(item.expiration) ? item.expiration : null,
+    })),
+  };
+}
 
 /**
  * Get a specific allowlist by name from CrowdSec LAPI
@@ -18,8 +33,10 @@ export async function getAllowlistByName(req: Request, res: Response): Promise<v
       return;
     }
 
+    const sanitizedAllowlist = sanitizeAllowlist(allowlist);
+
     res.status(200).json({
-      data: allowlist,
+      data: sanitizedAllowlist,
     });
   } catch (error) {
     console.error('Error fetching allowlist:', error);
