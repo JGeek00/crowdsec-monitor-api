@@ -9,29 +9,20 @@ import { config } from '../config';
  * The database stores all alerts and decisions from LAPI.
  * Existing alerts and decisions are overwritten with the latest data from LAPI.
  *
- * Two independent promise-based mutexes ensure that:
- * - alertsLock  → only one alerts/decisions sync runs at a time
- * - blocklistsLock → only one blocklists sync runs at a time
- * Both can progress concurrently with each other. SQLite WAL mode handles
- * the underlying write serialization without blocking reads.
+ * A single writeLock serializes all DB writes. Network fetches always happen
+ * BEFORE acquiring the lock so they never block each other or hold the lock
+ * during I/O. SQLite WAL mode + busy_timeout handle any residual contention.
  */
 export class DatabaseService {
   private lastSuccessfulSync: Date | null = null;
 
-  // Independent locks — alerts and blocklists syncs don't block each other
-  private alertsLock: Promise<void> = Promise.resolve();
-  private blocklistsLock: Promise<void> = Promise.resolve();
+  // Single write lock — only one sync writes to SQLite at a time
+  private writeLock: Promise<void> = Promise.resolve();
 
-  private acquireLock<T>(lock: 'alerts' | 'blocklists', fn: () => Promise<T>): Promise<T> {
-    const chain = this[lock === 'alerts' ? 'alertsLock' : 'blocklistsLock'];
-    const next = chain.then(() => fn());
-    // The outer chain must never reject so subsequent tasks are always queued
-    const silent = next.then(() => {}, () => {});
-    if (lock === 'alerts') {
-      this.alertsLock = silent;
-    } else {
-      this.blocklistsLock = silent;
-    }
+  private acquireWriteLock<T>(fn: () => Promise<T>): Promise<T> {
+    const next = this.writeLock.then(() => fn());
+    // Must never reject so the chain stays alive for subsequent callers
+    this.writeLock = next.then(() => {}, () => {});
     return next;
   }
 
@@ -48,8 +39,9 @@ export class DatabaseService {
    * Also syncs related decisions
    */
   async syncAlerts(): Promise<{ synced: number; updated: number; errors: number; decisions: number }> {
-    return this.acquireLock('alerts', async () => {
-      try {
+    // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
+    let alerts: Awaited<ReturnType<typeof crowdSecAPI.getAlerts>>;
+    try {
       console.log('Starting alerts sync...');
       const results = await Promise.all([
         crowdSecAPI.getAlerts({ origin: 'crowdsec' }),
@@ -57,8 +49,15 @@ export class DatabaseService {
         crowdSecAPI.getAlerts({ origin: 'console' }),
         crowdSecAPI.getAlerts({ origin: 'appsec' })
       ]);
-      const alerts = results.flat();
+      alerts = results.flat();
+    } catch (error) {
+      console.error('Error fetching alerts from LAPI:', error);
+      return { synced: 0, updated: 0, errors: 1, decisions: 0 };
+    }
 
+    // --- Phase 2: write to DB (inside the lock) ---
+    return this.acquireWriteLock(async () => {
+      try {
       let synced = 0;
       let updated = 0;
       let errors = 0;
@@ -253,46 +252,54 @@ export class DatabaseService {
 
   /**
    * Sync blocklists from CrowdSec LAPI to local database.
-   * Fetches alerts with origin "blocklist-import" and "lists" in parallel.
-   * Upserts rows in `lists` (by unique name) and `blocklist_ips` (by decision id).
+   *
+   * Strategy to minimise DB lock time:
+   *  1. Fetch and write "blocklist-import" fully before starting "lists".
+   *  2. For each alert, upsert the Blocklist row in one small lock acquisition.
+   *  3. Write its IPs in chunks of BLOCKLIST_IP_CHUNK_SIZE using bulkCreate
+   *     (INSERT OR REPLACE), one lock acquisition per chunk.
+   *
+   * This keeps individual lock windows tiny and allows syncAlerts to interleave
+   * between chunks when the scheduler fires.
    */
   async syncBlocklists(): Promise<{ synced: number; updated: number; ips: number; errors: number }> {
-    return this.acquireLock('blocklists', async () => {
+    const CHUNK_SIZE = 100;
+    let synced = 0;
+    let updated = 0;
+    let ipsCount = 0;
+    let errors = 0;
+
+    const processOrigin = async (origin: 'blocklist-import' | 'lists'): Promise<void> => {
+      // --- Fetch from network (outside the lock) ---
+      let alerts: Awaited<ReturnType<typeof crowdSecAPI.getAlerts>>;
       try {
-      console.log('Starting blocklists sync...');
+        console.log(`Fetching blocklists (origin: ${origin})...`);
+        alerts = await crowdSecAPI.getAlerts({ origin });
+        const totalIps = alerts.reduce((acc, a) => acc + (a.decisions?.length ?? 0), 0);
+        console.log(`Fetched ${alerts.length} blocklist alerts, ${totalIps} IPs total (origin: ${origin})`);
+      } catch (error) {
+        console.error(`Error fetching blocklists (origin: ${origin}):`, error);
+        errors++;
+        return;
+      }
 
-      // Fetch both origins in parallel
-      const [blocklistImportAlerts, listsAlerts] = await Promise.all([
-        crowdSecAPI.getAlerts({ origin: 'blocklist-import' }),
-        crowdSecAPI.getAlerts({ origin: 'lists' }),
-      ]);
+      const totalAlerts = alerts.length;
+      const totalIps = alerts.reduce((acc, a) => acc + (a.decisions?.length ?? 0), 0);
+      let alertsDone = 0;
+      let ipsDone = 0;
 
-      const allAlerts = [
-        ...blocklistImportAlerts.map(a => ({ alert: a, origin: 'blocklist-import' as const })),
-        ...listsAlerts.map(a => ({ alert: a, origin: 'lists' as const })),
-      ];
-
-      let synced = 0;
-      let updated = 0;
-      let ipsCount = 0;
-      let errors = 0;
-
-      for (const { alert, origin } of allAlerts) {
+      for (const alert of alerts) {
         try {
-          // Determine the blocklist name:
-          // - blocklist-import: use alert.scenario
-          // - lists: use alert.source.scope
-          const name = origin === 'blocklist-import' ? alert.scenario : alert.source?.scope ?? alert.scenario;
+          const name = origin === 'blocklist-import'
+            ? alert.scenario
+            : alert.source?.scope ?? alert.scenario;
 
-          if (!name) {
-            continue;
-          }
+          if (!name) continue;
 
-          // Upsert the blocklist row (find or create by name)
-          const [blocklistInstance, created] = await Blocklist.findOrCreate({
-            where: { name },
-            defaults: { name },
-          });
+          // --- Upsert the Blocklist row (small lock window) ---
+          const [blocklistInstance, created] = await this.acquireWriteLock(() =>
+            Blocklist.findOrCreate({ where: { name }, defaults: { name } })
+          );
 
           if (created) {
             synced++;
@@ -300,23 +307,38 @@ export class DatabaseService {
             updated++;
           }
 
-          // Upsert each decision as a blocklist_ip
-          if (alert.decisions && alert.decisions.length > 0) {
-            for (const decision of alert.decisions) {
-              try {
-                await BlocklistIp.upsert({
-                  id: decision.id,
-                  blocklist_id: blocklistInstance.id,
-                  scenario: decision.scenario,
-                  value: decision.value,
-                  type: decision.type,
-                  scope: decision.scope,
-                  updated_at: new Date(),
-                });
-                ipsCount++;
-              } catch (decisionError) {
-                console.error(`Error syncing blocklist IP ${decision.id}:`, decisionError);
-              }
+          alertsDone++;
+          const alertPct = totalAlerts > 0 ? Math.round((alertsDone / totalAlerts) * 100) : 100;
+          console.log(`[${origin}] Lists: ${alertsDone}/${totalAlerts} (${alertPct}%) — IPs written: ${ipsDone}/${totalIps}`);
+
+          if (!alert.decisions?.length) continue;
+
+          // --- Write IPs in chunks (one lock acquisition per chunk) ---
+          const totalChunks = Math.ceil(alert.decisions.length / CHUNK_SIZE);
+          for (let i = 0; i < alert.decisions.length; i += CHUNK_SIZE) {
+            const chunkIndex = Math.floor(i / CHUNK_SIZE) + 1;
+            const chunk = alert.decisions.slice(i, i + CHUNK_SIZE).map(d => ({
+              id: d.id,
+              blocklist_id: blocklistInstance.id,
+              scenario: d.scenario,
+              value: d.value,
+              type: d.type,
+              scope: d.scope,
+              updated_at: new Date(),
+            }));
+
+            try {
+              await this.acquireWriteLock(() =>
+                BlocklistIp.bulkCreate(chunk, {
+                  updateOnDuplicate: ['blocklist_id', 'scenario', 'value', 'type', 'scope', 'updated_at'],
+                })
+              );
+              ipsCount += chunk.length;
+              ipsDone += chunk.length;
+              const ipPct = totalIps > 0 ? Math.round((ipsDone / totalIps) * 100) : 100;
+              console.log(`[${origin}] IPs: chunk ${chunkIndex}/${totalChunks} for "${name}" — ${ipsDone}/${totalIps} (${ipPct}%)`);
+            } catch (chunkError) {
+              console.error(`Error writing IP chunk for blocklist "${name}" (offset ${i}):`, chunkError);
             }
           }
         } catch (alertError) {
@@ -325,13 +347,15 @@ export class DatabaseService {
         }
       }
 
-      console.log(`✓ Blocklists sync completed: ${synced} new lists, ${updated} existing lists, ${ipsCount} IPs upserted, ${errors} errors`);
-      return { synced, updated, ips: ipsCount, errors };
-    } catch (error) {
-      console.error('Error syncing blocklists:', error);
-      return { synced: 0, updated: 0, ips: 0, errors: 1 };
-    }
-    });
+      console.log(`✓ Finished origin "${origin}": ${alertsDone} lists, ${ipsDone} IPs written`);
+    };
+
+    console.log('Starting blocklists sync...');
+    await processOrigin('blocklist-import');
+    await processOrigin('lists');
+
+    console.log(`✓ Blocklists sync completed: ${synced} new lists, ${updated} existing lists, ${ipsCount} IPs upserted, ${errors} errors`);
+    return { synced, updated, ips: ipsCount, errors };
   }
 }
 

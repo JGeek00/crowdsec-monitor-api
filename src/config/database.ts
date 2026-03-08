@@ -25,6 +25,11 @@ export const initDatabase = async (): Promise<void> => {
     // when the blocklists sync (large payload) runs alongside normal queries.
     await sequelize.query('PRAGMA journal_mode=WAL;');
     console.log('✓ SQLite WAL mode enabled.');
+
+    // Ensure SQLite waits up to 30 s instead of failing immediately when locked.
+    // This is set both via dialectOptions (per-connection) and PRAGMA (belt-and-braces).
+    await sequelize.query('PRAGMA busy_timeout = 30000;');
+    console.log('✓ SQLite busy_timeout set to 30 s.');
     
     // Sync all models - creates tables if they don't exist, but doesn't modify existing ones
     await sequelize.sync();
