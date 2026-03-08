@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../../models';
+import { createRequestSignal } from '../../../utils/request-signal';
 
 /**
  * Get top countries statistics
  */
 export async function getTopCountries(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const alertsWithSource = await Alert.findAll({
+      signal,
       attributes: ['source'],
       raw: true,
     });
@@ -28,6 +31,7 @@ export async function getTopCountries(req: Request, res: Response): Promise<void
 
     res.json(countries);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching countries statistics',
     };
@@ -37,5 +41,7 @@ export async function getTopCountries(req: Request, res: Response): Promise<void
     }
 
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

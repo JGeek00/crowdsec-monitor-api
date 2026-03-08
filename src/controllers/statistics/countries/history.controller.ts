@@ -1,16 +1,19 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../../models';
+import { createRequestSignal } from '../../../utils/request-signal';
 
 /**
  * Get country history (alerts grouped by date for a specific country)
  */
 export async function getCountryHistory(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;
     const countryCode = String(item).toUpperCase();
 
     // Get all alerts with their dates and sources
     const alerts = await Alert.findAll({
+      signal,
       attributes: ['crowdsec_created_at', 'source'],
       raw: true,
     });
@@ -35,6 +38,7 @@ export async function getCountryHistory(req: Request, res: Response): Promise<vo
 
     res.json(history);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching country history',
     };
@@ -44,5 +48,7 @@ export async function getCountryHistory(req: Request, res: Response): Promise<vo
     }
 
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

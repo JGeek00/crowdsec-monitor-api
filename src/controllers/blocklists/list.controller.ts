@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { literal } from 'sequelize';
 import { Blocklist, BlocklistIp } from '../../models';
+import { createRequestSignal } from '../../utils/request-signal';
 
 const COUNT_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
   literal('(SELECT COUNT(*) FROM blocklist_ips WHERE blocklist_ips.blocklist_id = "Blocklist"."id")'),
@@ -15,11 +16,13 @@ const COUNT_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
  *   - limit / offset → pagination (default limit 100, offset 0)
  */
 export async function getBlocklists(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged, expand_ips } = req.query;
     const includeIps = expand_ips === 'true';
 
     const queryOptions: any = {
+      signal,
       attributes: {
         include: [COUNT_IPS_ATTRIBUTE],
       },
@@ -49,11 +52,14 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       offset: unpaged === 'true' ? 0 : Number(offset),
     });
   } catch (error) {
+    if (signal.aborted) return;
     console.error('Error fetching blocklists:', error);
     res.status(500).json({
       error: 'Failed to fetch blocklists',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
+  } finally {
+    cleanup();
   }
 }
 
@@ -62,10 +68,12 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
  * Always includes the full blocklistIps array and count_ips.
  */
 export async function getBlocklistById(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;
 
     const blocklist = await Blocklist.findByPk(Number(id), {
+      signal,
       attributes: {
         include: [COUNT_IPS_ATTRIBUTE],
       },
@@ -84,10 +92,13 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
 
     res.status(200).json({ data: blocklist });
   } catch (error) {
+    if (signal.aborted) return;
     console.error('Error fetching blocklist:', error);
     res.status(500).json({
       error: 'Failed to fetch blocklist',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
+  } finally {
+    cleanup();
   }
 }

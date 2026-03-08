@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { Decision } from '../../models';
 import { Op } from 'sequelize';
+import { createRequestSignal } from '../../utils/request-signal';
 
 /**
  * Get all decisions with filtering and pagination
  * @param only_active - Optional boolean to filter only active decisions (expiration > now)
  */
 export async function getAllDecisions(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged = false, type, scope, value, simulated, scenario, ip_address, country, ip_owner, only_active } = req.query;
 
@@ -56,6 +58,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
 
     // Fetch all decisions for filtering options (from entire database)
     const allDecisions = await Decision.findAll({
+      signal,
       attributes: ['source'],
       raw: true,
     });
@@ -80,6 +83,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
 
     // Fetch decisions with filters
     let decisions = await Decision.findAll({
+      signal,
       where,
       attributes: {
         exclude: ['created_at', 'updated_at']
@@ -146,6 +150,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
 
     res.json(response);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching decisions',
     };
@@ -155,5 +160,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     }
     
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

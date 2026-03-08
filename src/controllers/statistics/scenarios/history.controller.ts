@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../../models';
 import { QueryTypes } from 'sequelize';
+import { createRequestSignal } from '../../../utils/request-signal';
 
 /**
  * Get scenario history (alerts grouped by date for a specific scenario)
  */
 export async function getScenarioHistory(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;
 
@@ -21,11 +23,13 @@ export async function getScenarioHistory(req: Request, res: Response): Promise<v
       {
         replacements: { scenario: item },
         type: QueryTypes.SELECT,
+        signal,
       }
     );
 
     res.json(history);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching scenario history',
     };
@@ -35,5 +39,7 @@ export async function getScenarioHistory(req: Request, res: Response): Promise<v
     }
 
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

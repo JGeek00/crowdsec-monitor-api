@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../../models';
+import { createRequestSignal } from '../../../utils/request-signal';
 
 /**
  * Get target history (alerts grouped by date for a specific target)
  */
 export async function getTargetHistory(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;
 
     // Get all alerts with their dates and events
     const alerts = await Alert.findAll({
+      signal,
       attributes: ['crowdsec_created_at', 'events'],
       raw: true,
     });
@@ -53,6 +56,7 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
 
     res.json(history);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching target history',
     };
@@ -62,5 +66,7 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
     }
 
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

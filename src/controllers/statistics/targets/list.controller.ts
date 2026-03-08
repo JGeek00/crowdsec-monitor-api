@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../../models';
+import { createRequestSignal } from '../../../utils/request-signal';
 
 /**
  * Get top targets statistics
  */
 export async function getTopTargets(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const alerts = await Alert.findAll({
+      signal,
       attributes: ['events'],
       raw: true,
     });
@@ -45,6 +48,7 @@ export async function getTopTargets(req: Request, res: Response): Promise<void> 
 
     res.json(targets);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching targets statistics',
     };
@@ -54,5 +58,7 @@ export async function getTopTargets(req: Request, res: Response): Promise<void> 
     }
 
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

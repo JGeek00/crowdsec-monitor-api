@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../models';
 import { Op } from 'sequelize';
+import { createRequestSignal } from '../../utils/request-signal';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -44,6 +45,7 @@ function parseMetaValues(meta: any[]): any[] {
  * Get all alerts with filtering and pagination
  */
 export async function getAllAlerts(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner, target } = req.query;
 
@@ -63,6 +65,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     // Fetch all alerts for filtering options (from entire database)
     const allAlerts = await Alert.findAll({
+      signal,
       attributes: ['scenario', 'source', 'events'],
       raw: true,
     });
@@ -112,6 +115,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     // Fetch all alerts matching basic filters
     let alerts = await Alert.findAll({
+      signal,
       where,
       attributes: {
         exclude: ['created_at', 'updated_at']
@@ -224,6 +228,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     res.json(response);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching alerts',
     };
@@ -233,5 +238,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     }
     
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

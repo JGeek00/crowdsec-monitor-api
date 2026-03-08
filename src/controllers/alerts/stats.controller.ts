@@ -1,16 +1,19 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../models';
+import { createRequestSignal } from '../../utils/request-signal';
 
 /**
  * Get alerts statistics
  */
 export async function getAlertStats(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
-    const total = await Alert.count();
-    const simulated = await Alert.count({ where: { simulated: true } });
+    const total = await Alert.count({ signal }) as number;
+    const simulated = await Alert.count({ signal, where: { simulated: true } }) as number;
     const real = total - simulated;
 
     const topScenarios = await Alert.findAll({
+      signal,
       attributes: [
         'scenario',
         [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],
@@ -22,6 +25,7 @@ export async function getAlertStats(req: Request, res: Response): Promise<void> 
 
     // Get all alerts with source information for grouping
     const allAlerts = await Alert.findAll({
+      signal,
       attributes: ['source'],
     });
 
@@ -65,6 +69,7 @@ export async function getAlertStats(req: Request, res: Response): Promise<void> 
       topOrganizations,
     });
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching alert statistics',
     };
@@ -74,5 +79,7 @@ export async function getAlertStats(req: Request, res: Response): Promise<void> 
     }
     
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Alert, Decision } from '../../models';
+import { createRequestSignal } from '../../utils/request-signal';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -43,9 +44,11 @@ function parseMetaValues(meta: any[]): any[] {
  * Get alert by ID with associated decisions
  */
 export async function getAlertById(req: Request, res: Response): Promise<void> {
+  const { signal, cleanup } = createRequestSignal(req);
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const alert = await Alert.findByPk(id, {
+      signal,
       attributes: {
         exclude: ['created_at', 'updated_at']
       },
@@ -92,6 +95,7 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
 
     res.json(plainAlert);
   } catch (error) {
+    if (signal.aborted) return;
     const response: any = {
       message: 'Error fetching alert',
     };
@@ -101,5 +105,7 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
     }
     
     res.status(500).json(response);
+  } finally {
+    cleanup();
   }
 }
