@@ -120,7 +120,7 @@ const startServer = async (): Promise<void> => {
       console.log(`✓ Environment: ${config.server.nodeEnv}`);
       console.log(`✓ Version: ${packageJson.version}`);
       console.log(`✓ API available at: http://localhost:${config.server.port}/api`);
-      console.log(`✓ Refreshing data every ${config.sync.intervalSeconds} seconds`);
+      console.log(`✓ Refreshing alerts every ${config.sync.intervalSeconds} seconds`);
       console.log('=================================');
     });
   } catch (error) {

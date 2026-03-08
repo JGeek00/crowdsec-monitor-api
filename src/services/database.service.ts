@@ -8,9 +8,32 @@ import { config } from '../config';
  * Service for managing database operations and syncing data from CrowdSec LAPI.
  * The database stores all alerts and decisions from LAPI.
  * Existing alerts and decisions are overwritten with the latest data from LAPI.
+ *
+ * Two independent promise-based mutexes ensure that:
+ * - alertsLock  → only one alerts/decisions sync runs at a time
+ * - blocklistsLock → only one blocklists sync runs at a time
+ * Both can progress concurrently with each other. SQLite WAL mode handles
+ * the underlying write serialization without blocking reads.
  */
 export class DatabaseService {
   private lastSuccessfulSync: Date | null = null;
+
+  // Independent locks — alerts and blocklists syncs don't block each other
+  private alertsLock: Promise<void> = Promise.resolve();
+  private blocklistsLock: Promise<void> = Promise.resolve();
+
+  private acquireLock<T>(lock: 'alerts' | 'blocklists', fn: () => Promise<T>): Promise<T> {
+    const chain = this[lock === 'alerts' ? 'alertsLock' : 'blocklistsLock'];
+    const next = chain.then(() => fn());
+    // The outer chain must never reject so subsequent tasks are always queued
+    const silent = next.then(() => {}, () => {});
+    if (lock === 'alerts') {
+      this.alertsLock = silent;
+    } else {
+      this.blocklistsLock = silent;
+    }
+    return next;
+  }
 
   /**
    * Get the timestamp of the last successful sync
@@ -25,7 +48,8 @@ export class DatabaseService {
    * Also syncs related decisions
    */
   async syncAlerts(): Promise<{ synced: number; updated: number; errors: number; decisions: number }> {
-    try {
+    return this.acquireLock('alerts', async () => {
+      try {
       console.log('Starting alerts sync...');
       const results = await Promise.all([
         crowdSecAPI.getAlerts({ origin: 'crowdsec' }),
@@ -163,6 +187,7 @@ export class DatabaseService {
       console.error('Error syncing alerts:', error);
       return { synced: 0, updated: 0, errors: 1, decisions: 0 };
     }
+    });
   }
 
   /**
@@ -232,7 +257,8 @@ export class DatabaseService {
    * Upserts rows in `lists` (by unique name) and `blocklist_ips` (by decision id).
    */
   async syncBlocklists(): Promise<{ synced: number; updated: number; ips: number; errors: number }> {
-    try {
+    return this.acquireLock('blocklists', async () => {
+      try {
       console.log('Starting blocklists sync...');
 
       // Fetch both origins in parallel
@@ -305,6 +331,7 @@ export class DatabaseService {
       console.error('Error syncing blocklists:', error);
       return { synced: 0, updated: 0, ips: 0, errors: 1 };
     }
+    });
   }
 }
 
