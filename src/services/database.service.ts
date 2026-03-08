@@ -1,9 +1,8 @@
-import { Alert, Decision } from '../models';
+import { Op } from 'sequelize';
+import { Alert, Decision, Blocklist, BlocklistIp } from '../models';
 import { crowdSecAPI } from './crowdsec-api.service';
-import { CrowdSecAlert, CrowdSecDecision } from '../types/crowdsec.types';
 import { calculateExpiration, calculateRetentionCutoff } from '../utils/duration';
 import { config } from '../config';
-import { Op } from 'sequelize';
 
 /**
  * Service for managing database operations and syncing data from CrowdSec LAPI.
@@ -28,7 +27,14 @@ export class DatabaseService {
   async syncAlerts(): Promise<{ synced: number; updated: number; errors: number; decisions: number }> {
     try {
       console.log('Starting alerts sync...');
-      const alerts = await crowdSecAPI.getAlerts();
+      const results = await Promise.all([
+        crowdSecAPI.getAlerts({ origin: 'crowdsec' }),
+        crowdSecAPI.getAlerts({ origin: 'cscli' }),
+        crowdSecAPI.getAlerts({ origin: 'console' }),
+        crowdSecAPI.getAlerts({ origin: 'appsec' })
+      ]);
+      const alerts = results.flat();
+
       let synced = 0;
       let updated = 0;
       let errors = 0;
@@ -218,6 +224,87 @@ export class DatabaseService {
   async syncAll(): Promise<{ alerts: any }> {
     const alerts = await this.syncAlerts();
     return { alerts };
+  }
+
+  /**
+   * Sync blocklists from CrowdSec LAPI to local database.
+   * Fetches alerts with origin "blocklist-import" and "lists" in parallel.
+   * Upserts rows in `lists` (by unique name) and `blocklist_ips` (by decision id).
+   */
+  async syncBlocklists(): Promise<{ synced: number; updated: number; ips: number; errors: number }> {
+    try {
+      console.log('Starting blocklists sync...');
+
+      // Fetch both origins in parallel
+      const [blocklistImportAlerts, listsAlerts] = await Promise.all([
+        crowdSecAPI.getAlerts({ origin: 'blocklist-import' }),
+        crowdSecAPI.getAlerts({ origin: 'lists' }),
+      ]);
+
+      const allAlerts = [
+        ...blocklistImportAlerts.map(a => ({ alert: a, origin: 'blocklist-import' as const })),
+        ...listsAlerts.map(a => ({ alert: a, origin: 'lists' as const })),
+      ];
+
+      let synced = 0;
+      let updated = 0;
+      let ipsCount = 0;
+      let errors = 0;
+
+      for (const { alert, origin } of allAlerts) {
+        try {
+          // Determine the blocklist name:
+          // - blocklist-import: use alert.scenario
+          // - lists: use alert.source.scope
+          const name = origin === 'blocklist-import' ? alert.scenario : alert.source?.scope ?? alert.scenario;
+
+          if (!name) {
+            continue;
+          }
+
+          // Upsert the blocklist row (find or create by name)
+          const [blocklistInstance, created] = await Blocklist.findOrCreate({
+            where: { name },
+            defaults: { name },
+          });
+
+          if (created) {
+            synced++;
+          } else {
+            updated++;
+          }
+
+          // Upsert each decision as a blocklist_ip
+          if (alert.decisions && alert.decisions.length > 0) {
+            for (const decision of alert.decisions) {
+              try {
+                await BlocklistIp.upsert({
+                  id: decision.id,
+                  blocklist_id: blocklistInstance.id,
+                  scenario: decision.scenario,
+                  value: decision.value,
+                  type: decision.type,
+                  scope: decision.scope,
+                  updated_at: new Date(),
+                });
+                ipsCount++;
+              } catch (decisionError) {
+                console.error(`Error syncing blocklist IP ${decision.id}:`, decisionError);
+              }
+            }
+          }
+        } catch (alertError) {
+          console.error(`Error syncing blocklist alert ${alert.id}:`, alertError);
+          errors++;
+        }
+      }
+
+      console.log(`✓ Blocklists sync completed: ${synced} new lists, ${updated} existing lists, ${ipsCount} IPs upserted, ${errors} errors`);
+      return { synced, updated, ips: ipsCount, errors };
+    } catch (error) {
+      console.error('Error syncing blocklists:', error);
+      return { synced: 0, updated: 0, ips: 0, errors: 1 };
+    }
   }
 }
 

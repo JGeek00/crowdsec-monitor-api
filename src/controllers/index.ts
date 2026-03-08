@@ -7,6 +7,9 @@ export { getAllDecisions, getDecisionById, getDecisionStats, createDecision, del
 // Allowlist controllers
 export { getAllowlists, getAllowlistByName, checkAllowlist } from './allowlists';
 
+// Blocklist controllers
+export { getBlocklists, getBlocklistById } from './blocklists';
+
 // Statistics controllers
 export { 
   getStatistics, 

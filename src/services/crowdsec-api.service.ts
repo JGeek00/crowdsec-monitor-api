@@ -99,19 +99,23 @@ export class CrowdSecAPIService {
     since?: string; 
     until?: string; 
     has_active_decision?: boolean;
+    origin?: string;
   }): Promise<CrowdSecAlert[]> {
     // Exclude CAPI alerts by default because they are huge (scope: 'Ip' or 'Range')
-    const scopes = ['Ip', 'Range'];
+    // const scopes = ['Ip', 'Range'];
 
     try {
       const headers = await this.getAuthHeaders();
 
       const queryParams = new URLSearchParams();
-      scopes.forEach(s => queryParams.append('scope', s));
+      // scopes.forEach(s => queryParams.append('scope', s));
       if (params?.since) queryParams.append('since', params.since);
       if (params?.until) queryParams.append('until', params.until);
       if (params?.has_active_decision !== undefined) {
         queryParams.append('has_active_decision', String(params.has_active_decision));
+      }
+      if (params?.origin) {
+        queryParams.append('origin', params.origin);
       }
 
       const response = await this.client.get('/v1/alerts', { params: queryParams, headers });

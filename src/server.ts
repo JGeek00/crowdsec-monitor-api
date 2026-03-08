@@ -62,6 +62,12 @@ const startServer = async (): Promise<void> => {
     if (isConnected) {
       console.log('Performing initial data sync...');
       await databaseService.syncAll();
+
+      // Blocklists sync runs in the background - does not block server startup
+      console.log('Starting initial blocklists sync in the background...');
+      databaseService.syncBlocklists().catch((err) => {
+        console.error('Error during initial blocklists sync:', err);
+      });
     }
 
     // Setup automatic sync with interval-based scheduler
@@ -88,6 +94,20 @@ const startServer = async (): Promise<void> => {
       {
         intervalSeconds: 3600, // 1 hour
         runImmediately: true, // Check immediately on startup
+      }
+    );
+
+    // Setup blocklists sync (every hour = 3600 seconds)
+    console.log('Setting up automatic blocklists sync (interval: 1 hour)...');
+    schedulerService.schedule(
+      'blocklists-sync',
+      async () => {
+        console.log('Running scheduled blocklists sync...');
+        await databaseService.syncBlocklists();
+      },
+      {
+        intervalSeconds: 3600, // 1 hour
+        runImmediately: false, // Already ran initial sync above
       }
     );
 

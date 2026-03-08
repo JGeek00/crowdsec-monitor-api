@@ -1,5 +1,7 @@
 import { Alert } from './Alert';
 import { Decision } from './Decision';
+import { Blocklist } from './Blocklist';
+import { BlocklistIp } from './BlocklistIp';
 
 // Define associations
 Alert.hasMany(Decision, {
@@ -13,4 +15,15 @@ Decision.belongsTo(Alert, {
   as: 'alert',
 });
 
-export { Alert, Decision };
+Blocklist.hasMany(BlocklistIp, {
+  sourceKey: 'id',
+  foreignKey: 'blocklist_id',
+  as: 'blocklistIps',
+});
+
+BlocklistIp.belongsTo(Blocklist, {
+  foreignKey: 'blocklist_id',
+  as: 'blocklist',
+});
+
+export { Alert, Decision, Blocklist, BlocklistIp };
