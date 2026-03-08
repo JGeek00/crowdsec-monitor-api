@@ -46,6 +46,8 @@ tags:
     description: CrowdSec security decisions operations
   - name: Allowlists
     description: CrowdSec allowlists operations
+  - name: Blocklists
+    description: Imported blocklists from CrowdSec LAPI (origins blocklist-import and lists)
   - name: Statistics
     description: Statistics and aggregated data operations
 
@@ -708,6 +710,96 @@ paths:
                   message:
                     type: string
                     example: "Allowlist 'known_ips' was not found"
+        '500':
+          description: Internal server error
+
+  /blocklists:
+    get:
+      tags:
+        - Blocklists
+      summary: List all blocklists
+      description: |
+        Retrieve all blocklists stored in the local database, synced from CrowdSec LAPI
+        with origins `blocklist-import` and `lists`. The list is refreshed on startup
+        and every hour in the background.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Unpaged'
+        - name: expand_ips
+          in: query
+          description: When `true`, include the full array of blocked IPs for each blocklist. Defaults to `false`.
+          schema:
+            type: boolean
+            default: false
+          example: true
+      responses:
+        '200':
+          description: List of blocklists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Blocklist'
+                  total:
+                    type: integer
+                    description: Total number of blocklists in the database
+                    example: 5
+                  limit:
+                    type: integer
+                    description: Page size used for this response
+                    example: 100
+                  offset:
+                    type: integer
+                    description: Offset used for this response
+                    example: 0
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+
+  /blocklists/{id}:
+    get:
+      tags:
+        - Blocklists
+      summary: Get a specific blocklist
+      description: |
+        Retrieve a single blocklist by its ID. Always includes the full list of
+        blocked IPs (`blocklistIps`) and the `count_ips` counter.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The numeric ID of the blocklist
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Blocklist details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BlocklistWithIps'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Blocklist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Blocklist not found
         '500':
           description: Internal server error
 
@@ -1410,6 +1502,81 @@ components:
           type: string
           description: The allowlist item value (IP address, range, etc.)
           example: '1.0.0.1'
+
+    Blocklist:
+      type: object
+      description: A blocklist entry (without IPs array). Includes `count_ips` with the number of blocked entries.
+      properties:
+        id:
+          type: integer
+          description: Blocklist primary key
+          example: 1
+        name:
+          type: string
+          description: |
+            Blocklist name. For `blocklist-import` origin this equals the alert `scenario`.
+            For `lists` origin this equals `source.scope` from the alert.
+          example: 'external/blocklist (Censys)'
+        count_ips:
+          type: integer
+          description: Number of IPs/ranges associated with this blocklist
+          example: 42
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-03-08T19:52:14.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2026-03-08T19:52:14.000Z'
+
+    BlocklistWithIps:
+      allOf:
+        - $ref: '#/components/schemas/Blocklist'
+        - type: object
+          properties:
+            blocklistIps:
+              type: array
+              description: Full list of blocked IPs/ranges belonging to this blocklist
+              items:
+                $ref: '#/components/schemas/BlocklistIp'
+
+    BlocklistIp:
+      type: object
+      description: A single blocked IP or range entry linked to a blocklist.
+      properties:
+        id:
+          type: integer
+          description: Decision ID from CrowdSec LAPI
+          example: 21619437
+        blocklist_id:
+          type: integer
+          description: FK referencing the parent blocklist
+          example: 1
+        scenario:
+          type: string
+          description: Scenario name from the CrowdSec decision
+          example: 'external/blocklist (Censys)'
+        value:
+          type: string
+          description: The blocked IP address or CIDR range
+          example: '192.35.168.0/23'
+        type:
+          type: string
+          description: Decision type (e.g. ban)
+          example: 'ban'
+        scope:
+          type: string
+          description: Decision scope (e.g. Ip, Range)
+          example: 'Range'
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-03-08T19:52:14.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2026-03-08T19:52:14.000Z'
 
     Allowlist:
       type: object

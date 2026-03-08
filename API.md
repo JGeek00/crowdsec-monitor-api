@@ -859,6 +859,163 @@ Check if IP addresses are present in any allowlist.
 
 ---
 
+## Blocklists Endpoints
+
+Blocklists are synced from CrowdSec LAPI on startup and refreshed every hour in the background. Two origins are fetched: `blocklist-import` (external blocklists) and `lists` (firehol-style lists). Data is stored locally in SQLite.
+
+---
+
+### GET `/api/v1/blocklists`
+
+List all blocklists stored in the local database.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `limit` | integer | No | 100 | Number of items to return |
+| `offset` | integer | No | 0 | Starting index |
+| `unpaged` | boolean | No | false | Return all results without pagination |
+| `expand_ips` | boolean | No | false | When `true`, includes the full `blocklistIps` array for each entry |
+
+**Example Requests:**
+```bash
+# Default list
+curl "http://localhost:3000/api/v1/blocklists"
+
+# With blocked IPs expanded
+curl "http://localhost:3000/api/v1/blocklists?expand_ips=true"
+
+# All results, no pagination
+curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
+```
+
+**Response (200 OK) — `expand_ips=false` (default):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "external/blocklist (Censys)",
+      "count_ips": 4,
+      "created_at": "2026-03-08T19:52:14.000Z",
+      "updated_at": "2026-03-08T19:52:14.000Z"
+    },
+    {
+      "id": 2,
+      "name": "lists:firehol_cruzit_web_attacks",
+      "count_ips": 13232,
+      "created_at": "2026-03-08T02:14:20.000Z",
+      "updated_at": "2026-03-08T02:14:20.000Z"
+    }
+  ],
+  "total": 2,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+**Response (200 OK) — `expand_ips=true`:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "external/blocklist (Censys)",
+      "count_ips": 4,
+      "created_at": "2026-03-08T19:52:14.000Z",
+      "updated_at": "2026-03-08T19:52:14.000Z",
+      "blocklistIps": [
+        {
+          "id": 21619437,
+          "blocklist_id": 1,
+          "scenario": "external/blocklist (Censys)",
+          "value": "192.35.168.0/23",
+          "type": "ban",
+          "scope": "Range",
+          "created_at": "2026-03-08T19:52:14.000Z",
+          "updated_at": "2026-03-08T19:52:14.000Z"
+        }
+      ]
+    }
+  ],
+  "total": 2,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+**Response Fields:**
+- `data` (array): Blocklist entries
+- `total` (integer): Total number of blocklists in the database
+- `limit` (integer): Page size applied
+- `offset` (integer): Offset applied
+- `count_ips` (integer): Number of blocked IPs/ranges in this blocklist
+- `blocklistIps` (array): Only present when `expand_ips=true`. Full list of blocked entries
+
+---
+
+### GET `/api/v1/blocklists/{id}`
+
+Get a specific blocklist by its numeric ID. Always returns the full `blocklistIps` array and `count_ips`.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | The numeric ID of the blocklist |
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/blocklists/1"
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "external/blocklist (Censys)",
+    "count_ips": 4,
+    "created_at": "2026-03-08T19:52:14.000Z",
+    "updated_at": "2026-03-08T19:52:14.000Z",
+    "blocklistIps": [
+      {
+        "id": 21619437,
+        "blocklist_id": 1,
+        "scenario": "external/blocklist (Censys)",
+        "value": "192.35.168.0/23",
+        "type": "ban",
+        "scope": "Range",
+        "created_at": "2026-03-08T19:52:14.000Z",
+        "updated_at": "2026-03-08T19:52:14.000Z"
+      },
+      {
+        "id": 21619438,
+        "blocklist_id": 1,
+        "scenario": "external/blocklist (Censys)",
+        "value": "162.142.125.0/24",
+        "type": "ban",
+        "scope": "Range",
+        "created_at": "2026-03-08T19:52:14.000Z",
+        "updated_at": "2026-03-08T19:52:14.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Response (404 Not Found):**
+```json
+{
+  "error": "Blocklist not found"
+}
+```
+
+---
+
 ## Statistics Endpoints
 
 ### GET `/api/v1/statistics`
