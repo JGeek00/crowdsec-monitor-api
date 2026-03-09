@@ -73,29 +73,26 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
     const { id } = req.params;
     const includeIps = req.query.expand_ips === 'true';
 
-    const queryOptions: any = {
-      attributes: {
-        include: [COUNT_IPS_ATTRIBUTE],
-      },
-    };
+    const blocklistQuery = Blocklist.findByPk(Number(id), {
+      attributes: { include: [COUNT_IPS_ATTRIBUTE] },
+    });
+    const ipsQuery = includeIps
+      ? BlocklistIp.findAll({ where: { blocklist_id: Number(id) }, order: [['id', 'ASC']], raw: true })
+      : Promise.resolve(null);
 
-    if (includeIps) {
-      queryOptions.include = [
-        {
-          model: BlocklistIp,
-          as: 'blocklistIps',
-        },
-      ];
-    }
-
-    const blocklist = await Blocklist.findByPk(Number(id), queryOptions);
+    const [blocklist, ips] = await Promise.all([blocklistQuery, ipsQuery]);
 
     if (!blocklist) {
       res.status(404).json({ error: 'Blocklist not found' });
       return;
     }
 
-    res.status(200).json({ data: blocklist });
+    const result: any = blocklist.toJSON();
+    if (ips !== null) {
+      result.blocklistIps = ips;
+    }
+
+    res.status(200).json({ data: result });
   } catch (error) {
     if (signal.aborted) return;
     console.error('Error fetching blocklist:', error);
