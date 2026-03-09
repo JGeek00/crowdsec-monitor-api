@@ -11,17 +11,31 @@ services:
       - CROWDSEC_LAPI_URL=http://<crowdsec container_name>:8080
       - CROWDSEC_USER=crowdsec_user
       - CROWDSEC_PASSWORD=crowdsec_password
-      - DB_MODE=sqlite # Options: sqlite, postgres
-      - DB_PATH=/app/database/crowdsec.db # Required when DB_MODE=sqlite
-      # PostgreSQL connection (required when DB_MODE=postgres)
-      # - DB_MODE=postgres
-      # - POSTGRES_HOST=crowdsec-postgres:5432
-      # - POSTGRES_USER=postgres
-      # - POSTGRES_PASSWORD=changeme
-      # - POSTGRES_DB=crowdsec-monitor
+      - DB_MODE=postgres # Options: sqlite, postgres
+      - POSTGRES_HOST=crowdsec-postgres:5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=crowdsec-monitor
       - SYNC_INTERVAL_SECONDS=30 # Optional, interval in seconds (default 30 seconds)
       - DATA_RETENTION=2w # Optional, default is indefinite
       - API_PASSWORD= # Optional, leave empty to disable authentication
       - RATE_LIMIT= # Optional, format: <requests>/<minutes>, leave empty to disable rate limiting
+    depends_on:
+      crowdsec-postgres:
+        condition: service_healthy
+
+  crowdsec-postgres:
+    image: postgres:18-alpine
+    container_name: crowdsec-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: crowdsec-monitor
     volumes:
-      - ./database:/app/database
+      - ./pg-database:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

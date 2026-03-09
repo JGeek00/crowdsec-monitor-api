@@ -354,6 +354,12 @@ export class DatabaseService {
     await processOrigin('blocklist-import');
     await processOrigin('lists');
 
+    // Compact the WAL back into the main DB file after a large write session.
+    // This is a no-op (and would error) on PostgreSQL, so guard with the mode check.
+    if (config.database.mode === 'sqlite') {
+      await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');
+    }
+
     console.log(`✓ Blocklists sync completed: ${synced} new lists, ${updated} existing lists, ${ipsCount} IPs upserted, ${errors} errors`);
     return { synced, updated, ips: ipsCount, errors };
   }

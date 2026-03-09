@@ -11,14 +11,14 @@ export async function getScenarioHistory(req: Request, res: Response): Promise<v
   try {
     const { item } = req.params;
 
-    // Use raw SQL query to group by date
+    // Use raw SQL query to group by date — DATE() works on both SQLite and PostgreSQL
     const history = await Alert.sequelize!.query(
       `SELECT 
-        strftime('%Y-%m-%d', crowdsec_created_at) as date,
+        DATE(crowdsec_created_at) as date,
         COUNT(*) as amount
-      FROM Alerts
+      FROM alerts
       WHERE scenario = :scenario
-      GROUP BY strftime('%Y-%m-%d', crowdsec_created_at)
+      GROUP BY DATE(crowdsec_created_at)
       ORDER BY date ASC`,
       {
         replacements: { scenario: item },

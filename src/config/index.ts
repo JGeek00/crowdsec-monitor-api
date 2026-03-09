@@ -3,6 +3,45 @@ import { defaults } from './defaults';
 
 dotenv.config();
 
+// Validate and parse DB_MODE with its required env vars
+const parseDbMode = (): 'sqlite' | 'postgres' => {
+  const mode = (process.env.DB_MODE || 'sqlite').trim().toLowerCase();
+
+  if (mode === 'sqlite') {
+    if (!process.env.DB_PATH && !defaults.database.path) {
+      console.error('ERROR: DB_MODE is sqlite but DB_PATH is not defined.');
+      process.exit(1);
+    }
+    return 'sqlite';
+  }
+
+  if (mode === 'postgres') {
+    const required = ['POSTGRES_HOST', 'POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_DB'];
+    const missing = required.filter(v => !process.env[v]);
+    if (missing.length > 0) {
+      console.error(`ERROR: DB_MODE is postgres but the following variables are not defined: ${missing.join(', ')}`);
+      process.exit(1);
+    }
+    return 'postgres';
+  }
+
+  console.error(`ERROR: Invalid DB_MODE "${mode}". Allowed values: "sqlite", "postgres".`);
+  process.exit(1);
+};
+
+// Parse POSTGRES_HOST which may include the port (host:port or just host)
+const parsePostgresHost = (hostStr?: string): { host: string; port: number } => {
+  if (!hostStr) return { host: 'localhost', port: 5432 };
+  const colonIdx = hostStr.lastIndexOf(':');
+  if (colonIdx !== -1) {
+    const port = parseInt(hostStr.slice(colonIdx + 1), 10);
+    if (!isNaN(port)) {
+      return { host: hostStr.slice(0, colonIdx), port };
+    }
+  }
+  return { host: hostStr, port: 5432 };
+};
+
 // Parse rate limit from environment variable (format: <requests>/<minutes>)
 const parseRateLimit = (rateLimitStr: string | undefined): { max: number; windowMs: number } | null => {
   if (!rateLimitStr) {
@@ -40,8 +79,19 @@ export const config = {
     password: process.env.CROWDSEC_PASSWORD || defaults.crowdsec.password,
   },
   database: {
+    mode: parseDbMode(),
     path: process.env.DB_PATH || defaults.database.path,
     retention: process.env.DATA_RETENTION || undefined,
+    postgres: (() => {
+      const { host, port } = parsePostgresHost(process.env.POSTGRES_HOST);
+      return {
+        host,
+        port,
+        user: process.env.POSTGRES_USER || '',
+        password: process.env.POSTGRES_PASSWORD || '',
+        database: process.env.POSTGRES_DB || '',
+      };
+    })(),
   },
   sync: {
     intervalSeconds: process.env.SYNC_INTERVAL_SECONDS 

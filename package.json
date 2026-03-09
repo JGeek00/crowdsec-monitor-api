@@ -24,6 +24,8 @@
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
+    "pg": "^8.20.0",
+    "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   },

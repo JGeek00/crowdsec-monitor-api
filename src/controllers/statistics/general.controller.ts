@@ -52,23 +52,23 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     // 3. Activity history - Get all alerts and decisions grouped by date
     const alertsByDate = await Alert.findAll({
       attributes: [
-        [Alert.sequelize!.fn('strftime', '%Y-%m-%d', Alert.sequelize!.col('crowdsec_created_at')), 'date'],
+        [Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at')), 'date'],
         [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],
       ],
       where: whereClauseAlerts,
-      group: [Alert.sequelize!.fn('strftime', '%Y-%m-%d', Alert.sequelize!.col('crowdsec_created_at'))],
-      order: [[Alert.sequelize!.fn('strftime', '%Y-%m-%d', Alert.sequelize!.col('crowdsec_created_at')), 'ASC']],
+      group: [Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at'))],
+      order: [[Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at')), 'ASC']],
       raw: true,
     }) as any[];
 
     const decisionsByDate = await Decision.findAll({
       attributes: [
-        [Decision.sequelize!.fn('strftime', '%Y-%m-%d', Decision.sequelize!.col('crowdsec_created_at')), 'date'],
+        [Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at')), 'date'],
         [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],
       ],
       where: whereClauseDecisions,
-      group: [Decision.sequelize!.fn('strftime', '%Y-%m-%d', Decision.sequelize!.col('crowdsec_created_at'))],
-      order: [[Decision.sequelize!.fn('strftime', '%Y-%m-%d', Decision.sequelize!.col('crowdsec_created_at')), 'ASC']],
+      group: [Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at'))],
+      order: [[Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at')), 'ASC']],
       raw: true,
     }) as any[];
 
