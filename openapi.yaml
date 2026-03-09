@@ -5,7 +5,8 @@ info:
     REST API to monitor and query data from CrowdSec LAPI (Local API).
     
     The API provides persistent storage and query interface for CrowdSec security alerts and decisions,
-    automatically syncing data from your CrowdSec LAPI instance and storing it in a local SQLite database.
+    automatically syncing data from your CrowdSec LAPI instance and storing it in a local SQLite or
+    PostgreSQL database (configurable via the `DB_MODE` environment variable).
     
     ## Authentication
     
@@ -768,8 +769,9 @@ paths:
         - Blocklists
       summary: Get a specific blocklist
       description: |
-        Retrieve a single blocklist by its ID. Always includes the full list of
-        blocked IPs (`blocklistIps`) and the `count_ips` counter.
+        Retrieve a single blocklist by its ID. By default returns only metadata and `count_ips`.
+        Pass `expand_ips=true` to include the full `blocklistIps` array.
+        For large blocklists consider using `GET /blocklists/{blocklistId}/ips` instead, which supports pagination.
       parameters:
         - name: id
           in: path
@@ -778,6 +780,13 @@ paths:
           schema:
             type: integer
           example: 1
+        - name: expand_ips
+          in: query
+          description: When `true`, include the full array of blocked IPs. Defaults to `false`.
+          schema:
+            type: boolean
+            default: false
+          example: true
       responses:
         '200':
           description: Blocklist details
@@ -787,7 +796,87 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/BlocklistWithIps'
+                    oneOf:
+                      - $ref: '#/components/schemas/Blocklist'
+                      - $ref: '#/components/schemas/BlocklistWithIps'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Blocklist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Blocklist not found
+        '500':
+          description: Internal server error
+
+  /blocklists/{blocklistId}/ips:
+    get:
+      tags:
+        - Blocklists
+      summary: Get paginated IPs for a blocklist
+      description: |
+        Retrieve blocked IPs/ranges for a specific blocklist with pagination support.
+        This is the recommended endpoint for large blocklists instead of `expand_ips=true`.
+        Returns results ordered by `id` ascending.
+      parameters:
+        - name: blocklistId
+          in: path
+          required: true
+          description: The numeric ID of the blocklist
+          schema:
+            type: integer
+          example: 8
+        - name: limit
+          in: query
+          description: Number of items to return (must be positive)
+          schema:
+            type: integer
+            minimum: 1
+            default: 50
+        - name: offset
+          in: query
+          description: Starting index (must be non-negative)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: unpaged
+          in: query
+          description: Disable pagination and return all results. Use with caution on large blocklists.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Paginated list of blocked IPs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BlocklistIp'
+                  total:
+                    type: integer
+                    description: Total number of IPs in this blocklist
+                    example: 48568
+                  limit:
+                    type: integer
+                    description: Page size used for this response
+                    example: 50
+                  offset:
+                    type: integer
+                    description: Offset used for this response
+                    example: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':

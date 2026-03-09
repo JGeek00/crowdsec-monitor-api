@@ -17,12 +17,11 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 - **Rate Limiting**: Protection against API abuse (optional)
 - **Security Hardened**: Helmet and CORS configured
 - **Normalized Relations**: Decisions linked to alerts via foreign keys
-- **Optimized Indexes**: Fast queries on common fields
-
+- **PostgreSQL support**: You can use PostgreSQL instead of SQLite if you prefer it.
 
 ## Deployment
-
-1. Get the [provided docker-compose file](https://github.com/JGeek00/crowdsec-monitor-api/blob/master/docker-compose.yml). I recommend adding the ``crowdsec-monitor-api`` block on the same docker-compose file where you have your existing CrowdSec instance.
+1. Choose if you want to use SQLite or PostgreSQL as your database. By default SQLite is used and recommended for most deployments.
+1. Get the [provided docker-compose file (SQLite)](https://github.com/JGeek00/crowdsec-monitor-api/blob/master/docker-compose.yml) or the [PostgreSQL one](https://github.com/JGeek00/crowdsec-monitor-api/blob/master/docker-compose-postgres.yml) I recommend adding the ``crowdsec-monitor-api`` block on the same docker-compose file where you have your existing CrowdSec instance.
 2. Generate a random key: ``openssl rand -hex 32``
 3. Create the machine on CrowdSec. Open a terminal inside the CrowdSec container and run: ``cscli machines add crowdsec-monitor --password <generated_key> -f /dev/null``.
 4. On the docker-compose file, replace the `<crowdsec container_name>` string with the value that you have given to the `container_name` parameter on the CrwodSec container.
@@ -32,12 +31,35 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 
 ### Environment Variables
 
+#### CrowdSec connection
+
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `CROWDSEC_LAPI_URL` | CrowdSec LAPI URL | `http://localhost:8080` | Yes |
 | `CROWDSEC_USER` | CrowdSec machine ID | - | Yes |
 | `CROWDSEC_PASSWORD` | CrowdSec password | - | Yes |
-| `DB_PATH` | SQLite database path | `./database/crowdsec.db` | No |
+
+#### SQLite database
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DB_MODE` | Database mode | `sqlite` | No |
+| `DB_PATH` | SQLite database path | `./database/crowdsec.db` | Yes |
+
+#### PostgreSQL database
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DB_MODE` | Database mode | - | Yes |
+| `POSTGRES_HOST` | PostgreSQL machine IP and port | - | Yes |
+| `POSTGRES_USER` | User that has access to the database | - | Yes |
+| `POSTGRES_PASSWORD` | Password for that user | - | Yes |
+| `POSTGRES_DB` | Database in PostgreSQL for this application | - | Yes |
+
+#### Others
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
 | `DATA_RETENTION` | Auto-delete old data period | disabled | No |
 | `SYNC_INTERVAL_SECONDS` | Interval in seconds between syncs | `30` | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |

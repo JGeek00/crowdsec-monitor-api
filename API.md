@@ -861,7 +861,7 @@ Check if IP addresses are present in any allowlist.
 
 ## Blocklists Endpoints
 
-Blocklists are synced from CrowdSec LAPI on startup and refreshed every hour in the background. Two origins are fetched: `blocklist-import` (external blocklists) and `lists` (firehol-style lists). Data is stored locally in SQLite.
+Blocklists are synced from CrowdSec LAPI on startup and refreshed every hour in the background. Two origins are fetched: `blocklist-import` (external blocklists) and `lists` (firehol-style lists). Data is stored locally in SQLite or PostgreSQL depending on the `DB_MODE` environment variable.
 
 ---
 
@@ -958,7 +958,7 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 
 ### GET `/api/v1/blocklists/{id}`
 
-Get a specific blocklist by its numeric ID. Returns the blocklist metadata and optionally the full `blocklistIps` array.
+Get a specific blocklist by its numeric ID. Returns the blocklist metadata. Use `expand_ips=true` to include the full `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
 
 **Authentication:** Required if `API_PASSWORD` is set
 
@@ -970,15 +970,31 @@ Get a specific blocklist by its numeric ID. Returns the blocklist metadata and o
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `expand_ips` | boolean | No | false | When `true`, includes the full `blocklistIps` array |
+| `expand_ips` | boolean | No | false | When `true`, includes the full `blocklistIps` array in the response |
 
 **Example Requests:**
 ```bash
+# Metadata only
 curl "http://localhost:3000/api/v1/blocklists/1"
+
+# With full IP list
 curl "http://localhost:3000/api/v1/blocklists/1?expand_ips=true"
 ```
 
-**Response (200 OK):**
+**Response (200 OK) — default (`expand_ips=false`):**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "external/blocklist (Censys)",
+    "count_ips": 4,
+    "created_at": "2026-03-08T19:52:14.000Z",
+    "updated_at": "2026-03-08T19:52:14.000Z"
+  }
+}
+```
+
+**Response (200 OK) — `expand_ips=true`:**
 ```json
 {
   "data": {
@@ -1009,6 +1025,70 @@ curl "http://localhost:3000/api/v1/blocklists/1?expand_ips=true"
   "error": "Blocklist not found"
 }
 ```
+
+---
+
+### GET `/api/v1/blocklists/{blocklistId}/ips`
+
+Get paginated IPs for a specific blocklist. Recommended alternative to `expand_ips=true` for large blocklists.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `blocklistId` | integer | Yes | The numeric ID of the blocklist |
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `limit` | integer | No | 50 | Number of items to return (must be positive) |
+| `offset` | integer | No | 0 | Starting index (must be non-negative) |
+| `unpaged` | boolean | No | false | Return all results without pagination |
+
+**Example Requests:**
+```bash
+# First page (50 results)
+curl "http://localhost:3000/api/v1/blocklists/8/ips"
+
+# Second page
+curl "http://localhost:3000/api/v1/blocklists/8/ips?limit=50&offset=50"
+
+# All IPs without pagination
+curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true"
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 21619437,
+      "blocklist_id": 8,
+      "scenario": "lists:firehol_cruzit_web_attacks",
+      "value": "1.10.16.0/20",
+      "type": "ban",
+      "scope": "Range",
+      "created_at": "2026-03-08T02:14:20.000Z",
+      "updated_at": "2026-03-08T02:14:20.000Z"
+    }
+  ],
+  "total": 48568,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Response (404 Not Found):**
+```json
+{
+  "error": "Blocklist not found"
+}
+```
+
+**Notes:**
+- Returns IPs ordered by `id` ascending
+- Use `unpaged=true` with caution on large blocklists — some have 40 000+ entries
 
 ---
 
