@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { Alert, Decision, Blocklist, BlocklistIp } from '../models';
+import { sequelize } from '../config/database';
 import { crowdSecAPI } from './crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '../utils/duration';
 import { config } from '../config';
@@ -253,17 +254,17 @@ export class DatabaseService {
   /**
    * Sync blocklists from CrowdSec LAPI to local database.
    *
-   * Strategy to minimise DB lock time:
-   *  1. Fetch and write "blocklist-import" fully before starting "lists".
-   *  2. For each alert, upsert the Blocklist row in one small lock acquisition.
-   *  3. Write its IPs in chunks of BLOCKLIST_IP_CHUNK_SIZE using bulkCreate
-   *     (INSERT OR REPLACE), one lock acquisition per chunk.
-   *
-   * This keeps individual lock windows tiny and allows syncAlerts to interleave
-   * between chunks when the scheduler fires.
+   * Strategy:
+   *  1. Fetch all data from network BEFORE acquiring any write lock.
+   *  2. Upsert the Blocklist (name) row with one small lock acquisition.
+   *  3. Write ALL IPs for that blocklist in ONE SQLite transaction.
+   *     A single BEGIN/COMMIT per blocklist keeps the WAL file small and
+   *     prevents the accumulation of hundreds of micro-transactions that
+   *     slow down subsequent reads (WAL frame scanning overhead).
+   *  4. Checkpoint the WAL after the sync to compact it back to the main DB.
    */
   async syncBlocklists(): Promise<{ synced: number; updated: number; ips: number; errors: number }> {
-    const CHUNK_SIZE = 100;
+    const CHUNK_SIZE = 1000; // rows per bulkCreate call inside the transaction
     let synced = 0;
     let updated = 0;
     let ipsCount = 0;
@@ -313,34 +314,33 @@ export class DatabaseService {
 
           if (!alert.decisions?.length) continue;
 
-          // --- Write IPs in chunks (one lock acquisition per chunk) ---
-          const totalChunks = Math.ceil(alert.decisions.length / CHUNK_SIZE);
-          for (let i = 0; i < alert.decisions.length; i += CHUNK_SIZE) {
-            const chunkIndex = Math.floor(i / CHUNK_SIZE) + 1;
-            const chunk = alert.decisions.slice(i, i + CHUNK_SIZE).map(d => ({
-              id: d.id,
-              blocklist_id: blocklistInstance.id,
-              scenario: d.scenario,
-              value: d.value,
-              type: d.type,
-              scope: d.scope,
-              updated_at: new Date(),
-            }));
-
-            try {
-              await this.acquireWriteLock(() =>
-                BlocklistIp.bulkCreate(chunk, {
+          // --- Write ALL IPs for this blocklist in ONE transaction ---
+          // One BEGIN/COMMIT vs. N×(CHUNK_SIZE=100) keeps the WAL file small.
+          const decisions = alert.decisions;
+          await this.acquireWriteLock(async () => {
+            await sequelize.transaction(async (t) => {
+              for (let i = 0; i < decisions.length; i += CHUNK_SIZE) {
+                const chunk = decisions.slice(i, i + CHUNK_SIZE).map(d => ({
+                  id: d.id,
+                  blocklist_id: blocklistInstance.id,
+                  scenario: d.scenario,
+                  value: d.value,
+                  type: d.type,
+                  scope: d.scope,
+                  updated_at: new Date(),
+                }));
+                await BlocklistIp.bulkCreate(chunk, {
+                  transaction: t,
                   updateOnDuplicate: ['blocklist_id', 'scenario', 'value', 'type', 'scope', 'updated_at'],
-                })
-              );
-              ipsCount += chunk.length;
-              ipsDone += chunk.length;
-              const ipPct = totalIps > 0 ? Math.round((ipsDone / totalIps) * 100) : 100;
-              console.log(`[${origin}] IPs: chunk ${chunkIndex}/${totalChunks} for "${name}" — ${ipsDone}/${totalIps} (${ipPct}%)`);
-            } catch (chunkError) {
-              console.error(`Error writing IP chunk for blocklist "${name}" (offset ${i}):`, chunkError);
-            }
-          }
+                });
+              }
+            });
+          });
+
+          ipsCount += decisions.length;
+          ipsDone += decisions.length;
+          const ipPct = totalIps > 0 ? Math.round((ipsDone / totalIps) * 100) : 100;
+          console.log(`[${origin}] IPs written for "${name}": ${ipsDone}/${totalIps} (${ipPct}%)`);
         } catch (alertError) {
           console.error(`Error syncing blocklist alert ${alert.id}:`, alertError);
           errors++;

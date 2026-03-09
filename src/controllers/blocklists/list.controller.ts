@@ -22,7 +22,6 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
     const includeIps = expand_ips === 'true';
 
     const queryOptions: any = {
-      signal,
       attributes: {
         include: [COUNT_IPS_ATTRIBUTE],
       },
@@ -65,25 +64,31 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
 
 /**
  * Get a specific blocklist by ID.
- * Always includes the full blocklistIps array and count_ips.
+ * Query params:
+ *   - expand_ips=true  → include the full blocklistIps array (default: false)
  */
 export async function getBlocklistById(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;
+    const includeIps = req.query.expand_ips === 'true';
 
-    const blocklist = await Blocklist.findByPk(Number(id), {
-      signal,
+    const queryOptions: any = {
       attributes: {
         include: [COUNT_IPS_ATTRIBUTE],
       },
-      include: [
+    };
+
+    if (includeIps) {
+      queryOptions.include = [
         {
           model: BlocklistIp,
           as: 'blocklistIps',
         },
-      ],
-    });
+      ];
+    }
+
+    const blocklist = await Blocklist.findByPk(Number(id), queryOptions);
 
     if (!blocklist) {
       res.status(404).json({ error: 'Blocklist not found' });

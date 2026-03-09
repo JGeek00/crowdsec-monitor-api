@@ -58,7 +58,6 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
 
     // Fetch all decisions for filtering options (from entire database)
     const allDecisions = await Decision.findAll({
-      signal,
       attributes: ['source'],
       raw: true,
     });
@@ -83,7 +82,6 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
 
     // Fetch decisions with filters
     let decisions = await Decision.findAll({
-      signal,
       where,
       attributes: {
         exclude: ['created_at', 'updated_at']

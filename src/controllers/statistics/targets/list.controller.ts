@@ -9,7 +9,6 @@ export async function getTopTargets(req: Request, res: Response): Promise<void> 
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const alerts = await Alert.findAll({
-      signal,
       attributes: ['events'],
       raw: true,
     });

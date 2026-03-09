@@ -23,7 +23,6 @@ export async function getScenarioHistory(req: Request, res: Response): Promise<v
       {
         replacements: { scenario: item },
         type: QueryTypes.SELECT,
-        signal,
       }
     );
 

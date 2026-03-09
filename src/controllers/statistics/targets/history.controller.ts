@@ -12,7 +12,6 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
 
     // Get all alerts with their dates and events
     const alerts = await Alert.findAll({
-      signal,
       attributes: ['crowdsec_created_at', 'events'],
       raw: true,
     });

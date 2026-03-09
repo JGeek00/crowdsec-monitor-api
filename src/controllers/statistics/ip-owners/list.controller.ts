@@ -9,7 +9,6 @@ export async function getTopIpOwners(req: Request, res: Response): Promise<void>
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const alertsWithSource = await Alert.findAll({
-      signal,
       attributes: ['source'],
       raw: true,
     });

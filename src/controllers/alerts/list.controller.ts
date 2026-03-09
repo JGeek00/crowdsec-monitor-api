@@ -65,7 +65,6 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     // Fetch all alerts for filtering options (from entire database)
     const allAlerts = await Alert.findAll({
-      signal,
       attributes: ['scenario', 'source', 'events'],
       raw: true,
     });
@@ -115,7 +114,6 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     // Fetch all alerts matching basic filters
     let alerts = await Alert.findAll({
-      signal,
       where,
       attributes: {
         exclude: ['created_at', 'updated_at']

@@ -8,10 +8,9 @@ import { createRequestSignal } from '../../utils/request-signal';
 export async function getDecisionStats(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const total = await Decision.count({ signal }) as number;
+    const total = await Decision.count() as number;
 
     const byType = await Decision.findAll({
-      signal,
       attributes: [
         'type',
         [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],
@@ -21,7 +20,6 @@ export async function getDecisionStats(req: Request, res: Response): Promise<voi
     });
 
     const byScope = await Decision.findAll({
-      signal,
       attributes: [
         'scope',
         [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],

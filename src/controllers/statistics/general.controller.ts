@@ -35,7 +35,6 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
     const alertsLast24Hours = await Alert.count({
-      signal,
       where: {
         crowdsec_created_at: { [Op.gte]: twentyFourHoursAgo },
       },
@@ -44,7 +43,6 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     // 2. Active decisions (not expired)
     const now = new Date();
     const activeDecisions = await Decision.count({
-      signal,
       where: {
         expiration: { [Op.gt]: now },
         ...(sinceDate ? { crowdsec_created_at: { [Op.gte]: sinceDate } } : {}),
@@ -53,7 +51,6 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
     // 3. Activity history - Get all alerts and decisions grouped by date
     const alertsByDate = await Alert.findAll({
-      signal,
       attributes: [
         [Alert.sequelize!.fn('strftime', '%Y-%m-%d', Alert.sequelize!.col('crowdsec_created_at')), 'date'],
         [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],
@@ -65,7 +62,6 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     }) as any[];
 
     const decisionsByDate = await Decision.findAll({
-      signal,
       attributes: [
         [Decision.sequelize!.fn('strftime', '%Y-%m-%d', Decision.sequelize!.col('crowdsec_created_at')), 'date'],
         [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],
@@ -103,7 +99,6 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
     // 4. Top countries - Get all alerts with source and events information
     const alertsWithSource = await Alert.findAll({
-      signal,
       attributes: ['source', 'events'],
       where: whereClauseAlerts,
       raw: true,
@@ -172,7 +167,6 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
     // 5. Top scenarios
     const scenariosData = await Alert.findAll({
-      signal,
       attributes: [
         'scenario',
         [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],

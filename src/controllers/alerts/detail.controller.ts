@@ -48,7 +48,6 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const alert = await Alert.findByPk(id, {
-      signal,
       attributes: {
         exclude: ['created_at', 'updated_at']
       },

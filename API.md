@@ -958,7 +958,7 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 
 ### GET `/api/v1/blocklists/{id}`
 
-Get a specific blocklist by its numeric ID. Always returns the full `blocklistIps` array and `count_ips`.
+Get a specific blocklist by its numeric ID. Returns the blocklist metadata and optionally the full `blocklistIps` array.
 
 **Authentication:** Required if `API_PASSWORD` is set
 
@@ -967,9 +967,15 @@ Get a specific blocklist by its numeric ID. Always returns the full `blocklistIp
 |-----------|------|----------|-------------|
 | `id` | integer | Yes | The numeric ID of the blocklist |
 
-**Example Request:**
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `expand_ips` | boolean | No | false | When `true`, includes the full `blocklistIps` array |
+
+**Example Requests:**
 ```bash
 curl "http://localhost:3000/api/v1/blocklists/1"
+curl "http://localhost:3000/api/v1/blocklists/1?expand_ips=true"
 ```
 
 **Response (200 OK):**
@@ -987,16 +993,6 @@ curl "http://localhost:3000/api/v1/blocklists/1"
         "blocklist_id": 1,
         "scenario": "external/blocklist (Censys)",
         "value": "192.35.168.0/23",
-        "type": "ban",
-        "scope": "Range",
-        "created_at": "2026-03-08T19:52:14.000Z",
-        "updated_at": "2026-03-08T19:52:14.000Z"
-      },
-      {
-        "id": 21619438,
-        "blocklist_id": 1,
-        "scenario": "external/blocklist (Censys)",
-        "value": "162.142.125.0/24",
         "type": "ban",
         "scope": "Range",
         "created_at": "2026-03-08T19:52:14.000Z",

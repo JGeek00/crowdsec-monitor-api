@@ -9,7 +9,6 @@ export async function getTopScenarios(req: Request, res: Response): Promise<void
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const scenariosData = await Alert.findAll({
-      signal,
       attributes: [
         'scenario',
         [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],

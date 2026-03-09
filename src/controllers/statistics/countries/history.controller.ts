@@ -13,7 +13,6 @@ export async function getCountryHistory(req: Request, res: Response): Promise<vo
 
     // Get all alerts with their dates and sources
     const alerts = await Alert.findAll({
-      signal,
       attributes: ['crowdsec_created_at', 'source'],
       raw: true,
     });
