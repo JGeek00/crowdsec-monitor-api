@@ -24,6 +24,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
     const queryOptions: any = {
       attributes: {
         include: [COUNT_IPS_ATTRIBUTE],
+        exclude: ['created_at', 'updated_at'],
       },
       order: [['name', 'ASC']],
     };
@@ -33,6 +34,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
         {
           model: BlocklistIp,
           as: 'blocklistIps',
+          attributes: { exclude: ['created_at', 'updated_at'] },
         },
       ];
     }
@@ -74,10 +76,18 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
     const includeIps = req.query.expand_ips === 'true';
 
     const blocklistQuery = Blocklist.findByPk(Number(id), {
-      attributes: { include: [COUNT_IPS_ATTRIBUTE] },
+      attributes: { 
+        include: [COUNT_IPS_ATTRIBUTE],
+        exclude: ['created_at', 'updated_at'],
+      },
     });
     const ipsQuery = includeIps
-      ? BlocklistIp.findAll({ where: { blocklist_id: Number(id) }, order: [['id', 'ASC']], raw: true })
+      ? BlocklistIp.findAll({ 
+          where: { blocklist_id: Number(id) }, 
+          order: [['id', 'ASC']], 
+          attributes: { exclude: ['created_at', 'updated_at'] }, 
+          raw: true 
+        })
       : Promise.resolve(null);
 
     const [blocklist, ips] = await Promise.all([blocklistQuery, ipsQuery]);

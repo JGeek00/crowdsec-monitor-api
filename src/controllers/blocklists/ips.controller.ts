@@ -26,6 +26,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
     const queryOptions: any = {
       where: { blocklist_id: Number(blocklistId) },
       order: [['id', 'ASC']],
+      attributes: ['value'],
     };
 
     if (unpaged !== 'true') {
@@ -39,7 +40,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
     });
 
     res.status(200).json({
-      data: ips,
+      data: ips.map((ip: any) => ip.value),
       total,
       limit: unpaged === 'true' ? total : Number(limit),
       offset: unpaged === 'true' ? 0 : Number(offset),
