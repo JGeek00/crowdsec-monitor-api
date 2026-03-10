@@ -727,13 +727,17 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Unpaged'
-        - name: expand_ips
+        - name: return_ips
           in: query
-          description: When `true`, include the full array of blocked IPs for each blocklist. Defaults to `false`.
+          description: |
+            Controls whether `blocklistIps` is included in each entry.
+            - `full`: include full IP objects
+            - `ip_string`: include plain IP/range strings
+            - Omit to exclude `blocklistIps` entirely.
           schema:
-            type: boolean
-            default: false
-          example: true
+            type: string
+            enum: [full, ip_string]
+          example: full
       responses:
         '200':
           description: List of blocklists
@@ -770,7 +774,7 @@ paths:
       summary: Get a specific blocklist
       description: |
         Retrieve a single blocklist by its ID. By default returns only metadata and `count_ips`.
-        Pass `expand_ips=true` to include the full `blocklistIps` array.
+        Pass `return_ips=full` to include the full `blocklistIps` array, or `return_ips=ip_string` to get plain IP strings.
         For large blocklists consider using `GET /blocklists/{blocklistId}/ips` instead, which supports pagination.
       parameters:
         - name: id
@@ -780,13 +784,17 @@ paths:
           schema:
             type: integer
           example: 1
-        - name: expand_ips
+        - name: return_ips
           in: query
-          description: When `true`, include the full array of blocked IPs. Defaults to `false`.
+          description: |
+            Controls whether `blocklistIps` is included in the response.
+            - `full`: include full IP objects
+            - `ip_string`: include plain IP/range strings
+            - Omit to exclude `blocklistIps` entirely.
           schema:
-            type: boolean
-            default: false
-          example: true
+            type: string
+            enum: [full, ip_string]
+          example: full
       responses:
         '200':
           description: Blocklist details
@@ -799,6 +807,7 @@ paths:
                     oneOf:
                       - $ref: '#/components/schemas/Blocklist'
                       - $ref: '#/components/schemas/BlocklistWithIps'
+                      - $ref: '#/components/schemas/BlocklistWithIpStrings'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -851,6 +860,13 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: ip_string
+          in: query
+          description: When `true`, `data` is returned as an array of plain IP/range strings instead of full objects.
+          schema:
+            type: boolean
+            default: false
+          example: true
       responses:
         '200':
           description: Paginated list of blocked IPs
@@ -860,9 +876,16 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/BlocklistIp'
+                    oneOf:
+                      - type: array
+                        description: Full IP objects (default)
+                        items:
+                          $ref: '#/components/schemas/BlocklistIp'
+                      - type: array
+                        description: Plain IP/range strings (when ip_string=true)
+                        items:
+                          type: string
+                          example: '1.10.16.0/20'
                   total:
                     type: integer
                     description: Total number of IPs in this blocklist
@@ -1629,6 +1652,18 @@ components:
               description: Full list of blocked IPs/ranges belonging to this blocklist
               items:
                 $ref: '#/components/schemas/BlocklistIp'
+
+    BlocklistWithIpStrings:
+      allOf:
+        - $ref: '#/components/schemas/Blocklist'
+        - type: object
+          properties:
+            blocklistIps:
+              type: array
+              description: Plain IP/range strings belonging to this blocklist
+              items:
+                type: string
+                example: '192.35.168.0/23'
 
     BlocklistIp:
       type: object

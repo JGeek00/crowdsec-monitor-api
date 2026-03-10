@@ -11,15 +11,17 @@ const COUNT_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
 /**
  * Get all blocklists.
  * Query params:
- *   - expand_ips=true  → include blocklistIps array in each item (default: false)
- *   - unpaged=true   → return all results without pagination
- *   - limit / offset → pagination (default limit 100, offset 0)
+ *   - include_ips=full       → include blocklistIps as full objects
+ *   - include_ips=ip_string  → include blocklistIps as plain IP strings
+ *   - unpaged=true          → return all results without pagination
+ *   - limit / offset        → pagination (default limit 100, offset 0)
  */
 export async function getBlocklists(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const { limit = 100, offset = 0, unpaged, expand_ips } = req.query;
-    const includeIps = expand_ips === 'true';
+    const { limit = 100, offset = 0, unpaged, include_ips } = req.query;
+    const includeIps = include_ips === 'full' || include_ips === 'ip_string';
+    const onlyIps = include_ips === 'ip_string';
 
     const queryOptions: any = {
       attributes: {
@@ -46,8 +48,18 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
 
     const { rows: blocklists, count: total } = await Blocklist.findAndCountAll(queryOptions);
 
+    const data = onlyIps
+      ? blocklists.map((bl) => {
+          const obj: any = bl.toJSON();
+          if (Array.isArray(obj.blocklistIps)) {
+            obj.blocklistIps = obj.blocklistIps.map((ip: any) => ip.value);
+          }
+          return obj;
+        })
+      : blocklists;
+
     res.status(200).json({
-      data: blocklists,
+      data,
       total,
       limit: unpaged === 'true' ? total : Number(limit),
       offset: unpaged === 'true' ? 0 : Number(offset),
@@ -67,13 +79,15 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
 /**
  * Get a specific blocklist by ID.
  * Query params:
- *   - expand_ips=true  → include the full blocklistIps array (default: false)
+ *   - include_ips=full       → include blocklistIps as full objects
+ *   - include_ips=ip_string  → include blocklistIps as plain IP strings
  */
 export async function getBlocklistById(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;
-    const includeIps = req.query.expand_ips === 'true';
+    const includeIps = req.query.include_ips === 'full' || req.query.include_ips === 'ip_string';
+    const onlyIps = req.query.include_ips === 'ip_string';
 
     const blocklistQuery = Blocklist.findByPk(Number(id), {
       attributes: { 
@@ -99,7 +113,7 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
 
     const result: any = blocklist.toJSON();
     if (ips !== null) {
-      result.blocklistIps = ips;
+      result.blocklistIps = onlyIps ? ips.map((ip: any) => ip.value) : ips;
     }
 
     res.status(200).json({ data: result });

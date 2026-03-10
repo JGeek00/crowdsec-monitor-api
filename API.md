@@ -877,21 +877,24 @@ List all blocklists stored in the local database.
 | `limit` | integer | No | 100 | Number of items to return |
 | `offset` | integer | No | 0 | Starting index |
 | `unpaged` | boolean | No | false | Return all results without pagination |
-| `expand_ips` | boolean | No | false | When `true`, includes the full `blocklistIps` array for each entry |
+| `include_ips` | string | No | - | Controls `blocklistIps` inclusion. `full` returns full IP objects; `ip_string` returns plain IP strings. Omit to exclude `blocklistIps` entirely |
 
 **Example Requests:**
 ```bash
-# Default list
+# Default list (no IPs)
 curl "http://localhost:3000/api/v1/blocklists"
 
-# With blocked IPs expanded
-curl "http://localhost:3000/api/v1/blocklists?expand_ips=true"
+# With blocked IPs as full objects
+curl "http://localhost:3000/api/v1/blocklists?include_ips=full"
+
+# With blocked IPs as plain strings
+curl "http://localhost:3000/api/v1/blocklists?include_ips=ip_string"
 
 # All results, no pagination
 curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 ```
 
-**Response (200 OK) — `expand_ips=false` (default):**
+**Response (200 OK) — default (no `include_ips`):**
 ```json
 {
   "data": [
@@ -916,7 +919,7 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 }
 ```
 
-**Response (200 OK) — `expand_ips=true`:**
+**Response (200 OK) — `include_ips=full`:**
 ```json
 {
   "data": [
@@ -946,19 +949,38 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 }
 ```
 
+**Response (200 OK) — `include_ips=ip_string`:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "external/blocklist (Censys)",
+      "count_ips": 4,
+      "created_at": "2026-03-08T19:52:14.000Z",
+      "updated_at": "2026-03-08T19:52:14.000Z",
+      "blocklistIps": ["192.35.168.0/23", "1.2.3.4"]
+    }
+  ],
+  "total": 2,
+  "limit": 100,
+  "offset": 0
+}
+```
+
 **Response Fields:**
 - `data` (array): Blocklist entries
 - `total` (integer): Total number of blocklists in the database
 - `limit` (integer): Page size applied
 - `offset` (integer): Offset applied
 - `count_ips` (integer): Number of blocked IPs/ranges in this blocklist
-- `blocklistIps` (array): Only present when `expand_ips=true`. Full list of blocked entries
+- `blocklistIps` (array): Only present when `include_ips` is set. Contains full objects (`include_ips=full`) or plain IP strings (`include_ips=ip_string`)
 
 ---
 
 ### GET `/api/v1/blocklists/{id}`
 
-Get a specific blocklist by its numeric ID. Returns the blocklist metadata. Use `expand_ips=true` to include the full `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
+Get a specific blocklist by its numeric ID. Returns the blocklist metadata. Use `include_ips=full` or `include_ips=ip_string` to include the `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
 
 **Authentication:** Required if `API_PASSWORD` is set
 
@@ -970,18 +992,21 @@ Get a specific blocklist by its numeric ID. Returns the blocklist metadata. Use 
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `expand_ips` | boolean | No | false | When `true`, includes the full `blocklistIps` array in the response |
+| `include_ips` | string | No | - | Controls `blocklistIps` inclusion. `full` returns full IP objects; `ip_string` returns plain IP strings. Omit to exclude `blocklistIps` entirely |
 
 **Example Requests:**
 ```bash
 # Metadata only
 curl "http://localhost:3000/api/v1/blocklists/1"
 
-# With full IP list
-curl "http://localhost:3000/api/v1/blocklists/1?expand_ips=true"
+# With full IP objects
+curl "http://localhost:3000/api/v1/blocklists/1?include_ips=full"
+
+# With IPs as plain strings
+curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
 ```
 
-**Response (200 OK) — default (`expand_ips=false`):**
+**Response (200 OK) — default (no `include_ips`):**
 ```json
 {
   "data": {
@@ -994,7 +1019,7 @@ curl "http://localhost:3000/api/v1/blocklists/1?expand_ips=true"
 }
 ```
 
-**Response (200 OK) — `expand_ips=true`:**
+**Response (200 OK) — `include_ips=full`:**
 ```json
 {
   "data": {
@@ -1015,6 +1040,20 @@ curl "http://localhost:3000/api/v1/blocklists/1?expand_ips=true"
         "updated_at": "2026-03-08T19:52:14.000Z"
       }
     ]
+  }
+}
+```
+
+**Response (200 OK) — `include_ips=ip_string`:**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "external/blocklist (Censys)",
+    "count_ips": 4,
+    "created_at": "2026-03-08T19:52:14.000Z",
+    "updated_at": "2026-03-08T19:52:14.000Z",
+    "blocklistIps": ["192.35.168.0/23", "1.2.3.4"]
   }
 }
 ```
@@ -1045,20 +1084,21 @@ Get paginated IPs for a specific blocklist. Recommended alternative to `expand_i
 | `limit` | integer | No | 50 | Number of items to return (must be positive) |
 | `offset` | integer | No | 0 | Starting index (must be non-negative) |
 | `unpaged` | boolean | No | false | Return all results without pagination |
+| `ip_string` | boolean | No | false | When `true`, returns `data` as an array of plain IP strings instead of full objects |
 
 **Example Requests:**
 ```bash
-# First page (50 results)
+# First page as full objects (default)
 curl "http://localhost:3000/api/v1/blocklists/8/ips"
 
 # Second page
 curl "http://localhost:3000/api/v1/blocklists/8/ips?limit=50&offset=50"
 
-# All IPs without pagination
-curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true"
+# All IPs as plain strings
+curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 ```
 
-**Response (200 OK):**
+**Response (200 OK) — default:**
 ```json
 {
   "data": [
@@ -1073,6 +1113,16 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true"
       "updated_at": "2026-03-08T02:14:20.000Z"
     }
   ],
+  "total": 48568,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Response (200 OK) — `ip_string=true`:**
+```json
+{
+  "data": ["1.10.16.0/20", "1.10.32.0/20"],
   "total": 48568,
   "limit": 50,
   "offset": 0

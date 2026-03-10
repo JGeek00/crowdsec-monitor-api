@@ -6,15 +6,17 @@ import { createRequestSignal } from '../../utils/request-signal';
 /**
  * Get IPs for a specific blocklist with pagination.
  * Query params:
- *   - limit   → results per page (default 50)
- *   - offset  → pagination offset (default 0)
- *   - unpaged → return all results without pagination
+ *   - ip_string=true → return plain IP strings instead of full objects
+ *   - limit          → results per page (default 50)
+ *   - offset         → pagination offset (default 0)
+ *   - unpaged        → return all results without pagination
  */
 export async function getBlocklistIps(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { blocklistId } = req.params;
-    const { limit = 50, offset = 0, unpaged } = req.query;
+    const { limit = 50, offset = 0, unpaged, ip_string } = req.query;
+    const onlyStrings = ip_string === 'true';
 
     // Verify the blocklist exists
     const blocklist = await Blocklist.findByPk(Number(blocklistId));
@@ -26,7 +28,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
     const queryOptions: any = {
       where: { blocklist_id: Number(blocklistId) },
       order: [['id', 'ASC']],
-      attributes: ['value'],
+      attributes: onlyStrings ? ['value'] : { exclude: ['created_at', 'updated_at'] },
     };
 
     if (unpaged !== 'true') {
@@ -40,7 +42,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
     });
 
     res.status(200).json({
-      data: ips.map((ip: any) => ip.value),
+      data: onlyStrings ? ips.map((ip: any) => ip.value) : ips,
       total,
       limit: unpaged === 'true' ? total : Number(limit),
       offset: unpaged === 'true' ? 0 : Number(offset),
