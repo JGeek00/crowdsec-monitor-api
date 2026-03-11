@@ -58,12 +58,20 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
         })
       : blocklists;
 
-    res.status(200).json({
-      data,
-      total,
-      limit: unpaged === 'true' ? total : Number(limit),
-      offset: unpaged === 'true' ? 0 : Number(offset),
-    });
+    const response: any = { items: data };
+
+    if (unpaged !== 'true') {
+      const page = Math.floor(Number(offset) / Number(limit)) + 1;
+      response.pagination = {
+        page,
+        amount: data.length,
+        total,
+      };
+    } else {
+      response.total = total;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     if (signal.aborted) return;
     console.error('Error fetching blocklists:', error);

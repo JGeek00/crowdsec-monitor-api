@@ -41,12 +41,21 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
       raw: true,
     });
 
-    res.status(200).json({
-      data: onlyStrings ? ips.map((ip: any) => ip.value) : ips,
-      total,
-      limit: unpaged === 'true' ? total : Number(limit),
-      offset: unpaged === 'true' ? 0 : Number(offset),
-    });
+    const items = onlyStrings ? ips.map((ip: any) => ip.value) : ips;
+    const response: any = { items };
+
+    if (unpaged !== 'true') {
+      const page = Math.floor(Number(offset) / Number(limit)) + 1;
+      response.pagination = {
+        page,
+        amount: items.length,
+        total,
+      };
+    } else {
+      response.total = total;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     if (signal.aborted) return;
     console.error('Error fetching blocklist IPs:', error);
