@@ -746,22 +746,30 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
+                  items:
                     type: array
                     items:
                       $ref: '#/components/schemas/Blocklist'
+                  pagination:
+                    type: object
+                    description: Present when paginated (unpaged=false)
+                    properties:
+                      page:
+                        type: integer
+                        description: Current page number
+                        example: 1
+                      amount:
+                        type: integer
+                        description: Number of items in current response
+                        example: 5
+                      total:
+                        type: integer
+                        description: Total number of blocklists in the database
+                        example: 5
                   total:
                     type: integer
-                    description: Total number of blocklists in the database
+                    description: Total number of blocklists (present when unpaged=true)
                     example: 5
-                  limit:
-                    type: integer
-                    description: Page size used for this response
-                    example: 100
-                  offset:
-                    type: integer
-                    description: Offset used for this response
-                    example: 0
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '500':
@@ -875,7 +883,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
+                  items:
                     oneOf:
                       - type: array
                         description: Full IP objects (default)
@@ -886,18 +894,26 @@ paths:
                         items:
                           type: string
                           example: '1.10.16.0/20'
+                  pagination:
+                    type: object
+                    description: Present when paginated (unpaged=false)
+                    properties:
+                      page:
+                        type: integer
+                        description: Current page number
+                        example: 1
+                      amount:
+                        type: integer
+                        description: Number of items in current response
+                        example: 50
+                      total:
+                        type: integer
+                        description: Total number of IPs in this blocklist
+                        example: 48568
                   total:
                     type: integer
-                    description: Total number of IPs in this blocklist
+                    description: Total number of IPs (present when unpaged=true)
                     example: 48568
-                  limit:
-                    type: integer
-                    description: Page size used for this response
-                    example: 50
-                  offset:
-                    type: integer
-                    description: Offset used for this response
-                    example: 0
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':

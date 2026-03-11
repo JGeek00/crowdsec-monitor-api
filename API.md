@@ -897,7 +897,7 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 **Response (200 OK) — default (no `include_ips`):**
 ```json
 {
-  "data": [
+  "items": [
     {
       "id": 1,
       "name": "external/blocklist (Censys)",
@@ -913,16 +913,18 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
       "updated_at": "2026-03-08T02:14:20.000Z"
     }
   ],
-  "total": 2,
-  "limit": 100,
-  "offset": 0
+  "pagination": {
+    "page": 1,
+    "amount": 2,
+    "total": 2
+  }
 }
 ```
 
 **Response (200 OK) — `include_ips=full`:**
 ```json
 {
-  "data": [
+  "items": [
     {
       "id": 1,
       "name": "external/blocklist (Censys)",
@@ -943,16 +945,18 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
       ]
     }
   ],
-  "total": 2,
-  "limit": 100,
-  "offset": 0
+  "pagination": {
+    "page": 1,
+    "amount": 1,
+    "total": 2
+  }
 }
 ```
 
 **Response (200 OK) — `include_ips=ip_string`:**
 ```json
 {
-  "data": [
+  "items": [
     {
       "id": 1,
       "name": "external/blocklist (Censys)",
@@ -962,19 +966,25 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
       "blocklistIps": ["192.35.168.0/23", "1.2.3.4"]
     }
   ],
-  "total": 2,
-  "limit": 100,
-  "offset": 0
+  "pagination": {
+    "page": 1,
+    "amount": 1,
+    "total": 2
+  }
 }
 ```
 
-**Response Fields:**
-- `data` (array): Blocklist entries
-- `total` (integer): Total number of blocklists in the database
-- `limit` (integer): Page size applied
-- `offset` (integer): Offset applied
+**Response Fields (paginated):**
+- `items` (array): Blocklist entries
+- `pagination.page` (integer): Current page number
+- `pagination.amount` (integer): Number of items in current response
+- `pagination.total` (integer): Total number of blocklists in the database
 - `count_ips` (integer): Number of blocked IPs/ranges in this blocklist
 - `blocklistIps` (array): Only present when `include_ips` is set. Contains full objects (`include_ips=full`) or plain IP strings (`include_ips=ip_string`)
+
+**Response Fields (unpaged):**
+- `items` (array): All blocklist entries
+- `total` (integer): Total number of blocklists in the database
 
 ---
 
@@ -1101,7 +1111,7 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 **Response (200 OK) — default:**
 ```json
 {
-  "data": [
+  "items": [
     {
       "id": 21619437,
       "blocklist_id": 8,
@@ -1113,19 +1123,23 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
       "updated_at": "2026-03-08T02:14:20.000Z"
     }
   ],
-  "total": 48568,
-  "limit": 50,
-  "offset": 0
+  "pagination": {
+    "page": 1,
+    "amount": 1,
+    "total": 48568
+  }
 }
 ```
 
 **Response (200 OK) — `ip_string=true`:**
 ```json
 {
-  "data": ["1.10.16.0/20", "1.10.32.0/20"],
-  "total": 48568,
-  "limit": 50,
-  "offset": 0
+  "items": ["1.10.16.0/20", "1.10.32.0/20"],
+  "pagination": {
+    "page": 1,
+    "amount": 2,
+    "total": 48568
+  }
 }
 ```
 
