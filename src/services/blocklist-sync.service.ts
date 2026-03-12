@@ -52,7 +52,9 @@ class BlocklistSyncService {
         for (let i = 0; i < newIps.length; i += CHUNK_SIZE) {
           const chunk = newIps.slice(i, i + CHUNK_SIZE).map((value: string) => ({
             blocklist_id: blocklist.id,
+            blocklist_name: blocklist.name,
             value,
+            origin: 'blocklist' as const,
           }));
           await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
         }

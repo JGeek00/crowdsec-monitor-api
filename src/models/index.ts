@@ -2,6 +2,7 @@ import { Alert } from './Alert';
 import { Decision } from './Decision';
 import { Blocklist } from './Blocklist';
 import { BlocklistIp } from './BlocklistIp';
+import { CsBlocklist } from './CsBlocklist';
 
 // Define associations
 Alert.hasMany(Decision, {
@@ -26,4 +27,15 @@ BlocklistIp.belongsTo(Blocklist, {
   as: 'blocklist',
 });
 
-export { Alert, Decision, Blocklist, BlocklistIp };
+CsBlocklist.hasMany(BlocklistIp, {
+  sourceKey: 'id',
+  foreignKey: 'cs_blocklist_id',
+  as: 'blocklistIps',
+});
+
+BlocklistIp.belongsTo(CsBlocklist, {
+  foreignKey: 'cs_blocklist_id',
+  as: 'csBlocklist',
+});
+
+export { Alert, Decision, Blocklist, BlocklistIp, CsBlocklist };

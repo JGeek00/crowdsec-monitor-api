@@ -106,6 +106,20 @@ const startServer = async (): Promise<void> => {
       }
     );
 
+    // Setup CrowdSec-managed blocklists sync (every hour)
+    console.log('Setting up automatic CrowdSec blocklists sync (interval: 1 hour)...');
+    schedulerService.schedule(
+      'cs-blocklists-sync',
+      async () => {
+        console.log('Running scheduled CrowdSec blocklists sync...');
+        await databaseService.syncCsBlocklists();
+      },
+      {
+        intervalSeconds: 3600,
+        runImmediately: true,
+      }
+    );
+
     // Create and start Express app
     const app = createApp();
     
