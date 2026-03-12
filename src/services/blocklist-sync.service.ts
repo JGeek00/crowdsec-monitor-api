@@ -39,18 +39,19 @@ class BlocklistSyncService {
 
     // Fetch currently active decisions from CrowdSec to avoid pushing duplicates
     const activeDecisions = await crowdSecAPI.getActiveDecisions();
-    const newIps = ips.filter((ip) => !activeDecisions.has(ip));
-    const skipped = ips.length - newIps.length;
+    const uniqueNewIps = [...new Set(ips.filter((ip) => !activeDecisions.has(ip)))];
+    const skipped = ips.length - uniqueNewIps.length;
     if (skipped > 0) {
       console.log(`  Skipping ${skipped} IPs already blocked in CrowdSec for "${blocklist.name}"`);
     }
 
+    // Save all IPs from the list to the DB (regardless of what's already in CrowdSec)
     await this.acquireWriteLock(async () => {
       await sequelize.transaction(async (t) => {
         await BlocklistIp.destroy({ where: { blocklist_id: blocklist.id }, transaction: t });
 
-        for (let i = 0; i < newIps.length; i += CHUNK_SIZE) {
-          const chunk = newIps.slice(i, i + CHUNK_SIZE).map((value: string) => ({
+        for (let i = 0; i < ips.length; i += CHUNK_SIZE) {
+          const chunk = ips.slice(i, i + CHUNK_SIZE).map((value: string) => ({
             blocklist_id: blocklist.id,
             blocklist_name: blocklist.name,
             value,
@@ -63,15 +64,15 @@ class BlocklistSyncService {
 
     const scenario = `external/blocklist (${blocklist.name})`;
     const now = new Date().toISOString();
-    const batchCount = Math.ceil(newIps.length / CHUNK_SIZE);
+    const batchCount = Math.ceil(uniqueNewIps.length / CHUNK_SIZE);
 
-    if (newIps.length === 0) {
+    if (uniqueNewIps.length === 0) {
       console.log(`No new IPs to push for "${blocklist.name}" (all already blocked in CrowdSec)`);
     } else {
-      console.log(`Pushing "${blocklist.name}" to CrowdSec (${newIps.length} new entries, ${batchCount} batch(es))...`);
+      console.log(`Pushing "${blocklist.name}" to CrowdSec (${uniqueNewIps.length} new entries, ${batchCount} batch(es))...`);
 
-      for (let i = 0; i < newIps.length; i += CHUNK_SIZE) {
-        const chunk = newIps.slice(i, i + CHUNK_SIZE);
+      for (let i = 0; i < uniqueNewIps.length; i += CHUNK_SIZE) {
+        const chunk = uniqueNewIps.slice(i, i + CHUNK_SIZE);
 
         const payload: CrowdSecCreateAlertPayload = [
           {
@@ -109,7 +110,7 @@ class BlocklistSyncService {
       blocklist.update({ last_successful_refresh: new Date() })
     );
 
-    console.log(`✓ Refreshed "${blocklist.name}": ${newIps.length} IPs stored in DB and pushed to CrowdSec (${skipped} skipped, already blocked)`);
+    console.log(`✓ Refreshed "${blocklist.name}": ${ips.length} IPs stored in DB, ${uniqueNewIps.length} pushed to CrowdSec (${skipped} skipped, already blocked)`);
   }
 
   /**
