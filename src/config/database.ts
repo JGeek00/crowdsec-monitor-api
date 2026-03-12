@@ -79,6 +79,11 @@ async function initSQLite(): Promise<void> {
     'ALTER TABLE blocklists ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1;'
   ).catch(() => { /* column already exists — safe to ignore */ });
 
+  // Add 'active' column to blocklist_ips if it was created before this field existed.
+  await sequelize.query(
+    'ALTER TABLE blocklist_ips ADD COLUMN active BOOLEAN NOT NULL DEFAULT 1;'
+  ).catch(() => { /* column already exists — safe to ignore */ });
+
   // Create indexes after sync() so all tables are guaranteed to exist.
   await sequelize.query(
     'CREATE INDEX IF NOT EXISTS idx_blocklist_ips_blocklist_id ON blocklist_ips (blocklist_id);'
@@ -106,6 +111,11 @@ async function initPostgres(): Promise<void> {
   // Add 'enabled' column to blocklists if it was created before this field existed.
   await sequelize.query(
     'ALTER TABLE blocklists ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE;'
+  ).catch(() => { /* ignore if already exists */ });
+
+  // Add 'active' column to blocklist_ips if it was created before this field existed.
+  await sequelize.query(
+    'ALTER TABLE blocklist_ips ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE;'
   ).catch(() => { /* ignore if already exists */ });
 }
 

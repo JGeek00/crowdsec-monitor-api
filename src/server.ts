@@ -106,8 +106,8 @@ const startServer = async (): Promise<void> => {
       }
     );
 
-    // Setup CrowdSec-managed blocklists sync (every hour)
-    console.log('Setting up automatic CrowdSec blocklists sync (interval: 1 hour)...');
+    // Setup CrowdSec-managed blocklists sync
+    console.log(`Setting up automatic CrowdSec blocklists sync (interval: ${config.crowdsecBlocklists.refreshTimeSeconds}s)...`);
     schedulerService.schedule(
       'cs-blocklists-sync',
       async () => {
@@ -115,8 +115,22 @@ const startServer = async (): Promise<void> => {
         await databaseService.syncCsBlocklists();
       },
       {
-        intervalSeconds: 3600,
+        intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds,
         runImmediately: true,
+      }
+    );
+
+    // Setup blocklist reconciliation: deactivate DB IPs removed from CrowdSec
+    console.log(`Setting up automatic blocklist reconciliation (interval: ${config.blocklistReconcile.intervalSeconds}s)...`);
+    schedulerService.schedule(
+      'blocklist-reconcile',
+      async () => {
+        console.log('Running scheduled blocklist reconciliation...');
+        await databaseService.reconcileBlocklistIps();
+      },
+      {
+        intervalSeconds: config.blocklistReconcile.intervalSeconds,
+        runImmediately: false,
       }
     );
 

@@ -14,11 +14,12 @@ export const defaults = {
   database: {
     path: './database/crowdsec.db',
   },
-  sync: {
-    intervalSeconds: 30, // 30 seconds
-  },
-  blocklists: {
-    refreshTimeSeconds: 86400, // 1 day
+  intervals: {
+    alertsSync: 30, // 60 seconds
+    apiBlocklistsRefreshTime: 86400, // 1 day
+    apiBlocklistsSyncTime: 900, // 15 min
+    crowdsecBlocklistsRefreshTime: 3600, // 1 hour
+    blocklistReconcileTime: 3600, // 1 hour
   },
   statistics: {
     topItemsLimit: 10, // Default limit for top items in statistics

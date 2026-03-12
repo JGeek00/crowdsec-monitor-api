@@ -97,12 +97,22 @@ export const config = {
   sync: {
     intervalSeconds: process.env.SYNC_INTERVAL_SECONDS 
       ? parseInt(process.env.SYNC_INTERVAL_SECONDS, 10) 
-      : defaults.sync.intervalSeconds,
+      : defaults.intervals.alertsSync,
   },
   blocklists: {
     refreshTimeSeconds: process.env.BLOCKLISTS_REFRESH_TIME
       ? parseInt(process.env.BLOCKLISTS_REFRESH_TIME, 10)
-      : defaults.blocklists.refreshTimeSeconds,
+      : defaults.intervals.apiBlocklistsRefreshTime,
+  },
+  crowdsecBlocklists: {
+    refreshTimeSeconds: process.env.CROWDSEC_BLOCKLISTS_REFRESH_TIME
+      ? parseInt(process.env.CROWDSEC_BLOCKLISTS_REFRESH_TIME, 10)
+      : defaults.intervals.crowdsecBlocklistsRefreshTime,
+  },
+  blocklistReconcile: {
+    intervalSeconds: process.env.BLOCKLIST_RECONCILE_TIME
+      ? parseInt(process.env.BLOCKLIST_RECONCILE_TIME, 10)
+      : defaults.intervals.blocklistReconcileTime,
   },
   auth: {
     apiPassword: process.env.API_PASSWORD || undefined,

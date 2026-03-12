@@ -2,6 +2,7 @@ import { Blocklist } from '../models';
 import { alertsSyncService } from './alerts-sync.service';
 import { blocklistSyncService } from './blocklist-sync.service';
 import { csBlocklistSyncService } from './cs-blocklist-sync.service';
+import { blocklistReconcileService } from './blocklist-reconcile.service';
 
 /**
  * Facade that delegates to AlertsSyncService and BlocklistSyncService.
@@ -43,6 +44,10 @@ class DatabaseService {
 
   async syncCsBlocklists() {
     return csBlocklistSyncService.syncCsBlocklists();
+  }
+
+  async reconcileBlocklistIps() {
+    return blocklistReconcileService.reconcile();
   }
 }
 
