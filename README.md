@@ -65,6 +65,7 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 |----------|-------------|---------|----------|
 | `DATA_RETENTION` | Auto-delete old data period | disabled | No |
 | `SYNC_INTERVAL_SECONDS` | Interval in seconds between syncs | `30` | No |
+| `BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists | `86400` | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |
 
@@ -124,7 +125,15 @@ docker run -d \
 ```
 
 
-## 🔄 How Synchronization Works
+## Remove a blocklist if access to this API is lost or the database is reset
+
+The generated decisions will expire after 24 hours, but if you want to remove the blocklists now you can do this:
+1. Run `cscli alerts list` to get the list of alerts
+2. Identify the alerts related with the blocklists. On the `reason` column, check the entries that  begin with `external/blocklist`.
+3. Run `cscli alerts delete -s <reason>` to remove all the alerts with that reason.
+
+
+## 🔄 How Synchronization for Alerts and decisions work
 
 The API automatically syncs data from CrowdSec LAPI based on the configured `SYNC_INTERVAL_SECONDS` interval:
 
@@ -137,6 +146,17 @@ The API automatically syncs data from CrowdSec LAPI based on the configured `SYN
 7. **Tracks** last successful sync timestamp for monitoring
 
 The database is **not a cache** - it's a permanent incremental storage. Configure `DATA_RETENTION` to automatically remove old data and prevent the database from growing indefinitely.
+
+
+## 🔄 How Synchronization for blocklists work
+
+This process is repeated for each blocklist added to the database.
+
+1. **Retrieves** the list of blocked IPs or ranges of that list
+2. **Fetches** the list of IPs that are already banned from CrowdSec
+3. **Compares** the list of IPs to ban with the list of already banned IPs to avoid duplications
+4. **Creates** the decisions list and pushes them to CrowdSec in batches
+5. **Repeats** this process based on the `BLOCKLISTS_REFRESH_TIME` env variable
 
 
 ## 🔒 Security
