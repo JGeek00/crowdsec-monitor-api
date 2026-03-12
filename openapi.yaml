@@ -58,6 +58,7 @@ paths:
       tags:
         - Health
       summary: Check API health
+      operationId: healthCheck
       description: Returns API status and current timestamp. Always accessible without authentication.
       security: []
       responses:
@@ -81,6 +82,7 @@ paths:
       tags:
         - Health
       summary: Get comprehensive status information
+      operationId: getStatus
       description: Returns CrowdSec LAPI connection status, last successful data sync, and API version information. Requires authentication if API_PASSWORD is configured.
       responses:
         '200':
@@ -125,6 +127,7 @@ paths:
       tags:
         - Alerts
       summary: List all alerts
+      operationId: listAlerts
       description: Retrieve all alerts with optional filtering and pagination
       parameters:
         - $ref: '#/components/parameters/Limit'
@@ -204,6 +207,7 @@ paths:
       tags:
         - Alerts
       summary: Get alert by ID
+      operationId: getAlertById
       description: Retrieve a single alert by its ID
       parameters:
         - name: id
@@ -235,6 +239,7 @@ paths:
       tags:
         - Alerts
       summary: Delete alert by ID
+      operationId: deleteAlertById
       description: |
         Delete an alert from CrowdSec LAPI (including all associated decisions).
         The alert is immediately deleted from the local database, then the API syncs with LAPI.
@@ -293,6 +298,7 @@ paths:
       tags:
         - Alerts
       summary: Get alerts statistics
+      operationId: getAlertStats
       description: Get aggregated statistics about alerts
       responses:
         '200':
@@ -309,6 +315,7 @@ paths:
       tags:
         - Decisions
       summary: List all decisions
+      operationId: listDecisions
       description: Retrieve all decisions with optional filtering and pagination
       parameters:
         - $ref: '#/components/parameters/Limit'
@@ -394,6 +401,7 @@ paths:
       tags:
         - Decisions
       summary: Create a decision
+      operationId: createDecision
       description: |
         Create a decision in CrowdSec LAPI. This is a simplified endpoint that creates an alert with a decision.
         After successful creation, the API automatically syncs the local database with LAPI.
@@ -480,6 +488,7 @@ paths:
       tags:
         - Decisions
       summary: Get decision by ID
+      operationId: getDecisionById
       description: Retrieve a single decision by its ID
       parameters:
         - name: id
@@ -511,6 +520,7 @@ paths:
       tags:
         - Decisions
       summary: Delete decision by ID
+      operationId: deleteDecisionById
       description: |
         Delete a decision from CrowdSec LAPI. The associated alert is NOT deleted.
         In the local database, the decision expiration date is set to the current time (not deleted).
@@ -570,6 +580,7 @@ paths:
       tags:
         - Decisions
       summary: Get decisions statistics
+      operationId: getDecisionStats
       description: Get aggregated statistics about decisions
       responses:
         '200':
@@ -586,6 +597,7 @@ paths:
       tags:
         - Allowlists
       summary: List all allowlists
+      operationId: listAllowlists
       description: Retrieve all allowlists from CrowdSec LAPI with their items
       responses:
         '200':
@@ -613,6 +625,7 @@ paths:
       tags:
         - Allowlists
       summary: Check if IPs are in any allowlist
+      operationId: checkAllowlistIps
       description: Check if provided IP addresses are present in any allowlist and return their allowlist membership
       requestBody:
         required: true
@@ -677,6 +690,7 @@ paths:
       tags:
         - Allowlists
       summary: Get specific allowlist
+      operationId: getAllowlistByName
       description: Retrieve a specific allowlist from CrowdSec LAPI by its name
       parameters:
         - name: allowlist_name
@@ -719,15 +733,18 @@ paths:
       tags:
         - Blocklists
       summary: List all blocklists
+      operationId: listBlocklists
       description: |
-        Retrieve all blocklists stored in the local database, synced from CrowdSec LAPI
-        with origins `blocklist-import` and `lists`. The list is refreshed on startup
-        and every hour in the background.
+        Retrieve all blocklists (both API-managed and CrowdSec-managed) stored in the local database.
+        API-managed lists are returned first, followed by CrowdSec-managed lists.
+        Each item includes a `type` field: `api` for API-managed, `cs` for CrowdSec-managed.
+        API-managed lists are synced at a configurable interval; CrowdSec-managed lists are synced
+        from `GET /v1/alerts?has_active_decision=true&origin=lists` on startup and every hour.
       parameters:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Unpaged'
-        - name: return_ips
+        - name: include_ips
           in: query
           description: |
             Controls whether `blocklistIps` is included in each entry.
@@ -738,6 +755,17 @@ paths:
             type: string
             enum: [full, ip_string]
           example: full
+        - name: get_only
+          in: query
+          description: |
+            Filter by blocklist type.
+            - `blocklists`: return only API-managed lists
+            - `cs_blocklists`: return only CrowdSec-managed lists
+            - Omit to return both types.
+          schema:
+            type: string
+            enum: [blocklists, cs_blocklists]
+          example: blocklists
       responses:
         '200':
           description: List of blocklists
@@ -780,9 +808,11 @@ paths:
       tags:
         - Blocklists
       summary: Get a specific blocklist
+      operationId: getBlocklistById
       description: |
-        Retrieve a single blocklist by its ID. By default returns only metadata and `count_ips`.
-        Pass `return_ips=full` to include the full `blocklistIps` array, or `return_ips=ip_string` to get plain IP strings.
+        Retrieve a single blocklist by its ID. Looks up API-managed blocklists first, then
+        CrowdSec-managed blocklists. Returns only metadata and `count_ips` by default.
+        Pass `include_ips=full` to include the full `blocklistIps` array, or `include_ips=ip_string` to get plain IP strings.
         For large blocklists consider using `GET /blocklists/{blocklistId}/ips` instead, which supports pagination.
       parameters:
         - name: id
@@ -792,7 +822,7 @@ paths:
           schema:
             type: integer
           example: 1
-        - name: return_ips
+        - name: include_ips
           in: query
           description: |
             Controls whether `blocklistIps` is included in the response.
@@ -836,6 +866,7 @@ paths:
       tags:
         - Blocklists
       summary: Get paginated IPs for a blocklist
+      operationId: getBlocklistIps
       description: |
         Retrieve blocked IPs/ranges for a specific blocklist with pagination support.
         This is the recommended endpoint for large blocklists instead of `expand_ips=true`.
@@ -936,6 +967,7 @@ paths:
       tags:
         - Statistics
       summary: Get comprehensive statistics
+      operationId: getStatistics
       description: Get comprehensive statistics including alerts in the last 24 hours, active decisions, activity history, and top items (countries, scenarios, IP owners, and targets)
       parameters:
         - name: since
@@ -969,6 +1001,7 @@ paths:
       tags:
         - Statistics
       summary: Get countries statistics
+      operationId: listCountriesStats
       description: Get complete list of all countries with alert counts, sorted by count (descending)
       responses:
         '200':
@@ -987,6 +1020,7 @@ paths:
       tags:
         - Statistics
       summary: Get country history
+      operationId: getCountryHistory
       description: Get historical activity for a specific country, showing alert counts grouped by date
       parameters:
         - name: item
@@ -1013,6 +1047,7 @@ paths:
       tags:
         - Statistics
       summary: Get scenarios statistics
+      operationId: listScenariosStats
       description: Get complete list of all scenarios with alert counts, sorted by count (descending)
       responses:
         '200':
@@ -1031,6 +1066,7 @@ paths:
       tags:
         - Statistics
       summary: Get scenario history
+      operationId: getScenarioHistory
       description: Get historical activity for a specific scenario, showing alert counts grouped by date
       parameters:
         - name: item
@@ -1057,6 +1093,7 @@ paths:
       tags:
         - Statistics
       summary: Get IP owners statistics
+      operationId: listIpOwnersStats
       description: Get complete list of all IP owners (AS names) with alert counts, sorted by count (descending)
       responses:
         '200':
@@ -1075,6 +1112,7 @@ paths:
       tags:
         - Statistics
       summary: Get IP owner history
+      operationId: getIpOwnerHistory
       description: Get historical activity for a specific IP owner, showing alert counts grouped by date
       parameters:
         - name: item
@@ -1101,6 +1139,7 @@ paths:
       tags:
         - Statistics
       summary: Get targets statistics
+      operationId: listTargetsStats
       description: Get complete list of all target FQDNs (from target_fqdn in events metadata) with alert counts, sorted by count (descending)
       responses:
         '200':
@@ -1119,6 +1158,7 @@ paths:
       tags:
         - Statistics
       summary: Get target history
+      operationId: getTargetHistory
       description: Get historical activity for a specific target FQDN, showing alert counts grouped by date
       parameters:
         - name: item
@@ -1633,7 +1673,9 @@ components:
 
     Blocklist:
       type: object
-      description: A blocklist entry (without IPs array). Includes `count_ips` with the number of blocked entries.
+      description: |
+        A blocklist entry (without IPs array). Includes `count_ips` with the number of blocked entries
+        and a `type` field indicating the origin (`api` = managed by this API, `cs` = managed by CrowdSec).
       properties:
         id:
           type: integer
@@ -1641,21 +1683,44 @@ components:
           example: 1
         name:
           type: string
+          description: Blocklist name.
+          example: 'My Blocklist'
+        type:
+          type: string
+          enum: [api, cs]
           description: |
-            Blocklist name. For `blocklist-import` origin this equals the alert `scenario`.
-            For `lists` origin this equals `source.scope` from the alert.
-          example: 'external/blocklist (Censys)'
+            Origin of the blocklist.
+            - `api`: managed by this API (URL-based, stored in `blocklists` table)
+            - `cs`: managed by CrowdSec Central API / console (stored in `cs_blocklists` table)
+          example: 'api'
         count_ips:
           type: integer
           description: Number of IPs/ranges associated with this blocklist
           example: 42
-        created_at:
+        url:
+          type: string
+          description: "Source URL (only present for `type: api` blocklists)"
+          example: 'https://example.com/blocklist.txt'
+        enabled:
+          type: boolean
+          description: "Whether the blocklist is enabled (only present for `type: api` blocklists)"
+          example: true
+        added_date:
           type: string
           format: date-time
+          description: "Date the blocklist was added (only present for `type: api` blocklists)"
+          example: '2026-03-01T10:00:00.000Z'
+        last_refresh_attempt:
+          type: string
+          format: date-time
+          nullable: true
+          description: "Last refresh attempt timestamp (only present for `type: api` blocklists)"
           example: '2026-03-08T19:52:14.000Z'
-        updated_at:
+        last_successful_refresh:
           type: string
           format: date-time
+          nullable: true
+          description: "Last successful refresh timestamp (only present for `type: api` blocklists)"
           example: '2026-03-08T19:52:14.000Z'
 
     BlocklistWithIps:
@@ -1683,40 +1748,40 @@ components:
 
     BlocklistIp:
       type: object
-      description: A single blocked IP or range entry linked to a blocklist.
+      description: A single blocked IP or range entry. Linked to either an API-managed blocklist (`blocklist_id`) or a CrowdSec-managed blocklist (`cs_blocklist_id`), depending on `origin`.
       properties:
         id:
           type: integer
-          description: Decision ID from CrowdSec LAPI
-          example: 21619437
+          description: Auto-incremented primary key
+          example: 1
         blocklist_id:
           type: integer
-          description: FK referencing the parent blocklist
-          example: 1
-        scenario:
+          nullable: true
+          description: FK referencing the parent `blocklists` row. Null for `cs_blocklist` origin.
+          example: 3
+        cs_blocklist_id:
+          type: integer
+          nullable: true
+          description: FK referencing the parent `cs_blocklists` row. Null for `blocklist` origin.
+          example: null
+        blocklist_name:
           type: string
-          description: Scenario name from the CrowdSec decision
-          example: 'external/blocklist (Censys)'
+          description: |
+            For `blocklist` origin: name of the parent API-managed blocklist.
+            For `cs_blocklist` origin: `scenario` field of the CrowdSec decision.
+          example: 'My Blocklist'
         value:
           type: string
           description: The blocked IP address or CIDR range
           example: '192.35.168.0/23'
-        type:
+        origin:
           type: string
-          description: Decision type (e.g. ban)
-          example: 'ban'
-        scope:
-          type: string
-          description: Decision scope (e.g. Ip, Range)
-          example: 'Range'
-        created_at:
-          type: string
-          format: date-time
-          example: '2026-03-08T19:52:14.000Z'
-        updated_at:
-          type: string
-          format: date-time
-          example: '2026-03-08T19:52:14.000Z'
+          enum: [blocklist, cs_blocklist]
+          description: |
+            Origin of this entry.
+            - `blocklist`: added by this API from a URL-based blocklist
+            - `cs_blocklist`: added by CrowdSec Central API / console
+          example: 'blocklist'
 
     Allowlist:
       type: object

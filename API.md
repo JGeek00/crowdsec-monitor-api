@@ -861,7 +861,12 @@ Check if IP addresses are present in any allowlist.
 
 ## Blocklists Endpoints
 
-Blocklists are synced from CrowdSec LAPI on startup and refreshed every hour in the background. Two origins are fetched: `blocklist-import` (external blocklists) and `lists` (firehol-style lists). Data is stored locally in SQLite or PostgreSQL depending on the `DB_MODE` environment variable.
+Two types of blocklists are supported:
+
+- **API-managed** (`type: "api"`): External blocklists configured via this API (URL-based). Refreshed on startup and at a configurable interval.
+- **CrowdSec-managed** (`type: "cs"`): Blocklists pushed by CrowdSec Central API or the CrowdSec console (origin `lists`). Synced from `GET /v1/alerts?has_active_decision=true&origin=lists` on startup and every hour.
+
+Both types share the same endpoints. The `type` field in each response item indicates its origin. Data is stored locally in SQLite or PostgreSQL depending on the `DB_MODE` environment variable.
 
 ---
 
@@ -878,11 +883,18 @@ List all blocklists stored in the local database.
 | `offset` | integer | No | 0 | Starting index |
 | `unpaged` | boolean | No | false | Return all results without pagination |
 | `include_ips` | string | No | - | Controls `blocklistIps` inclusion. `full` returns full IP objects; `ip_string` returns plain IP strings. Omit to exclude `blocklistIps` entirely |
+| `get_only` | string | No | - | Filter by blocklist type. `blocklists` returns only API-managed lists; `cs_blocklists` returns only CrowdSec-managed lists. Omit to return both types |
 
 **Example Requests:**
 ```bash
 # Default list (no IPs)
 curl "http://localhost:3000/api/v1/blocklists"
+
+# Only API-managed blocklists
+curl "http://localhost:3000/api/v1/blocklists?get_only=blocklists"
+
+# Only CrowdSec-managed blocklists
+curl "http://localhost:3000/api/v1/blocklists?get_only=cs_blocklists"
 
 # With blocked IPs as full objects
 curl "http://localhost:3000/api/v1/blocklists?include_ips=full"
@@ -899,18 +911,21 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 {
   "items": [
     {
-      "id": 1,
-      "name": "external/blocklist (Censys)",
+      "id": 3,
+      "url": "https://example.com/blocklist.txt",
+      "name": "My Blocklist",
+      "enabled": true,
+      "added_date": "2026-03-01T10:00:00.000Z",
+      "last_refresh_attempt": "2026-03-08T19:52:14.000Z",
+      "last_successful_refresh": "2026-03-08T19:52:14.000Z",
       "count_ips": 4,
-      "created_at": "2026-03-08T19:52:14.000Z",
-      "updated_at": "2026-03-08T19:52:14.000Z"
+      "type": "api"
     },
     {
-      "id": 2,
-      "name": "lists:firehol_cruzit_web_attacks",
-      "count_ips": 13232,
-      "created_at": "2026-03-08T02:14:20.000Z",
-      "updated_at": "2026-03-08T02:14:20.000Z"
+      "id": 5573,
+      "name": "lists:crowdsec_cve_2025_55182",
+      "count_ips": 18068,
+      "type": "cs"
     }
   ],
   "pagination": {
@@ -926,21 +941,18 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 {
   "items": [
     {
-      "id": 1,
-      "name": "external/blocklist (Censys)",
+      "id": 3,
+      "name": "My Blocklist",
       "count_ips": 4,
-      "created_at": "2026-03-08T19:52:14.000Z",
-      "updated_at": "2026-03-08T19:52:14.000Z",
+      "type": "api",
       "blocklistIps": [
         {
-          "id": 21619437,
-          "blocklist_id": 1,
-          "scenario": "external/blocklist (Censys)",
+          "id": 1,
+          "blocklist_id": 3,
+          "cs_blocklist_id": null,
+          "blocklist_name": "My Blocklist",
           "value": "192.35.168.0/23",
-          "type": "ban",
-          "scope": "Range",
-          "created_at": "2026-03-08T19:52:14.000Z",
-          "updated_at": "2026-03-08T19:52:14.000Z"
+          "origin": "blocklist"
         }
       ]
     }
@@ -958,11 +970,10 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 {
   "items": [
     {
-      "id": 1,
-      "name": "external/blocklist (Censys)",
+      "id": 3,
+      "name": "My Blocklist",
       "count_ips": 4,
-      "created_at": "2026-03-08T19:52:14.000Z",
-      "updated_at": "2026-03-08T19:52:14.000Z",
+      "type": "api",
       "blocklistIps": ["192.35.168.0/23", "1.2.3.4"]
     }
   ],
@@ -975,22 +986,23 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 ```
 
 **Response Fields (paginated):**
-- `items` (array): Blocklist entries
+- `items` (array): Blocklist entries (API-managed first, then CrowdSec-managed)
 - `pagination.page` (integer): Current page number
 - `pagination.amount` (integer): Number of items in current response
-- `pagination.total` (integer): Total number of blocklists in the database
+- `pagination.total` (integer): Total number of blocklists across both types
+- `type` (string): `"api"` for API-managed lists, `"cs"` for CrowdSec-managed lists
 - `count_ips` (integer): Number of blocked IPs/ranges in this blocklist
 - `blocklistIps` (array): Only present when `include_ips` is set. Contains full objects (`include_ips=full`) or plain IP strings (`include_ips=ip_string`)
 
 **Response Fields (unpaged):**
 - `items` (array): All blocklist entries
-- `total` (integer): Total number of blocklists in the database
+- `total` (integer): Total number of blocklists across both types
 
 ---
 
 ### GET `/api/v1/blocklists/{id}`
 
-Get a specific blocklist by its numeric ID. Returns the blocklist metadata. Use `include_ips=full` or `include_ips=ip_string` to include the `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
+Get a specific blocklist by its numeric ID. Looks up API-managed blocklists first, then CrowdSec-managed blocklists. Returns the blocklist metadata with a `type` field indicating its origin. Use `include_ips=full` or `include_ips=ip_string` to include the `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
 
 **Authentication:** Required if `API_PASSWORD` is set
 
@@ -1016,15 +1028,31 @@ curl "http://localhost:3000/api/v1/blocklists/1?include_ips=full"
 curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
 ```
 
-**Response (200 OK) — default (no `include_ips`):**
+**Response (200 OK) — default (no `include_ips`), API-managed:**
 ```json
 {
   "data": {
-    "id": 1,
-    "name": "external/blocklist (Censys)",
+    "id": 3,
+    "url": "https://example.com/blocklist.txt",
+    "name": "My Blocklist",
+    "enabled": true,
+    "added_date": "2026-03-01T10:00:00.000Z",
+    "last_refresh_attempt": "2026-03-08T19:52:14.000Z",
+    "last_successful_refresh": "2026-03-08T19:52:14.000Z",
     "count_ips": 4,
-    "created_at": "2026-03-08T19:52:14.000Z",
-    "updated_at": "2026-03-08T19:52:14.000Z"
+    "type": "api"
+  }
+}
+```
+
+**Response (200 OK) — default (no `include_ips`), CrowdSec-managed:**
+```json
+{
+  "data": {
+    "id": 5573,
+    "name": "lists:crowdsec_cve_2025_55182",
+    "count_ips": 18068,
+    "type": "cs"
   }
 }
 ```
@@ -1033,21 +1061,18 @@ curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
 ```json
 {
   "data": {
-    "id": 1,
-    "name": "external/blocklist (Censys)",
+    "id": 3,
+    "name": "My Blocklist",
     "count_ips": 4,
-    "created_at": "2026-03-08T19:52:14.000Z",
-    "updated_at": "2026-03-08T19:52:14.000Z",
+    "type": "api",
     "blocklistIps": [
       {
-        "id": 21619437,
-        "blocklist_id": 1,
-        "scenario": "external/blocklist (Censys)",
+        "id": 1,
+        "blocklist_id": 3,
+        "cs_blocklist_id": null,
+        "blocklist_name": "My Blocklist",
         "value": "192.35.168.0/23",
-        "type": "ban",
-        "scope": "Range",
-        "created_at": "2026-03-08T19:52:14.000Z",
-        "updated_at": "2026-03-08T19:52:14.000Z"
+        "origin": "blocklist"
       }
     ]
   }
@@ -1058,11 +1083,10 @@ curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
 ```json
 {
   "data": {
-    "id": 1,
-    "name": "external/blocklist (Censys)",
+    "id": 3,
+    "name": "My Blocklist",
     "count_ips": 4,
-    "created_at": "2026-03-08T19:52:14.000Z",
-    "updated_at": "2026-03-08T19:52:14.000Z",
+    "type": "api",
     "blocklistIps": ["192.35.168.0/23", "1.2.3.4"]
   }
 }
@@ -1113,14 +1137,12 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 {
   "items": [
     {
-      "id": 21619437,
+      "id": 1,
       "blocklist_id": 8,
-      "scenario": "lists:firehol_cruzit_web_attacks",
+      "cs_blocklist_id": null,
+      "blocklist_name": "lists:firehol_cruzit_web_attacks",
       "value": "1.10.16.0/20",
-      "type": "ban",
-      "scope": "Range",
-      "created_at": "2026-03-08T02:14:20.000Z",
-      "updated_at": "2026-03-08T02:14:20.000Z"
+      "origin": "blocklist"
     }
   ],
   "pagination": {
@@ -1151,6 +1173,7 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 ```
 
 **Notes:**
+- Works for both API-managed and CrowdSec-managed blocklists (resolved by ID automatically)
 - Returns IPs ordered by `id` ascending
 - Use `unpaged=true` with caution on large blocklists — some have 40 000+ entries
 
