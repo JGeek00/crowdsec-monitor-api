@@ -114,6 +114,7 @@ export const config = {
       ? parseInt(process.env.BLOCKLIST_RECONCILE_TIME, 10)
       : defaults.intervals.blocklistReconcileTime,
   },
+  blocklistBanDuration: process.env.BLOCKLIST_IPS_BAN_DURATION || defaults.intervals.blocklistIpsBanDuration,
   auth: {
     apiPassword: process.env.API_PASSWORD || undefined,
   },

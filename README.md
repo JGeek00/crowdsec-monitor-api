@@ -65,7 +65,8 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 |----------|-------------|---------|----------|
 | `DATA_RETENTION` | Auto-delete old data period | disabled | No |
 | `SYNC_INTERVAL_SECONDS` | Interval in seconds between to sync alerts and decisions | `30` | No |
-| `BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists | `86400` | No |
+| `BLOCKLIST_IPS_BAN_DURATION` | Ban time for each IP that comes from a blocklist | `24h` | No |
+| `BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists | `14400` | No |
 | `CROWDSEC_BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists managed by CrowdSec | `3600` | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |

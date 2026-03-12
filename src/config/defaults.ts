@@ -16,7 +16,8 @@ export const defaults = {
   },
   intervals: {
     alertsSync: 30, // 60 seconds
-    apiBlocklistsRefreshTime: 86400, // 1 day
+    blocklistIpsBanDuration: '24h',
+    apiBlocklistsRefreshTime: 14400, // 4 hours
     apiBlocklistsSyncTime: 900, // 15 min
     crowdsecBlocklistsRefreshTime: 3600, // 1 hour
     blocklistReconcileTime: 3600, // 1 hour

@@ -89,7 +89,7 @@ class BlocklistSyncService {
             start_at: now,
             stop_at: now,
             decisions: chunk.map((value: string) => ({
-              duration: '24h',
+              duration: config.blocklistBanDuration,
               origin: 'cs-monitor-blocklist-import',
               scenario,
               scope: 'Ip',
