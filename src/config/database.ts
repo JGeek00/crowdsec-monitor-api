@@ -58,9 +58,26 @@ async function initSQLite(): Promise<void> {
   await sequelize.query('PRAGMA wal_autocheckpoint = 200;');
   console.log('✓ SQLite wal_autocheckpoint set to 200 pages.');
 
+  // One-time migration: if the old 'lists' table exists, drop it along with
+  // 'blocklist_ips' so they get recreated with the new schema.
+  const [oldLists] = await sequelize.query(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='lists'"
+  );
+  if ((oldLists as any[]).length > 0) {
+    console.log('⚙️  Migrating old blocklist tables to new schema...');
+    await sequelize.query('DROP TABLE IF EXISTS blocklist_ips');
+    await sequelize.query('DROP TABLE IF EXISTS lists');
+    console.log('✓ Old blocklist tables dropped.');
+  }
+
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
+
+  // Add 'enabled' column to blocklists if it was created before this field existed.
+  await sequelize.query(
+    'ALTER TABLE blocklists ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1;'
+  ).catch(() => { /* column already exists — safe to ignore */ });
 
   // Create indexes after sync() so all tables are guaranteed to exist.
   await sequelize.query(
@@ -70,9 +87,26 @@ async function initSQLite(): Promise<void> {
 }
 
 async function initPostgres(): Promise<void> {
+  // One-time migration: if the old 'lists' table exists, drop it along with
+  // 'blocklist_ips' so they get recreated with the new schema.
+  const [oldLists] = await sequelize.query(
+    "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename='lists'"
+  );
+  if ((oldLists as any[]).length > 0) {
+    console.log('⚙️  Migrating old blocklist tables to new schema...');
+    await sequelize.query('DROP TABLE IF EXISTS blocklist_ips');
+    await sequelize.query('DROP TABLE IF EXISTS lists');
+    console.log('✓ Old blocklist tables dropped.');
+  }
+
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
+
+  // Add 'enabled' column to blocklists if it was created before this field existed.
+  await sequelize.query(
+    'ALTER TABLE blocklists ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE;'
+  ).catch(() => { /* ignore if already exists */ });
 }
 
 export const initDatabase = async (): Promise<void> => {

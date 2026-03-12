@@ -77,6 +77,7 @@ export const config = {
     lapiUrl: process.env.CROWDSEC_LAPI_URL || defaults.crowdsec.lapiUrl,
     user: process.env.CROWDSEC_USER || defaults.crowdsec.user,
     password: process.env.CROWDSEC_PASSWORD || defaults.crowdsec.password,
+    bouncerKey: process.env.CROWDSEC_BOUNCER_KEY || '',
   },
   database: {
     mode: parseDbMode(),
@@ -97,6 +98,11 @@ export const config = {
     intervalSeconds: process.env.SYNC_INTERVAL_SECONDS 
       ? parseInt(process.env.SYNC_INTERVAL_SECONDS, 10) 
       : defaults.sync.intervalSeconds,
+  },
+  blocklists: {
+    refreshTimeSeconds: process.env.BLOCKLISTS_REFRESH_TIME
+      ? parseInt(process.env.BLOCKLISTS_REFRESH_TIME, 10)
+      : defaults.blocklists.refreshTimeSeconds,
   },
   auth: {
     apiPassword: process.env.API_PASSWORD || undefined,

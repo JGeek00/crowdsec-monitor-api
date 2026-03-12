@@ -1,1 +1,2 @@
-export const API_SCENARIO_NAME = 'manual/crowdsec-monitor';
+export const MANUAL_DECISION = 'manual/crowdsec-monitor';
+export const BLOCKLIST_SCENARIO_PREFIX = 'external/blocklist';

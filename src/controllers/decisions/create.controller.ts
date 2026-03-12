@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '../../services';
 import { CrowdSecCreateAlertPayload } from '../../types/crowdsec.types';
 import { config } from '../../config';
-import { API_SCENARIO_NAME } from '../../constants/scenarios';
+import { MANUAL_DECISION } from '../../constants/scenarios';
 
 interface CreateDecisionRequest {
   ip: string;
@@ -25,8 +25,8 @@ export async function createDecision(req: Request, res: Response): Promise<void>
     // Build the alert payload for LAPI
     const alertPayload: CrowdSecCreateAlertPayload = [
       {
-        scenario: API_SCENARIO_NAME,
-        campaign_name: API_SCENARIO_NAME,
+        scenario: MANUAL_DECISION,
+        campaign_name: MANUAL_DECISION,
         message: reason,
         events_count: 1,
         start_at: now,
@@ -47,7 +47,7 @@ export async function createDecision(req: Request, res: Response): Promise<void>
             duration: duration,
             value: ip,
             origin: config.crowdsec.user,
-            scenario: API_SCENARIO_NAME,
+            scenario: MANUAL_DECISION,
             scope: 'ip',
           },
         ],

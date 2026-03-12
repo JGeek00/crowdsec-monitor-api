@@ -3,18 +3,24 @@ import { sequelize } from '../config/database';
 
 export interface BlocklistAttributes {
   id: number;
+  url: string;
   name: string;
-  created_at: Date;
-  updated_at: Date;
+  enabled: boolean;
+  added_date: Date;
+  last_refresh_attempt: Date | null;
+  last_successful_refresh: Date | null;
 }
 
-export interface BlocklistCreationAttributes extends Optional<BlocklistAttributes, 'id' | 'created_at' | 'updated_at'> {}
+export interface BlocklistCreationAttributes extends Optional<BlocklistAttributes, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh'> {}
 
 export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttributes> implements BlocklistAttributes {
   public id!: number;
+  public url!: string;
   public name!: string;
-  public created_at!: Date;
-  public updated_at!: Date;
+  public enabled!: boolean;
+  public added_date!: Date;
+  public last_refresh_attempt!: Date | null;
+  public last_successful_refresh!: Date | null;
 
   // Associations set in models/index.ts
   public readonly blocklistIps?: any[];
@@ -26,29 +32,40 @@ Blocklist.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+      allowNull: false,
     },
-    name: {
+    url: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
-    created_at: {
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    enabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+    added_date: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    updated_at: {
+    last_refresh_attempt: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
+      allowNull: true,
+    },
+    last_successful_refresh: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {
     sequelize,
-    tableName: 'lists',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    tableName: 'blocklists',
+    timestamps: false,
   }
 );
 

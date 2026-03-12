@@ -13,6 +13,7 @@ const validateEnvironment = (): void => {
     { name: 'CROWDSEC_LAPI_URL', value: config.crowdsec.lapiUrl },
     { name: 'CROWDSEC_USER', value: config.crowdsec.user },
     { name: 'CROWDSEC_PASSWORD', value: config.crowdsec.password },
+    { name: 'CROWDSEC_BOUNCER_KEY', value: config.crowdsec.bouncerKey },
   ];
 
   const missingVars: string[] = [];
@@ -32,7 +33,7 @@ const validateEnvironment = (): void => {
     });
     console.error('');
     console.error('Please configure these variables in your .env file.');
-    console.error('See .env.example for reference.');
+    console.error('See README.md for deployment instructions.');
     console.error('');
     process.exit(1);
   }
@@ -62,12 +63,6 @@ const startServer = async (): Promise<void> => {
     if (isConnected) {
       console.log('Performing initial data sync...');
       await databaseService.syncAll();
-
-      // Blocklists sync runs in the background - does not block server startup
-      console.log('Starting initial blocklists sync in the background...');
-      databaseService.syncBlocklists().catch((err) => {
-        console.error('Error during initial blocklists sync:', err);
-      });
     }
 
     // Setup automatic sync with interval-based scheduler
@@ -97,8 +92,8 @@ const startServer = async (): Promise<void> => {
       }
     );
 
-    // Setup blocklists sync (every hour = 3600 seconds)
-    console.log('Setting up automatic blocklists sync (interval: 1 hour)...');
+    // Setup blocklists sync
+    console.log(`Setting up automatic blocklists sync (interval: ${config.blocklists.refreshTimeSeconds}s)...`);
     schedulerService.schedule(
       'blocklists-sync',
       async () => {
@@ -106,8 +101,8 @@ const startServer = async (): Promise<void> => {
         await databaseService.syncBlocklists();
       },
       {
-        intervalSeconds: 3600, // 1 hour
-        runImmediately: false, // Already ran initial sync above
+        intervalSeconds: config.blocklists.refreshTimeSeconds,
+        runImmediately: true,
       }
     );
 

@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '../config';
 import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload, CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '../types/crowdsec.types';
-import { API_SCENARIO_NAME } from '../constants/scenarios';
+import { BLOCKLIST_SCENARIO_PREFIX, MANUAL_DECISION } from '../constants/scenarios';
 
 export class CrowdSecAPIService {
   private client: AxiosInstance;
@@ -28,7 +28,7 @@ export class CrowdSecAPIService {
       const response = await this.client.post<CrowdSecLoginResponse>('/v1/watchers/login', {
         machine_id: config.crowdsec.user,
         password: config.crowdsec.password,
-        scenarios: [API_SCENARIO_NAME],
+        scenarios: [MANUAL_DECISION, BLOCKLIST_SCENARIO_PREFIX],
       });
 
       if (response.data && response.data.token) {
@@ -100,6 +100,7 @@ export class CrowdSecAPIService {
     until?: string; 
     has_active_decision?: boolean;
     origin?: string;
+    scenario?: string;
   }): Promise<CrowdSecAlert[]> {
     // Exclude CAPI alerts by default because they are huge (scope: 'Ip' or 'Range')
     // const scopes = ['Ip', 'Range'];
@@ -116,6 +117,9 @@ export class CrowdSecAPIService {
       }
       if (params?.origin) {
         queryParams.append('origin', params.origin);
+      }
+      if (params?.scenario) {
+        queryParams.append('scenario', params.scenario);
       }
 
       const response = await this.client.get('/v1/alerts', { params: queryParams, headers });
@@ -371,6 +375,27 @@ export class CrowdSecAPIService {
     } catch (error) {
       // Token might be invalid, don't log as error
       return false;
+    }
+  }
+
+  /**
+   * Get all active decisions from CrowdSec LAPI using the bouncer API key.
+   * Uses the X-Api-Key header (CROWDSEC_BOUNCER_KEY), not the watcher Bearer token.
+   * @returns Set of currently blocked IP/CIDR values
+   */
+  async getActiveDecisions(): Promise<Set<string>> {
+    try {
+      const response = await this.client.get('/v1/decisions', {
+        headers: {
+          'X-Api-Key': config.crowdsec.bouncerKey,
+        },
+      });
+
+      const decisions: Array<{ value: string }> = response.data || [];
+      return new Set(decisions.map((d) => d.value));
+    } catch (error) {
+      this.handleError(error, 'fetching active decisions');
+      return new Set();
     }
   }
 

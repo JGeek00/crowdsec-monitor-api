@@ -17,6 +17,9 @@ export const defaults = {
   sync: {
     intervalSeconds: 30, // 30 seconds
   },
+  blocklists: {
+    refreshTimeSeconds: 86400, // 1 day
+  },
   statistics: {
     topItemsLimit: 10, // Default limit for top items in statistics
   },

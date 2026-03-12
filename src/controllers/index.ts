@@ -8,7 +8,7 @@ export { getAllDecisions, getDecisionById, getDecisionStats, createDecision, del
 export { getAllowlists, getAllowlistByName, checkAllowlist } from './allowlists';
 
 // Blocklist controllers
-export { getBlocklists, getBlocklistById, getBlocklistIps } from './blocklists';
+export { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist } from './blocklists';
 
 // Statistics controllers
 export { 
