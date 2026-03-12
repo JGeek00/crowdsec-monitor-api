@@ -802,6 +802,56 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '500':
           description: Internal server error
+    post:
+      tags:
+        - Blocklists
+      summary: Add a new blocklist
+      operationId: createBlocklist
+      description: |
+        Add a new API-managed blocklist by URL. The entry is created in the database immediately
+        and the response is returned. The initial IP fetch and push to CrowdSec happen in the background.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, name]
+              properties:
+                url:
+                  type: string
+                  description: URL of the blocklist file
+                  example: https://example.com/blocklist.txt
+                name:
+                  type: string
+                  description: Display name for the blocklist
+                  example: My Blocklist
+      responses:
+        '201':
+          description: Blocklist created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Blocklist'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: A blocklist with this URL already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: A blocklist with this URL already exists
+        '500':
+          description: Internal server error
 
   /blocklists/{id}:
     get:
@@ -846,6 +896,48 @@ paths:
                       - $ref: '#/components/schemas/Blocklist'
                       - $ref: '#/components/schemas/BlocklistWithIps'
                       - $ref: '#/components/schemas/BlocklistWithIpStrings'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Blocklist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Blocklist not found
+        '500':
+          description: Internal server error
+    delete:
+      tags:
+        - Blocklists
+      summary: Delete a blocklist
+      operationId: deleteBlocklist
+      description: |
+        Delete an API-managed blocklist by ID. The entry and its IPs are removed from the local
+        database immediately (IPs via CASCADE) and the response is returned.
+        The removal of associated alerts from CrowdSec LAPI happens asynchronously in the background.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The numeric ID of the blocklist to delete
+          schema:
+            type: integer
+          example: 3
+      responses:
+        '202':
+          description: Blocklist deletion accepted — removed from DB, CrowdSec cleanup in progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Blocklist deletion requested
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':

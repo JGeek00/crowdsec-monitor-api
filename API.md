@@ -1000,6 +1000,62 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 
 ---
 
+### POST `/api/v1/blocklists`
+
+Add a new API-managed blocklist by URL. The entry is created in the database immediately and the response is returned. The initial fetch of IPs and push to CrowdSec happens asynchronously in the background.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Request Body (JSON):**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | string | Yes | URL of the blocklist file |
+| `name` | string | Yes | Display name for the blocklist |
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/blocklists" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/blocklist.txt", "name": "My Blocklist"}'
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": 3,
+    "url": "https://example.com/blocklist.txt",
+    "name": "My Blocklist",
+    "enabled": true,
+    "added_date": "2026-03-12T10:00:00.000Z",
+    "last_refresh_attempt": null,
+    "last_successful_refresh": null,
+    "count_ips": 0,
+    "type": "api"
+  }
+}
+```
+
+**Response (400 Bad Request):**
+```json
+{
+  "error": "url is required"
+}
+```
+
+**Response (409 Conflict):**
+```json
+{
+  "error": "A blocklist with this URL already exists"
+}
+```
+
+**Notes:**
+- The response is returned immediately after the database entry is created
+- The initial IP fetch and CrowdSec push happen in the background after the response
+
+---
+
 ### GET `/api/v1/blocklists/{id}`
 
 Get a specific blocklist by its numeric ID. Looks up API-managed blocklists first, then CrowdSec-managed blocklists. Returns the blocklist metadata with a `type` field indicating its origin. Use `include_ips=full` or `include_ips=ip_string` to include the `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
@@ -1098,6 +1154,42 @@ curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
   "error": "Blocklist not found"
 }
 ```
+
+---
+
+### DELETE `/api/v1/blocklists/{id}`
+
+Delete an API-managed blocklist by ID. The entry is removed from the database immediately and the response is returned. The removal of associated alerts from CrowdSec happens asynchronously in the background.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|--------------|
+| `id` | integer | Yes | The numeric ID of the blocklist to delete |
+
+**Example Request:**
+```bash
+curl -X DELETE "http://localhost:3000/api/v1/blocklists/3"
+```
+
+**Response (202 Accepted):**
+```json
+{
+  "message": "Blocklist deletion requested"
+}
+```
+
+**Response (404 Not Found):**
+```json
+{
+  "error": "Blocklist not found"
+}
+```
+
+**Notes:**
+- The blocklist and its IPs are deleted from the local database before the response is sent (IPs are removed via CASCADE)
+- The removal of associated alerts from CrowdSec LAPI happens in the background after the response
 
 ---
 

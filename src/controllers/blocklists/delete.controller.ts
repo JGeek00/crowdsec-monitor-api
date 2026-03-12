@@ -17,10 +17,12 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
-    await databaseService.deleteBlocklistAlerts(blocklist);
     await blocklist.destroy();
 
-    res.status(200).json({ message: 'Blocklist deleted successfully' });
+    res.status(202).json({ message: 'Blocklist deletion requested' });
+
+    databaseService.deleteBlocklistAlerts(blocklist)
+      .catch((error) => console.error(`Error deleting blocklist alerts "${blocklist.name}":`, error));
   } catch (error) {
     console.error('Error deleting blocklist:', error);
     res.status(500).json({
