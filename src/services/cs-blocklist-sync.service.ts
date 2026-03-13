@@ -24,23 +24,38 @@ class CsBlocklistSyncService {
       return { synced: 0, ips: 0, errors: 0 };
     }
 
-    console.log(`Syncing ${alerts.length} CrowdSec blocklist alert(s)...`);
-
+    // Deduplicate alerts by name: keep the latest one (highest ID) per unique list name.
+    // CrowdSec generates a new alert each time it updates the IPs for a blocklist,
+    // so the highest alert ID is always the most recent version.
+    const alertsByName = new Map<string, (typeof alerts)[0]>();
     for (const alert of alerts) {
+      const name = alert.source?.scope ?? '';
+      const existing = alertsByName.get(name);
+      if (!existing || alert.id > existing.id) {
+        alertsByName.set(name, alert);
+      }
+    }
+    const deduplicatedAlerts = Array.from(alertsByName.values());
+
+    console.log(`Syncing ${deduplicatedAlerts.length} unique CrowdSec blocklist(s) (from ${alerts.length} alert(s))...`);
+
+    for (const alert of deduplicatedAlerts) {
       try {
         const decisions = alert.decisions ?? [];
         const name = alert.source?.scope ?? '';
 
         await sequelize.transaction(async (t) => {
-          await CsBlocklist.upsert(
+          // Destroy any existing entry for this name (IPs cascade-delete via FK).
+          // This handles stale rows with different alert IDs from previous syncs.
+          await CsBlocklist.destroy({
+            where: { name },
+            transaction: t,
+          });
+
+          await CsBlocklist.create(
             { id: alert.id, name },
             { transaction: t }
           );
-
-          await BlocklistIp.destroy({
-            where: { cs_blocklist_id: alert.id },
-            transaction: t,
-          });
 
           for (let i = 0; i < decisions.length; i += CHUNK_SIZE) {
             const chunk = decisions.slice(i, i + CHUNK_SIZE).map((decision) => ({
