@@ -28,13 +28,15 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
 
     await blocklist.update({ enabled });
 
-    if (enabled) {
-      await databaseService.refreshBlocklist(blocklist);
-    } else {
-      await databaseService.deleteBlocklistAlerts(blocklist);
-    }
-
     res.status(200).json({ data: blocklist });
+
+    const crowdsecOp = enabled
+      ? databaseService.refreshBlocklist(blocklist)
+      : databaseService.deleteBlocklistAlerts(blocklist);
+
+    crowdsecOp.catch((error) => {
+      console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}":`, error);
+    });
   } catch (error) {
     console.error('Error toggling blocklist:', error);
     res.status(500).json({
