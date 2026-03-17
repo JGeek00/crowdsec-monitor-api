@@ -8,16 +8,15 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 
 ### Key Features
 
-- **Incremental Database**: All CrowdSec data is stored permanently in SQLite
+- **Incremental Database**: All CrowdSec data is stored permanently in a database
 - **Automatic Synchronization**: Only new alerts are added, preventing duplicates
-- **Watcher Authentication**: Secure login with machine_id/password and JWT Bearer tokens
-- **RESTful API**: Well-structured endpoints for alerts and decisions
-- **Pagination & Validation**: express-validator with configurable pagination
 - **TypeScript**: Strong typing for improved security and maintainability
 - **Rate Limiting**: Protection against API abuse (optional)
-- **Security Hardened**: Helmet and CORS configured
-- **Normalized Relations**: Decisions linked to alerts via foreign keys
 - **PostgreSQL support**: You can use PostgreSQL instead of SQLite if you prefer it.
+
+#### Blocklists support
+
+CrowdSec Monitor API has an **integrated blocklists management system**, so you don't need to use extra tools. You can add a blocklist using an URL, and this service will automatically fetch the list and block that IP addresses on CrowdSec. It will also refresh the blocklists after a certain period of time.
 
 ## Deployment
 1. Choose if you want to use SQLite or PostgreSQL as your database. By default SQLite is used and recommended for most deployments.
@@ -185,3 +184,12 @@ MIT
 ## 👤 Author
 
 JGeek00
+
+## 💶 Donations
+If you like the project and you want to contribute with the development, you can [become a sponsor on GitHub](https://github.com/sponsors/JGeek00), or you can donate using PayPal.
+
+<div align="center">
+  <a href="https://www.paypal.com/donate/?hosted_button_id=T63UK6AVL3MG8">
+    <img src="https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png" alt="Donate with PayPal" height="100" />
+  </a>
+</div>
