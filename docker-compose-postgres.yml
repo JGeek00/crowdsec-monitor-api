@@ -11,6 +11,7 @@ services:
       - CROWDSEC_LAPI_URL=http://<crowdsec container_name>:8080
       - CROWDSEC_USER=crowdsec_user
       - CROWDSEC_PASSWORD=crowdsec_password
+      - CROWDSEC_BOUNCER_KEY=key generated when bouncer is added
       - DB_MODE=postgres # Options: sqlite, postgres
       - POSTGRES_HOST=crowdsec-postgres:5432
       - POSTGRES_USER=postgres

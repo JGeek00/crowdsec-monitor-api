@@ -11,6 +11,7 @@ services:
       - CROWDSEC_LAPI_URL=http://<crowdsec container_name>:8080
       - CROWDSEC_USER=crowdsec_user
       - CROWDSEC_PASSWORD=crowdsec_password
+      - CROWDSEC_BOUNCER_KEY=key generated when bouncer is added
       - DB_MODE=sqlite # Options: sqlite, postgres
       - DB_PATH=/app/database/crowdsec.db # Required when DB_MODE=sqlite
       # PostgreSQL connection (required when DB_MODE=postgres)
