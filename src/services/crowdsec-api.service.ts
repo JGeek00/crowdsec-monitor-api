@@ -7,6 +7,7 @@ export class CrowdSecAPIService {
   private client: AxiosInstance;
   private token: string | null = null;
   private tokenExpiration: Date | null = null;
+  private loginPromise: Promise<boolean> | null = null;
 
   constructor() {
     this.client = axios.create({
@@ -62,15 +63,23 @@ export class CrowdSecAPIService {
   }
 
   /**
-   * Ensure we have a valid token, login if necessary
+   * Ensure we have a valid token, login if necessary.
+   * Uses a shared promise so concurrent callers don't each trigger a separate login.
    */
   private async ensureAuthenticated(): Promise<boolean> {
     if (this.isTokenValid()) {
       return true;
     }
 
+    if (this.loginPromise) {
+      return await this.loginPromise;
+    }
+
     console.log('Token expired or not available, re-authenticating...');
-    return await this.login();
+    this.loginPromise = this.login().finally(() => {
+      this.loginPromise = null;
+    });
+    return await this.loginPromise;
   }
 
   /**
