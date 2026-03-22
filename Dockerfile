@@ -22,6 +22,9 @@ FROM node:24-alpine
 
 WORKDIR /app
 
+# Install system dependencies
+RUN apk add --no-cache traceroute
+
 # Install production dependencies only
 COPY package*.json ./
 RUN npm ci --only=production

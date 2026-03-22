@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist } from '../controllers';
-import { paginationValidators, checkBlocklistValidators } from '../validators';
+import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist, checkDomainBlocklist } from '../controllers';
+import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
@@ -16,6 +16,12 @@ router.get('/', getBlocklists);
  * Check if IPs are in any blocklist
  */
 router.post('/check', checkBlocklistValidators, handleValidationErrors, checkBlocklist);
+
+/**
+ * POST /api/v1/blocklists/check-domain
+ * Run a traceroute to a domain and check if any hop IP is in any blocklist
+ */
+router.post('/check-domain', checkDomainBlocklistValidators, handleValidationErrors, checkDomainBlocklist);
 
 /**
  * POST /api/v1/blocklists
