@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist } from '../controllers';
-import { paginationValidators } from '../validators';
+import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist } from '../controllers';
+import { paginationValidators, checkBlocklistValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
@@ -10,6 +10,12 @@ const router = Router();
  * Get all blocklists from the local database
  */
 router.get('/', getBlocklists);
+
+/**
+ * POST /api/v1/blocklists/check
+ * Check if IPs are in any blocklist
+ */
+router.post('/check', checkBlocklistValidators, handleValidationErrors, checkBlocklist);
 
 /**
  * POST /api/v1/blocklists

@@ -2,9 +2,9 @@ import { body, ValidationChain } from 'express-validator';
 import { ipv4Regex, ipv6Regex } from '../constants/regexps';
 
 /**
- * Validation rules for checking if IPs are in allowlists (POST /v1/allowlists/check)
+ * Validation rules for checking if IPs are in blocklists (POST /v1/blocklists/check)
  */
-export const checkAllowlistValidators: ValidationChain[] = [
+export const checkBlocklistValidators: ValidationChain[] = [
   body('ips')
     .isArray()
     .withMessage('ips must be an array')
