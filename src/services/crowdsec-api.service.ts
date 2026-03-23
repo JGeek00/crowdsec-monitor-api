@@ -403,8 +403,7 @@ export class CrowdSecAPIService {
       const decisions: Array<{ value: string }> = response.data || [];
       return new Set(decisions.map((d) => d.value));
     } catch (error) {
-      this.handleError(error, 'fetching active decisions');
-      return new Set();
+      throw error;
     }
   }
 

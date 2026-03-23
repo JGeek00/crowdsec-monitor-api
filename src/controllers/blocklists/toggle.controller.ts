@@ -35,7 +35,7 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
       : databaseService.deleteBlocklistAlerts(blocklist);
 
     crowdsecOp.catch((error) => {
-      console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}":`, error);
+      console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${error instanceof Error ? error.message : error}`);
     });
   } catch (error) {
     console.error('Error toggling blocklist:', error);

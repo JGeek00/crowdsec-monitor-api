@@ -38,7 +38,13 @@ class BlocklistSyncService {
     const totalIpCount = ips.reduce((sum: number, v: string) => sum + countIpsInValue(v), 0);
 
     // Fetch currently active decisions from CrowdSec to avoid pushing duplicates
-    const activeDecisions = await crowdSecAPI.getActiveDecisions();
+    let activeDecisions: Set<string>;
+    try {
+      activeDecisions = await crowdSecAPI.getActiveDecisions();
+    } catch {
+      console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
+      throw new Error(`Failed to fetch active decisions from CrowdSec`);
+    }
     const uniqueNewIps = [...new Set(ips.filter((ip) => !activeDecisions.has(ip)))];
     const skipped = ips.length - uniqueNewIps.length;
     if (skipped > 0) {
@@ -161,7 +167,7 @@ class BlocklistSyncService {
         ipsCount += await BlocklistIp.count({ where: { blocklist_id: blocklist.id } });
         refreshed++;
       } catch (error) {
-        console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}):`, error);
+        console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}): ${error instanceof Error ? error.message : error}`);
         errors++;
       }
     }

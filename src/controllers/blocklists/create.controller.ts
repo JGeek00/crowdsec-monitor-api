@@ -38,7 +38,7 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
 
     // Trigger immediate fetch & CrowdSec push in the background
     databaseService.refreshBlocklist(blocklist).catch((err) =>
-      console.error(`Error during initial refresh of blocklist "${blocklist.name}":`, err)
+      console.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`)
     );
   } catch (error) {
     console.error('Error creating blocklist:', error);
