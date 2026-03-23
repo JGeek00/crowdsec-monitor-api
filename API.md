@@ -1271,6 +1271,150 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 
 ---
 
+### POST `/api/v1/blocklists/check`
+
+Check if IP addresses are present in any blocklist.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Request Body:**
+```json
+{
+  "ips": [
+    "1.1.1.1",
+    "5.188.206.14",
+    "2.2.2.2"
+  ]
+}
+```
+
+**Request Body Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ips` | array[string] | Yes | Array of IPv4 or IPv6 addresses to check. Array cannot be empty |
+
+**Response (200 OK):**
+```json
+{
+  "results": [
+    {
+      "ip": "1.1.1.1",
+      "blocklist": null
+    },
+    {
+      "ip": "5.188.206.14",
+      "blocklist": "firehol_cruzit_web_attacks"
+    },
+    {
+      "ip": "2.2.2.2",
+      "blocklist": null
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `ip` (string): The IP address checked
+- `blocklist` (string | null): The name of the blocklist if the IP is listed, `null` otherwise
+
+**Response (400 Bad Request):**
+```json
+{
+  "errors": [
+    {
+      "msg": "each IP must be a valid IPv4 or IPv6 address",
+      "param": "ips",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns a result for every IP provided
+- IPs not in any blocklist have `blocklist` set to `null`
+- Both IPv4 and IPv6 addresses are supported
+- Checks across all locally stored blocklists (both API-managed and CrowdSec-managed)
+
+---
+
+### POST `/api/v1/blocklists/check-domain`
+
+Run a traceroute to a domain and check if any intermediate hop IP is present in any blocklist. Useful to detect whether a router on the path to a destination is flagged.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Request Body:**
+```json
+{
+  "domain": "github.com"
+}
+```
+
+**Request Body Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `domain` | string | Yes | Domain name to traceroute. Max 253 characters. Subdomains are allowed |
+
+**Response (200 OK):**
+```json
+{
+  "domain": "github.com",
+  "reachable": true,
+  "hops": [
+    {
+      "hop": 1,
+      "ip": "192.168.0.1",
+      "timed_out": false,
+      "blocklist": null
+    },
+    {
+      "hop": 2,
+      "ip": null,
+      "timed_out": true,
+      "blocklist": null
+    },
+    {
+      "hop": 3,
+      "ip": "5.188.206.14",
+      "timed_out": false,
+      "blocklist": "firehol_cruzit_web_attacks"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `domain` (string): The domain that was checked
+- `reachable` (boolean): Whether the domain was reachable (responds to HTTP or traceroute reaches it)
+- `hops` (array): List of traceroute hops up to the last hop with a resolved IP. Trailing timed-out hops are trimmed
+  - `hop` (integer): Hop number
+  - `ip` (string | null): IP address of the router, `null` if it did not respond (timed out)
+  - `timed_out` (boolean): Whether this hop timed out
+  - `blocklist` (string | null): Name of the blocklist if the hop IP is listed, `null` otherwise
+
+**Response (400 Bad Request):**
+```json
+{
+  "errors": [
+    {
+      "msg": "domain must be a valid domain name (subdomains are allowed)",
+      "param": "domain",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Runs `traceroute -n` with a maximum of 20 hops and 3s timeout per hop
+- Reachability is determined by an HTTP HEAD request and/or natural traceroute termination
+- Intermediate hops with `ip: null` are routers that do not respond to ICMP (normal behaviour)
+- Trailing null-IP hops after the last resolved hop are removed from the response
+- Blocklist lookup is performed only for hops with a resolved IP
+
+---
+
 ## Statistics Endpoints
 
 ### GET `/api/v1/statistics`

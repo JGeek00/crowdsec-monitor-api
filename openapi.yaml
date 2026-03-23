@@ -1054,6 +1054,160 @@ paths:
         '500':
           description: Internal server error
 
+  /blocklists/check:
+    post:
+      tags:
+        - Blocklists
+      summary: Check if IPs are in any blocklist
+      operationId: checkBlocklistIps
+      description: Check if provided IP addresses are present in any locally stored blocklist (both API-managed and CrowdSec-managed) and return their blocklist membership.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ips
+              properties:
+                ips:
+                  type: array
+                  items:
+                    type: string
+                    description: IPv4 or IPv6 address
+                  description: Array of IP addresses to check
+                  example:
+                    - "1.1.1.1"
+                    - "5.188.206.14"
+                    - "2.2.2.2"
+      responses:
+        '200':
+          description: Blocklist check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          description: The IP address checked
+                          example: "5.188.206.14"
+                        blocklist:
+                          type: string
+                          nullable: true
+                          description: Name of the blocklist if IP is listed, null otherwise
+                          example: "firehol_cruzit_web_attacks"
+              example:
+                results:
+                  - ip: "1.1.1.1"
+                    blocklist: null
+                  - ip: "5.188.206.14"
+                    blocklist: "firehol_cruzit_web_attacks"
+                  - ip: "2.2.2.2"
+                    blocklist: null
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+
+  /blocklists/check-domain:
+    post:
+      tags:
+        - Blocklists
+      summary: Traceroute a domain and check hop IPs against blocklists
+      operationId: checkDomainBlocklist
+      description: |
+        Runs a traceroute to the given domain and checks whether any intermediate
+        router IP is present in any locally stored blocklist. Useful to detect
+        whether a hop on the path to a destination is flagged.
+        
+        Reachability is determined by an HTTP HEAD request to the domain and/or
+        the natural termination of the traceroute process. Trailing timed-out hops
+        (after the last resolved IP) are stripped from the response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  maxLength: 253
+                  description: Domain name to traceroute. Subdomains are allowed.
+                  example: github.com
+      responses:
+        '200':
+          description: Traceroute and blocklist check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    type: string
+                    description: The domain that was checked
+                    example: github.com
+                  reachable:
+                    type: boolean
+                    description: Whether the domain was reachable
+                    example: true
+                  hops:
+                    type: array
+                    description: Traceroute hops up to the last resolved IP. Trailing timed-out hops are trimmed.
+                    items:
+                      type: object
+                      properties:
+                        hop:
+                          type: integer
+                          description: Hop number
+                          example: 1
+                        ip:
+                          type: string
+                          nullable: true
+                          description: IP address of the router, null if it did not respond
+                          example: "192.168.0.1"
+                        timed_out:
+                          type: boolean
+                          description: Whether this hop timed out
+                          example: false
+                        blocklist:
+                          type: string
+                          nullable: true
+                          description: Name of the blocklist if the IP is listed, null otherwise
+                          example: null
+              example:
+                domain: github.com
+                reachable: true
+                hops:
+                  - hop: 1
+                    ip: "192.168.0.1"
+                    timed_out: false
+                    blocklist: null
+                  - hop: 2
+                    ip: null
+                    timed_out: true
+                    blocklist: null
+                  - hop: 3
+                    ip: "5.188.206.14"
+                    timed_out: false
+                    blocklist: "firehol_cruzit_web_attacks"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+
   /statistics:
     get:
       tags:
