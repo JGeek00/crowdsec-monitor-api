@@ -21,13 +21,16 @@ export async function checkDomainBlocklist(req: Request, res: Response): Promise
       blocklist: h.ip ? (blocklistMap.get(h.ip) ?? null) : null,
     }));
 
-    const blocked_ips = hopResults.filter(h => h.blocklist !== null);
+    let lastIpIndex = -1;
+    for (let i = hopResults.length - 1; i >= 0; i--) {
+      if (hopResults[i].ip !== null) { lastIpIndex = i; break; }
+    }
+    const trimmedHops = lastIpIndex >= 0 ? hopResults.slice(0, lastIpIndex + 1) : hopResults;
 
     res.status(200).json({
       domain,
       reachable,
-      hops: hopResults,
-      blocked_ips,
+      hops: trimmedHops,
     });
   } catch (error) {
     console.error('Error checking domain blocklist:', error);
