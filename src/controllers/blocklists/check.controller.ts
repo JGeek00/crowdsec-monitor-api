@@ -9,7 +9,7 @@ export async function checkBlocklist(req: Request, res: Response): Promise<void>
     const { ips } = req.body as { ips: string[] };
 
     const blocklistMap = await lookupIpsInBlocklists(ips);
-    const results = ips.map(ip => ({ ip, blocklist: blocklistMap.get(ip) ?? null }));
+    const results = ips.map(ip => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
 
     res.status(200).json({ results });
   } catch (error) {
