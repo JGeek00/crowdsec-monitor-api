@@ -1060,7 +1060,7 @@ paths:
         - Blocklists
       summary: Check if IPs are in any blocklist
       operationId: checkBlocklistIps
-      description: Check if provided IP addresses are present in any locally stored blocklist (both API-managed and CrowdSec-managed) and return their blocklist membership.
+      description: Check if provided IP addresses are present in any locally stored blocklist (both API-managed and CrowdSec-managed) and return their blocklist membership. Each IP can match multiple blocklists.
       requestBody:
         required: true
         content:
@@ -1097,19 +1097,20 @@ paths:
                           type: string
                           description: The IP address checked
                           example: "5.188.206.14"
-                        blocklist:
-                          type: string
-                          nullable: true
-                          description: Name of the blocklist if IP is listed, null otherwise
-                          example: "firehol_cruzit_web_attacks"
+                        blocklists:
+                          type: array
+                          items:
+                            type: string
+                          description: Array of blocklist names the IP is listed in. Empty array if not in any blocklist
+                          example: ["firehol_cruzit_web_attacks", "my_blocklist"]
               example:
                 results:
                   - ip: "1.1.1.1"
-                    blocklist: null
+                    blocklists: []
                   - ip: "5.188.206.14"
-                    blocklist: "firehol_cruzit_web_attacks"
+                    blocklists: ["firehol_cruzit_web_attacks"]
                   - ip: "2.2.2.2"
-                    blocklist: null
+                    blocklists: []
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1121,16 +1122,12 @@ paths:
     post:
       tags:
         - Blocklists
-      summary: Traceroute a domain and check hop IPs against blocklists
+      summary: Resolve a domain and check its IPs against blocklists
       operationId: checkDomainBlocklist
       description: |
-        Runs a traceroute to the given domain and checks whether any intermediate
-        router IP is present in any locally stored blocklist. Useful to detect
-        whether a hop on the path to a destination is flagged.
-        
-        Reachability is determined by an HTTP HEAD request to the domain and/or
-        the natural termination of the traceroute process. Trailing timed-out hops
-        (after the last resolved IP) are stripped from the response.
+        Resolves the given domain to its IPv4 and IPv6 addresses via DNS and checks
+        whether any resolved IP is present in any locally stored blocklist.
+        Uses the DNS server configured via the `DNS_SERVER` environment variable.
       requestBody:
         required: true
         content:
@@ -1143,11 +1140,11 @@ paths:
                 domain:
                   type: string
                   maxLength: 253
-                  description: Domain name to traceroute. Subdomains are allowed.
+                  description: Domain name to resolve. Subdomains are allowed.
                   example: github.com
       responses:
         '200':
-          description: Traceroute and blocklist check results
+          description: DNS resolution and blocklist check results
           content:
             application/json:
               schema:
@@ -1157,54 +1154,43 @@ paths:
                     type: string
                     description: The domain that was checked
                     example: github.com
-                  reachable:
-                    type: boolean
-                    description: Whether the domain was reachable
-                    example: true
-                  hops:
+                  ips:
                     type: array
-                    description: Traceroute hops up to the last resolved IP. Trailing timed-out hops are trimmed.
+                    description: Resolved IP addresses with their blocklist membership
                     items:
                       type: object
                       properties:
-                        hop:
-                          type: integer
-                          description: Hop number
-                          example: 1
                         ip:
                           type: string
-                          nullable: true
-                          description: IP address of the router, null if it did not respond
-                          example: "192.168.0.1"
-                        timed_out:
-                          type: boolean
-                          description: Whether this hop timed out
-                          example: false
-                        blocklist:
-                          type: string
-                          nullable: true
-                          description: Name of the blocklist if the IP is listed, null otherwise
-                          example: null
+                          description: Resolved IP address
+                          example: "140.82.121.4"
+                        blocklists:
+                          type: array
+                          items:
+                            type: string
+                          description: Array of blocklist names the IP is listed in. Empty array if not in any blocklist
+                          example: []
               example:
                 domain: github.com
-                reachable: true
-                hops:
-                  - hop: 1
-                    ip: "192.168.0.1"
-                    timed_out: false
-                    blocklist: null
-                  - hop: 2
-                    ip: null
-                    timed_out: true
-                    blocklist: null
-                  - hop: 3
-                    ip: "5.188.206.14"
-                    timed_out: false
-                    blocklist: "firehol_cruzit_web_attacks"
+                ips:
+                  - ip: "140.82.121.4"
+                    blocklists: []
+                  - ip: "140.82.121.3"
+                    blocklists: []
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          description: Domain could not be resolved to any IP address
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Could not resolve domain to any IP address
         '500':
           description: Internal server error
 

@@ -1299,15 +1299,15 @@ Check if IP addresses are present in any blocklist.
   "results": [
     {
       "ip": "1.1.1.1",
-      "blocklist": null
+      "blocklists": []
     },
     {
       "ip": "5.188.206.14",
-      "blocklist": "firehol_cruzit_web_attacks"
+      "blocklists": ["firehol_cruzit_web_attacks", "firehol_level1"]
     },
     {
       "ip": "2.2.2.2",
-      "blocklist": null
+      "blocklists": []
     }
   ]
 }
@@ -1315,7 +1315,7 @@ Check if IP addresses are present in any blocklist.
 
 **Response Fields:**
 - `ip` (string): The IP address checked
-- `blocklist` (string | null): The name of the blocklist if the IP is listed, `null` otherwise
+- `blocklists` (array[string]): Names of all blocklists the IP appears in. Empty array if not listed in any blocklist
 
 **Response (400 Bad Request):**
 ```json
@@ -1332,7 +1332,8 @@ Check if IP addresses are present in any blocklist.
 
 **Notes:**
 - Returns a result for every IP provided
-- IPs not in any blocklist have `blocklist` set to `null`
+- IPs not in any blocklist have `blocklists` set to an empty array `[]`
+- An IP can appear in multiple blocklists simultaneously
 - Both IPv4 and IPv6 addresses are supported
 - Checks across all locally stored blocklists (both API-managed and CrowdSec-managed)
 
@@ -1340,7 +1341,7 @@ Check if IP addresses are present in any blocklist.
 
 ### POST `/api/v1/blocklists/check-domain`
 
-Run a traceroute to a domain and check if any intermediate hop IP is present in any blocklist. Useful to detect whether a router on the path to a destination is flagged.
+Resolve a domain name via DNS and check if any of the resolved IP addresses are present in any blocklist.
 
 **Authentication:** Required if `API_PASSWORD` is set
 
@@ -1354,31 +1355,20 @@ Run a traceroute to a domain and check if any intermediate hop IP is present in 
 **Request Body Parameters:**
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `domain` | string | Yes | Domain name to traceroute. Max 253 characters. Subdomains are allowed |
+| `domain` | string | Yes | Domain name to resolve and check. Max 253 characters. Subdomains are allowed |
 
 **Response (200 OK):**
 ```json
 {
   "domain": "github.com",
-  "reachable": true,
-  "hops": [
+  "ips": [
     {
-      "hop": 1,
-      "ip": "192.168.0.1",
-      "timed_out": false,
-      "blocklist": null
+      "ip": "140.82.114.4",
+      "blocklists": []
     },
     {
-      "hop": 2,
-      "ip": null,
-      "timed_out": true,
-      "blocklist": null
-    },
-    {
-      "hop": 3,
       "ip": "5.188.206.14",
-      "timed_out": false,
-      "blocklist": "firehol_cruzit_web_attacks"
+      "blocklists": ["firehol_cruzit_web_attacks"]
     }
   ]
 }
@@ -1386,12 +1376,9 @@ Run a traceroute to a domain and check if any intermediate hop IP is present in 
 
 **Response Fields:**
 - `domain` (string): The domain that was checked
-- `reachable` (boolean): Whether the domain was reachable (responds to HTTP or traceroute reaches it)
-- `hops` (array): List of traceroute hops up to the last hop with a resolved IP. Trailing timed-out hops are trimmed
-  - `hop` (integer): Hop number
-  - `ip` (string | null): IP address of the router, `null` if it did not respond (timed out)
-  - `timed_out` (boolean): Whether this hop timed out
-  - `blocklist` (string | null): Name of the blocklist if the hop IP is listed, `null` otherwise
+- `ips` (array): List of IP addresses the domain resolved to
+  - `ip` (string): Resolved IP address
+  - `blocklists` (array[string]): Names of all blocklists the IP appears in. Empty array if not listed in any blocklist
 
 **Response (400 Bad Request):**
 ```json
@@ -1406,12 +1393,18 @@ Run a traceroute to a domain and check if any intermediate hop IP is present in 
 }
 ```
 
+**Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Could not resolve domain to any IP address"
+}
+```
+
 **Notes:**
-- Runs `traceroute -n` with a maximum of 20 hops and 3s timeout per hop
-- Reachability is determined by an HTTP HEAD request and/or natural traceroute termination
-- Intermediate hops with `ip: null` are routers that do not respond to ICMP (normal behaviour)
-- Trailing null-IP hops after the last resolved hop are removed from the response
-- Blocklist lookup is performed only for hops with a resolved IP
+- Uses the DNS server configured via the `DNS_SERVER` environment variable
+- Returns 422 if the domain cannot be resolved to any IP address
+- An IP can appear in multiple blocklists simultaneously
+- Checks across all locally stored blocklists (both API-managed and CrowdSec-managed)
 
 ---
 
