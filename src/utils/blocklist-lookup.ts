@@ -6,7 +6,7 @@ import { isIpv4, isIpv4InCidr } from './ip';
  * Look up which blocklist each IP belongs to (if any).
  * Returns a Map of ip -> blocklist_name for all matched IPs.
  */
-export async function lookupIpsInBlocklists(ips: string[]): Promise<Map<string, string>> {
+export async function lookupIpsInBlocklists(ips: string[]): Promise<Map<string, string[]>> {
   if (ips.length === 0) return new Map();
 
   const entries = await BlocklistIp.findAll({
@@ -19,29 +19,36 @@ export async function lookupIpsInBlocklists(ips: string[]): Promise<Map<string, 
     attributes: ['value', 'blocklist_name'],
   });
 
-  const exactMatches = new Map<string, string>();
+  const exactMatches = new Map<string, string[]>();
   const cidrEntries: Array<{ value: string; blocklist_name: string }> = [];
 
   for (const entry of entries) {
     if (entry.value.includes('/')) {
       cidrEntries.push({ value: entry.value, blocklist_name: entry.blocklist_name });
-    } else if (!exactMatches.has(entry.value)) {
-      exactMatches.set(entry.value, entry.blocklist_name);
+    } else {
+      const existing = exactMatches.get(entry.value) ?? [];
+      if (!existing.includes(entry.blocklist_name)) {
+        existing.push(entry.blocklist_name);
+      }
+      exactMatches.set(entry.value, existing);
     }
   }
 
-  const result = new Map<string, string>();
+  const result = new Map<string, string[]>();
 
   for (const ip of ips) {
-    if (exactMatches.has(ip)) {
-      result.set(ip, exactMatches.get(ip)!);
-    } else if (isIpv4(ip)) {
+    const matched: string[] = [...(exactMatches.get(ip) ?? [])];
+
+    if (isIpv4(ip)) {
       for (const cidr of cidrEntries) {
-        if (isIpv4InCidr(ip, cidr.value)) {
-          result.set(ip, cidr.blocklist_name);
-          break;
+        if (isIpv4InCidr(ip, cidr.value) && !matched.includes(cidr.blocklist_name)) {
+          matched.push(cidr.blocklist_name);
         }
       }
+    }
+
+    if (matched.length > 0) {
+      result.set(ip, matched);
     }
   }
 

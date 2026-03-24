@@ -22,6 +22,9 @@ export const defaults = {
     crowdsecBlocklistsRefreshTime: 3600, // 1 hour
     blocklistReconcileTime: 3600, // 1 hour
   },
+  dns: {
+    server: 'cloudflare', // Default DNS server for domain checks
+  },
   statistics: {
     topItemsLimit: 10, // Default limit for top items in statistics
   },

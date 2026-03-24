@@ -1,37 +1,27 @@
 import { Request, Response } from 'express';
-import { runTraceroute } from '../../utils/traceroute';
 import { lookupIpsInBlocklists } from '../../utils/blocklist-lookup';
+import { resolveIps } from '../../utils/dns-resolve';
+import { config } from '../../config';
 
 /**
- * Run a traceroute to a domain and check if any hop IP is in any blocklist
+ * Resolve DNS for a domain using the configured DNS server and check if any
+ * resolved IP is in any blocklist.
  */
 export async function checkDomainBlocklist(req: Request, res: Response): Promise<void> {
   try {
     const { domain } = req.body as { domain: string };
 
-    const { hops, reachable } = await runTraceroute(domain);
+    const ips = await resolveIps(domain, config.dns.server);
 
-    const realIps = hops.filter(h => h.ip !== null).map(h => h.ip as string);
-    const blocklistMap = await lookupIpsInBlocklists(realIps);
-
-    const hopResults = hops.map(h => ({
-      hop: h.hop,
-      ip: h.ip,
-      timed_out: h.timed_out,
-      blocklist: h.ip ? (blocklistMap.get(h.ip) ?? null) : null,
-    }));
-
-    let lastIpIndex = -1;
-    for (let i = hopResults.length - 1; i >= 0; i--) {
-      if (hopResults[i].ip !== null) { lastIpIndex = i; break; }
+    if (ips.length === 0) {
+      res.status(422).json({ error: 'Could not resolve domain to any IP address' });
+      return;
     }
-    const trimmedHops = lastIpIndex >= 0 ? hopResults.slice(0, lastIpIndex + 1) : hopResults;
 
-    res.status(200).json({
-      domain,
-      reachable,
-      hops: trimmedHops,
-    });
+    const blocklistMap = await lookupIpsInBlocklists(ips);
+    const results = ips.map(ip => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
+
+    res.status(200).json({ domain, ips: results });
   } catch (error) {
     console.error('Error checking domain blocklist:', error);
     res.status(500).json({

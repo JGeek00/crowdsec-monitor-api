@@ -67,6 +67,7 @@ CrowdSec Monitor API has an **integrated blocklists management system**, so you 
 | `BLOCKLIST_IPS_BAN_DURATION` | Ban time for each IP that comes from a blocklist | `24h` | No |
 | `BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists | `14400` | No |
 | `CROWDSEC_BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists managed by CrowdSec | `3600` | No |
+| `DOMAIN_CHECK_DNS_SERVER` | DNS server to be used on endpoint `/api/v1/blocklists/check-domain` to resolve IP. Options: `cloudflare`, `google`, `quad9` or `opendns` | `cloudflare` | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |
 

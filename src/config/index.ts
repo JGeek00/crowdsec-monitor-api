@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { defaults } from './defaults';
+import { dnsServers } from '../constants/dns-servers';
 
 dotenv.config();
 
@@ -119,6 +120,17 @@ export const config = {
     apiPassword: process.env.API_PASSWORD || undefined,
   },
   rateLimit: parseRateLimit(process.env.RATE_LIMIT),
+  dns: {
+    server: (() => {
+      const raw = (process.env.DOMAIN_CHECK_DNS_SERVER || defaults.dns.server).trim().toLowerCase();
+      const key = raw === 'opendns' ? 'openDns' : raw as keyof typeof dnsServers;
+      if (!(key in dnsServers)) {
+        console.warn(`WARNING: Unknown DOMAIN_CHECK_DNS_SERVER "${raw}". Falling back to "${defaults.dns.server}".`);
+        return dnsServers[defaults.dns.server as keyof typeof dnsServers];
+      }
+      return dnsServers[key];
+    })(),
+  },
 };
 
 export { defaults } from './defaults';

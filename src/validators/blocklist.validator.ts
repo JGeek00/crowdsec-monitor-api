@@ -19,7 +19,7 @@ export const checkBlocklistValidators: ValidationChain[] = [
 ];
 
 /**
- * Validation rules for checking if a domain's route IPs are in blocklists (POST /v1/blocklists/check-domain)
+ * Validation rules for checking if a domain's resolved IPs are in blocklists (POST /v1/blocklists/check-domain)
  */
 export const checkDomainBlocklistValidators: ValidationChain[] = [
   body('domain')
