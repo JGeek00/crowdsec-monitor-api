@@ -232,6 +232,9 @@ paths:
               schema:
                 type: object
                 properties:
+                  error:
+                    type: string
+                    example: Not found
                   message:
                     type: string
                     example: Alert not found
@@ -269,14 +272,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid alert ID
-                  message:
-                    type: string
-                    example: Alert ID must be a valid number
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -284,14 +280,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Alert not found
-                  message:
-                    type: string
-                    example: Alert with ID 123 was not found
+                $ref: '#/components/schemas/ErrorResponse'
 
   /alerts/stats:
     get:
@@ -474,14 +463,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Error creating decision
-                  error:
-                    type: string
-                    example: Connection refused
+                $ref: '#/components/schemas/ErrorResponse'
 
   /decisions/{id}:
     get:
@@ -511,11 +493,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Decision not found
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       tags:
         - Decisions
@@ -551,14 +529,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid decision ID
-                  message:
-                    type: string
-                    example: Decision ID must be a valid number
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -566,14 +537,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Decision not found
-                  message:
-                    type: string
-                    example: Decision with ID 456 was not found
+                $ref: '#/components/schemas/ErrorResponse'
 
   /decisions/stats:
     get:
@@ -717,14 +681,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Allowlist not found
-                  message:
-                    type: string
-                    example: "Allowlist 'known_ips' was not found"
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
 
@@ -845,11 +802,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: A blocklist with this URL already exists
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
 
@@ -903,11 +856,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Blocklist not found
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
     delete:
@@ -945,11 +894,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Blocklist not found
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
 
@@ -1046,11 +991,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Blocklist not found
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
 
@@ -1186,11 +1127,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Could not resolve domain to any IP address
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
 
@@ -1448,6 +1385,21 @@ components:
         default: false
 
   schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Short error category or title
+          example: Not found
+        message:
+          type: string
+          description: Detailed error description
+          example: The requested resource was not found
+
     Alert:
       type: object
       properties:
@@ -2075,21 +2027,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              errors:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    msg:
-                      type: string
-                    param:
-                      type: string
-                    location:
-                      type: string
+            $ref: '#/components/schemas/ErrorResponse'
           example:
-            errors:
-              - msg: limit must be a positive integer
-                param: limit
-                location: query
+            error: Validation error
+            message: limit must be a positive integer

@@ -269,6 +269,7 @@ curl "http://localhost:3000/api/v1/alerts/1"
 **Error Response (404):**
 ```json
 {
+  "error": "Not found",
   "message": "Alert not found"
 }
 ```
@@ -530,21 +531,16 @@ curl -X POST "http://localhost:3000/api/v1/decisions" \
 **Error Response (400 Bad Request):**
 ```json
 {
-  "errors": [
-    {
-      "msg": "ip must be a valid IPv4 or IPv6 address",
-      "param": "ip",
-      "location": "body"
-    }
-  ]
+  "error": "Validation error",
+  "message": "ip must be a valid IPv4 or IPv6 address"
 }
 ```
 
 **Error Response (500 Internal Server Error):**
 ```json
 {
-  "message": "Error creating decision",
-  "error": "Connection refused"
+  "error": "Error creating decision",
+  "message": "Connection refused"
 }
 ```
 
@@ -614,6 +610,7 @@ curl "http://localhost:3000/api/v1/decisions/1"
 **Error Response (404):**
 ```json
 {
+  "error": "Not found",
   "message": "Decision not found"
 }
 ```
@@ -841,13 +838,8 @@ Check if IP addresses are present in any allowlist.
 **Response (400 Bad Request):**
 ```json
 {
-  "errors": [
-    {
-      "msg": "each IP must be a valid IPv4 or IPv6 address",
-      "param": "ips",
-      "location": "body"
-    }
-  ]
+  "error": "Validation error",
+  "message": "each IP must be a valid IPv4 or IPv6 address"
 }
 ```
 
@@ -1039,14 +1031,16 @@ curl -X POST "http://localhost:3000/api/v1/blocklists" \
 **Response (400 Bad Request):**
 ```json
 {
-  "error": "url is required"
+  "error": "Validation error",
+  "message": "url is required"
 }
 ```
 
 **Response (409 Conflict):**
 ```json
 {
-  "error": "A blocklist with this URL already exists"
+  "error": "Conflict",
+  "message": "A blocklist with this URL already exists"
 }
 ```
 
@@ -1151,7 +1145,8 @@ curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
 **Response (404 Not Found):**
 ```json
 {
-  "error": "Blocklist not found"
+  "error": "Not found",
+  "message": "Blocklist not found"
 }
 ```
 
@@ -1183,7 +1178,8 @@ curl -X DELETE "http://localhost:3000/api/v1/blocklists/3"
 **Response (404 Not Found):**
 ```json
 {
-  "error": "Blocklist not found"
+  "error": "Not found",
+  "message": "Blocklist not found"
 }
 ```
 
@@ -1260,7 +1256,8 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 **Response (404 Not Found):**
 ```json
 {
-  "error": "Blocklist not found"
+  "error": "Not found",
+  "message": "Blocklist not found"
 }
 ```
 
@@ -1320,13 +1317,8 @@ Check if IP addresses are present in any blocklist.
 **Response (400 Bad Request):**
 ```json
 {
-  "errors": [
-    {
-      "msg": "each IP must be a valid IPv4 or IPv6 address",
-      "param": "ips",
-      "location": "body"
-    }
-  ]
+  "error": "Validation error",
+  "message": "each IP must be a valid IPv4 or IPv6 address"
 }
 ```
 
@@ -1383,20 +1375,16 @@ Resolve a domain name via DNS and check if any of the resolved IP addresses are 
 **Response (400 Bad Request):**
 ```json
 {
-  "errors": [
-    {
-      "msg": "domain must be a valid domain name (subdomains are allowed)",
-      "param": "domain",
-      "location": "body"
-    }
-  ]
+  "error": "Validation error",
+  "message": "domain must be a valid domain name (subdomains are allowed)"
 }
 ```
 
 **Response (422 Unprocessable Entity):**
 ```json
 {
-  "error": "Could not resolve domain to any IP address"
+  "error": "Unprocessable entity",
+  "message": "Could not resolve domain to any IP address"
 }
 ```
 
@@ -1509,37 +1497,22 @@ curl "http://localhost:3000/api/v1/statistics?since=2026-02-13&amount=15"
 **Validation Errors (400 Bad Request):**
 ```json
 {
-  "message": "Validation error",
-  "errors": [
-    {
-      "field": "since",
-      "message": "since must be in yyyy-mm-dd format"
-    }
-  ]
+  "error": "Validation error",
+  "message": "since must be in yyyy-mm-dd format"
 }
 ```
 
 ```json
 {
-  "message": "Validation error",
-  "errors": [
-    {
-      "field": "since",
-      "message": "since date must be in the past (not today or future dates)"
-    }
-  ]
+  "error": "Validation error",
+  "message": "since date must be in the past (not today or future dates)"
 }
 ```
 
 ```json
 {
-  "message": "Validation error",
-  "errors": [
-    {
-      "field": "amount",
-      "message": "amount must be a positive integer"
-    }
-  ]
+  "error": "Validation error",
+  "message": "amount must be a positive integer"
 }
 ```
 
@@ -1968,14 +1941,14 @@ Statistics are returned directly at the root level.
 
 ```json
 {
-  "message": "Error description",
-  "error": "Detailed error message (only in development mode)"
+  "error": "Error category",
+  "message": "Detailed error message"
 }
 ```
 
 **Notes:**
-- The `error` field with detailed error information is only included when `NODE_ENV !== 'production'`
-- In production mode, only generic error messages are returned for security reasons
+- `error`: Short category or title (e.g., `"Not found"`, `"Validation error"`, `"Internal server error"`)
+- `message`: Detailed description of what went wrong
 
 **Common HTTP Status Codes:**
 - `200`: Success
@@ -1993,34 +1966,16 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
 **Example validation error:**
 ```json
 {
-  "message": "Validation error",
-  "errors": [
-    {
-      "field": "limit",
-      "message": "limit must be a positive integer"
-    },
-    {
-      "field": "offset",
-      "message": "offset must be a non-negative integer"
-    }
-  ]
+  "error": "Validation error",
+  "message": "limit must be a positive integer, offset must be a non-negative integer"
 }
 ```
 
 **Common validation errors for new parameters:**
 ```json
 {
-  "message": "Validation error",
-  "errors": [
-    {
-      "field": "ip_address",
-      "message": "ip_address must be a valid IPv4 or IPv6 address"
-    },
-    {
-      "field": "country",
-      "message": "country must be a 2-letter country code (ISO 3166-1 alpha-2)"
-    }
-  ]
+  "error": "Validation error",
+  "message": "ip_address must be a valid IPv4 or IPv6 address, country must be a 2-letter country code (ISO 3166-1 alpha-2)"
 }
 ```
 
@@ -2048,6 +2003,7 @@ The API supports optional rate limiting via the `RATE_LIMIT` environment variabl
 When rate limit is exceeded:
 ```json
 {
+  "error": "Too many requests",
   "message": "Too many requests from this IP, please try again later."
 }
 ```
