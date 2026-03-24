@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { crowdSecAPI } from '../../services';
 import { isValidDate } from '../../utils/date-validator';
 import { CrowdSecAllowlist } from '../../types/crowdsec.types';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Sanitize allowlist items by converting invalid expiration dates to null
@@ -30,9 +31,6 @@ export async function getAllowlists(req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error('Error fetching allowlists:', error);
-    res.status(500).json({
-      error: 'Failed to fetch allowlists',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to fetch allowlists', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

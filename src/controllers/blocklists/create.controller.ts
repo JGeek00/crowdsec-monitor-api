@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '../../models';
 import { databaseService } from '../../services';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Add a new blocklist URL.
@@ -11,17 +12,17 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
     const { url, name } = req.body;
 
     if (!url || typeof url !== 'string' || url.trim() === '') {
-      res.status(400).json({ error: 'url is required' });
+      res.status(400).json(errorResponse('Validation error', 'url is required'));
       return;
     }
     if (!name || typeof name !== 'string' || name.trim() === '') {
-      res.status(400).json({ error: 'name is required' });
+      res.status(400).json(errorResponse('Validation error', 'name is required'));
       return;
     }
 
     const existing = await Blocklist.findOne({ where: { url: url.trim() } });
     if (existing) {
-      res.status(409).json({ error: 'A blocklist with this URL already exists' });
+      res.status(409).json(errorResponse('Conflict', 'A blocklist with this URL already exists'));
       return;
     }
 
@@ -42,9 +43,6 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
     );
   } catch (error) {
     console.error('Error creating blocklist:', error);
-    res.status(500).json({
-      error: 'Failed to create blocklist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to create blocklist', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

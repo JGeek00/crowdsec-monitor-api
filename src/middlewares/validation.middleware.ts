@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { errorResponse } from '../utils/error-response';
 
 /**
  * Middleware to handle validation errors from express-validator
@@ -13,13 +14,7 @@ export const handleValidationErrors = (
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
-    res.status(400).json({
-      message: 'Validation error',
-      errors: errors.array().map(err => ({
-        field: err.type === 'field' ? err.path : undefined,
-        message: err.msg,
-      })),
-    });
+    res.status(400).json(errorResponse('Validation error', errors.array().map(err => err.msg).join(', ')));
     return;
   }
   

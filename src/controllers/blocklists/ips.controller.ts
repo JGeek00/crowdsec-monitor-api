@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { BlocklistIp } from '../../models';
 import { Blocklist, CsBlocklist } from '../../models';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Get IPs for a specific blocklist with pagination.
@@ -29,7 +30,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
     } else {
       const csBlocklist = await CsBlocklist.findByPk(numId);
       if (!csBlocklist) {
-        res.status(404).json({ error: 'Blocklist not found' });
+        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
         return;
       }
       whereClause = { cs_blocklist_id: numId };
@@ -69,10 +70,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
   } catch (error) {
     if (signal.aborted) return;
     console.error('Error fetching blocklist IPs:', error);
-    res.status(500).json({
-      error: 'Failed to fetch blocklist IPs',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to fetch blocklist IPs', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

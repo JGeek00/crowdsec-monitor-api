@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { literal } from 'sequelize';
 import { Blocklist, BlocklistIp, CsBlocklist } from '../../models';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 const COUNT_API_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
   literal('(SELECT COUNT(*) FROM blocklist_ips WHERE blocklist_ips.blocklist_id = "Blocklist"."id")'),
@@ -120,10 +121,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
   } catch (error) {
     if (signal.aborted) return;
     console.error('Error fetching blocklists:', error);
-    res.status(500).json({
-      error: 'Failed to fetch blocklists',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to fetch blocklists', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }
@@ -175,7 +173,7 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
     });
 
     if (!csBlocklist) {
-      res.status(404).json({ error: 'Blocklist not found' });
+      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
       return;
     }
 
@@ -197,10 +195,7 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
   } catch (error) {
     if (signal.aborted) return;
     console.error('Error fetching blocklist:', error);
-    res.status(500).json({
-      error: 'Failed to fetch blocklist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to fetch blocklist', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

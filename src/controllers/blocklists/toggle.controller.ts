@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '../../models';
 import { databaseService } from '../../services';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Enable or disable a blocklist.
@@ -16,13 +17,13 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
     const { enabled } = req.body;
 
     if (typeof enabled !== 'boolean') {
-      res.status(400).json({ error: '"enabled" must be a boolean' });
+      res.status(400).json(errorResponse('Validation error', '"enabled" must be a boolean'));
       return;
     }
 
     const blocklist = await Blocklist.findByPk(Number(blocklistId));
     if (!blocklist) {
-      res.status(404).json({ error: 'Blocklist not found' });
+      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
       return;
     }
 
@@ -39,9 +40,6 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
     });
   } catch (error) {
     console.error('Error toggling blocklist:', error);
-    res.status(500).json({
-      error: 'Failed to toggle blocklist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to toggle blocklist', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

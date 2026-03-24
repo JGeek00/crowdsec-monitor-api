@@ -20,7 +20,7 @@ export const createApp = (): Application => {
     const limiter = rateLimit({
       windowMs: config.rateLimit.windowMs,
       max: config.rateLimit.max,
-      message: 'Too many requests from this IP, please try again later.',
+      message: { error: 'Too many requests', message: 'Too many requests from this IP, please try again later.' },
     });
     app.use('/api/v1/', limiter);
     console.log(`Rate limiting enabled: ${config.rateLimit.max} requests per ${config.rateLimit.windowMs / 60000} minutes`);

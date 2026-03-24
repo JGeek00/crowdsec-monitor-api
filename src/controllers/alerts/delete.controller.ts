@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '../../services';
+import { errorResponse } from '../../utils/error-response';
 import { Alert } from '../../models';
 
 /**
@@ -12,20 +13,14 @@ export const deleteAlert = async (req: Request, res: Response): Promise<void> =>
     const id = parseInt(idParam, 10);
 
     if (isNaN(id)) {
-      res.status(400).json({
-        error: 'Invalid alert ID',
-        message: 'Alert ID must be a valid number'
-      });
+      res.status(400).json(errorResponse('Invalid alert ID', 'Alert ID must be a valid number'));
       return;
     }
 
     const nbDeleted = await crowdSecAPI.deleteAlert(id);
 
     if (nbDeleted === 0) {
-      res.status(404).json({
-        error: 'Alert not found',
-        message: `Alert with ID ${id} was not found`
-      });
+      res.status(404).json(errorResponse('Alert not found', `Alert with ID ${id} was not found`));
       return;
     }
 
@@ -43,16 +38,10 @@ export const deleteAlert = async (req: Request, res: Response): Promise<void> =>
     console.error('Error deleting alert:', error.message);
     
     if (error.response?.status === 404) {
-      res.status(404).json({
-        error: 'Alert not found',
-        message: `Alert with ID ${req.params.id} was not found`
-      });
+      res.status(404).json(errorResponse('Alert not found', `Alert with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(error.response?.status || 500).json({
-      error: 'Failed to delete alert',
-      message: error.message
-    });
+    res.status(error.response?.status || 500).json(errorResponse('Failed to delete alert', error.message));
   }
 };

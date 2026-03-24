@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { lookupIpsInBlocklists } from '../../utils/blocklist-lookup';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Check if IPs are in any blocklist
@@ -14,9 +15,6 @@ export async function checkBlocklist(req: Request, res: Response): Promise<void>
     res.status(200).json({ results });
   } catch (error) {
     console.error('Error checking blocklist:', error);
-    res.status(500).json({
-      error: 'Failed to check blocklist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to check blocklist', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

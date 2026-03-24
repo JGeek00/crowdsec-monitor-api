@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { Alert, Decision } from '../../models';
 import { defaults } from '../../config/defaults';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Get comprehensive statistics
@@ -195,15 +196,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching statistics',
-    };
-
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching statistics', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Alert, Decision } from '../../models';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -61,9 +62,7 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
     });
 
     if (!alert) {
-      res.status(404).json({
-        message: 'Alert not found',
-      });
+      res.status(404).json(errorResponse('Not found', 'Alert not found'));
       return;
     }
 
@@ -95,15 +94,7 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
     res.json(plainAlert);
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching alert',
-    };
-    
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-    
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching alert', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

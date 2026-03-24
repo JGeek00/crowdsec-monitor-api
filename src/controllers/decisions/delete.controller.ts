@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '../../services';
+import { errorResponse } from '../../utils/error-response';
 import { Decision } from '../../models';
 
 /**
@@ -13,20 +14,14 @@ export const deleteDecision = async (req: Request, res: Response): Promise<void>
     const id = parseInt(idParam, 10);
 
     if (isNaN(id)) {
-      res.status(400).json({
-        error: 'Invalid decision ID',
-        message: 'Decision ID must be a valid number'
-      });
+      res.status(400).json(errorResponse('Invalid decision ID', 'Decision ID must be a valid number'));
       return;
     }
 
     const nbDeleted = await crowdSecAPI.deleteDecision(id);
 
     if (nbDeleted === 0) {
-      res.status(404).json({
-        error: 'Decision not found',
-        message: `Decision with ID ${id} was not found`
-      });
+      res.status(404).json(errorResponse('Decision not found', `Decision with ID ${id} was not found`));
       return;
     }
 
@@ -47,16 +42,10 @@ export const deleteDecision = async (req: Request, res: Response): Promise<void>
     console.error('Error deleting decision:', error.message);
     
     if (error.response?.status === 404) {
-      res.status(404).json({
-        error: 'Decision not found',
-        message: `Decision with ID ${req.params.id} was not found`
-      });
+      res.status(404).json(errorResponse('Decision not found', `Decision with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(error.response?.status || 500).json({
-      error: 'Failed to delete decision',
-      message: error.message
-    });
+    res.status(error.response?.status || 500).json(errorResponse('Failed to delete decision', error.message));
   }
 };

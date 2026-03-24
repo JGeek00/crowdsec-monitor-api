@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { lookupIpsInBlocklists } from '../../utils/blocklist-lookup';
 import { resolveIps } from '../../utils/dns-resolve';
 import { config } from '../../config';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Resolve DNS for a domain using the configured DNS server and check if any
@@ -14,7 +15,7 @@ export async function checkDomainBlocklist(req: Request, res: Response): Promise
     const ips = await resolveIps(domain, config.dns.server);
 
     if (ips.length === 0) {
-      res.status(422).json({ error: 'Could not resolve domain to any IP address' });
+      res.status(422).json(errorResponse('Unprocessable entity', 'Could not resolve domain to any IP address'));
       return;
     }
 
@@ -24,9 +25,6 @@ export async function checkDomainBlocklist(req: Request, res: Response): Promise
     res.status(200).json({ domain, ips: results });
   } catch (error) {
     console.error('Error checking domain blocklist:', error);
-    res.status(500).json({
-      error: 'Failed to check domain blocklist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to check domain blocklist', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

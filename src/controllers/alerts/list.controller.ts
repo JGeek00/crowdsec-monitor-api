@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '../../models';
 import { Op } from 'sequelize';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -171,9 +172,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     // Validate offset is not greater than total (only when paginated)
     if (!unpaged && (offset as number) > total) {
-      res.status(400).json({
-        message: `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`,
-      });
+      res.status(400).json(errorResponse('Validation error', `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`));
       return;
     }
 
@@ -227,15 +226,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     res.json(response);
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching alerts',
-    };
-    
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-    
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching alerts', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

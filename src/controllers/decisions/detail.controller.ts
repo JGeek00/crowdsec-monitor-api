@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Decision, Alert } from '../../models';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -61,9 +62,7 @@ export async function getDecisionById(req: Request, res: Response): Promise<void
     });
 
     if (!decision) {
-      res.status(404).json({
-        message: 'Decision not found',
-      });
+      res.status(404).json(errorResponse('Not found', 'Decision not found'));
       return;
     }
 
@@ -90,15 +89,7 @@ export async function getDecisionById(req: Request, res: Response): Promise<void
     res.json(plainDecision);
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching decision',
-    };
-    
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-    
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching decision', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { crowdSecAPI } from '../../services';
 import { isValidDate } from '../../utils/date-validator';
 import { CrowdSecAllowlist } from '../../types/crowdsec.types';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Sanitize allowlist items by converting invalid expiration dates to null
@@ -26,10 +27,7 @@ export async function getAllowlistByName(req: Request, res: Response): Promise<v
     const allowlist = await crowdSecAPI.getAllowlistByName(allowlist_name);
 
     if (!allowlist) {
-      res.status(404).json({
-        error: 'Allowlist not found',
-        message: `Allowlist '${allowlist_name}' was not found`,
-      });
+      res.status(404).json(errorResponse('Allowlist not found', `Allowlist '${allowlist_name}' was not found`));
       return;
     }
 
@@ -40,9 +38,6 @@ export async function getAllowlistByName(req: Request, res: Response): Promise<v
     });
   } catch (error) {
     console.error('Error fetching allowlist:', error);
-    res.status(500).json({
-      error: 'Failed to fetch allowlist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to fetch allowlist', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

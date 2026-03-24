@@ -3,6 +3,7 @@ import { crowdSecAPI, databaseService } from '../../services';
 import { CrowdSecCreateAlertPayload } from '../../types/crowdsec.types';
 import { config } from '../../config';
 import { MANUAL_DECISION } from '../../constants/scenarios';
+import { errorResponse } from '../../utils/error-response';
 
 interface CreateDecisionRequest {
   ip: string;
@@ -71,14 +72,6 @@ export async function createDecision(req: Request, res: Response): Promise<void>
       },
     });
   } catch (error) {
-    const response: any = {
-      message: 'Error creating decision',
-    };
-
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error creating decision', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../../models';
 import { createRequestSignal } from '../../../utils/request-signal';
+import { errorResponse } from '../../../utils/error-response';
 
 /**
  * Get target history (alerts grouped by date for a specific target)
@@ -56,15 +57,7 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
     res.json(history);
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching target history',
-    };
-
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching target history', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

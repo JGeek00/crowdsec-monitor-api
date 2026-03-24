@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '../../../models';
 import { QueryTypes } from 'sequelize';
 import { createRequestSignal } from '../../../utils/request-signal';
+import { errorResponse } from '../../../utils/error-response';
 
 /**
  * Get scenario history (alerts grouped by date for a specific scenario)
@@ -29,15 +30,7 @@ export async function getScenarioHistory(req: Request, res: Response): Promise<v
     res.json(history);
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching scenario history',
-    };
-
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching scenario history', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

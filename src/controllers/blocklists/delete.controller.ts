@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '../../models';
 import { databaseService } from '../../services';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Delete a blocklist by ID.
@@ -13,7 +14,7 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
 
     const blocklist = await Blocklist.findByPk(Number(id));
     if (!blocklist) {
-      res.status(404).json({ error: 'Blocklist not found' });
+      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
       return;
     }
 
@@ -25,9 +26,6 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
       .catch((error) => console.error(`Error deleting blocklist alerts "${blocklist.name}":`, error));
   } catch (error) {
     console.error('Error deleting blocklist:', error);
-    res.status(500).json({
-      error: 'Failed to delete blocklist',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json(errorResponse('Failed to delete blocklist', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

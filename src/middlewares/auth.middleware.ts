@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { config } from '../config';
+import { errorResponse } from '../utils/error-response';
 
 /**
  * Optional Bearer token authentication middleware
@@ -19,20 +20,14 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Authorization header is required'
-    });
+    res.status(401).json(errorResponse('Unauthorized', 'Authorization header is required'));
     return;
   }
 
   // Check if it's a Bearer token
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Authorization header must be in format: Bearer <token>'
-    });
+    res.status(401).json(errorResponse('Unauthorized', 'Authorization header must be in format: Bearer <token>'));
     return;
   }
 
@@ -40,10 +35,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
 
   // Validate token against configured password
   if (token !== config.auth.apiPassword) {
-    res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Invalid credentials'
-    });
+    res.status(401).json(errorResponse('Unauthorized', 'Invalid credentials'));
     return;
   }
 

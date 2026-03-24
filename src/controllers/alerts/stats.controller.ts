@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Alert } from '../../models';
 import { createRequestSignal } from '../../utils/request-signal';
+import { errorResponse } from '../../utils/error-response';
 
 /**
  * Get alerts statistics
@@ -68,15 +69,7 @@ export async function getAlertStats(req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     if (signal.aborted) return;
-    const response: any = {
-      message: 'Error fetching alert statistics',
-    };
-    
-    if (process.env.NODE_ENV !== 'production') {
-      response.error = error instanceof Error ? error.message : 'Unknown error';
-    }
-    
-    res.status(500).json(response);
+    res.status(500).json(errorResponse('Error fetching alert statistics', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }
