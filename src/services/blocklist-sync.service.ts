@@ -5,6 +5,7 @@ import { crowdSecAPI } from './crowdsec-api.service';
 import { CrowdSecCreateAlertPayload } from '../types/crowdsec.types';
 import { countIpsInValue } from '../utils/ip-count';
 import { config } from '../config';
+import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '../constants/regexps';
 
 class BlocklistSyncService {
   private writeLock: Promise<void> = Promise.resolve();
@@ -33,7 +34,10 @@ class BlocklistSyncService {
     const ips = response.data
       .split('\n')
       .map((line: string) => line.trim())
-      .filter((line: string) => line.length > 0 && !line.startsWith('#'));
+      .filter((line: string) =>
+        !line.startsWith('#') &&
+        (ipv4Regex.test(line) || ipv4CidrRegex.test(line) || ipv6Regex.test(line) || ipv6CidrRegex.test(line))
+      );
 
     const totalIpCount = ips.reduce((sum: number, v: string) => sum + countIpsInValue(v), 0);
 
