@@ -1,6 +1,6 @@
-import { CsBlocklist, BlocklistIp } from '../models';
-import { sequelize } from '../config/database';
-import { crowdSecAPI } from './crowdsec-api.service';
+import { CsBlocklist, BlocklistIp } from '@/models';
+import { sequelize } from '@/config/database';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
 
 const CHUNK_SIZE = 1000;
 

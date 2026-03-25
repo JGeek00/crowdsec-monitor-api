@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getAllAlerts, getAlertById, getAlertStats, deleteAlert } from '../controllers';
-import { paginationValidators, alertQueryValidators } from '../validators';
-import { handleValidationErrors } from '../middlewares';
+import { getAllAlerts, getAlertById, getAlertStats, deleteAlert } from '@/controllers';
+import { paginationValidators, alertQueryValidators } from '@/validators';
+import { handleValidationErrors } from '@/middlewares';
 
 const router = Router();
 

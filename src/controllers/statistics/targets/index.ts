@@ -1,2 +1,2 @@
-export { getTopTargets } from './list.controller';
-export { getTargetHistory } from './history.controller';
+export { getTopTargets } from '@/controllers/statistics/targets/list.controller';
+export { getTargetHistory } from '@/controllers/statistics/targets/history.controller';

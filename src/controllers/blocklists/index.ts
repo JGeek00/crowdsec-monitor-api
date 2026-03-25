@@ -1,7 +1,7 @@
-export { getBlocklists, getBlocklistById } from './list.controller';
-export { getBlocklistIps } from './ips.controller';
-export { createBlocklist } from './create.controller';
-export { deleteBlocklist } from './delete.controller';
-export { toggleBlocklist } from './toggle.controller';
-export { checkBlocklist } from './check.controller';
-export { checkDomainBlocklist } from './check-domain.controller';
+export { getBlocklists, getBlocklistById } from '@/controllers/blocklists/list.controller';
+export { getBlocklistIps } from '@/controllers/blocklists/ips.controller';
+export { createBlocklist } from '@/controllers/blocklists/create.controller';
+export { deleteBlocklist } from '@/controllers/blocklists/delete.controller';
+export { toggleBlocklist } from '@/controllers/blocklists/toggle.controller';
+export { checkBlocklist } from '@/controllers/blocklists/check.controller';
+export { checkDomainBlocklist } from '@/controllers/blocklists/check-domain.controller';

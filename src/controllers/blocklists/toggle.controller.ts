@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Blocklist } from '../../models';
-import { databaseService } from '../../services';
-import { errorResponse } from '../../utils/error-response';
+import { Blocklist } from '@/models';
+import { databaseService } from '@/services';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Enable or disable a blocklist.

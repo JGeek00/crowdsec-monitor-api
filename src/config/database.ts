@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize';
-import { config } from './index';
+import { config } from '@/config/index';
 
 function createSequelize(): Sequelize {
   if (config.database.mode === 'postgres') {

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI } from '../../services';
-import { errorResponse } from '../../utils/error-response';
+import { crowdSecAPI } from '@/services';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Check if IPs are in any allowlist

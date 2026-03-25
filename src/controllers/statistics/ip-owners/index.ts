@@ -1,2 +1,2 @@
-export { getTopIpOwners } from './list.controller';
-export { getIpOwnerHistory } from './history.controller';
+export { getTopIpOwners } from '@/controllers/statistics/ip-owners/list.controller';
+export { getIpOwnerHistory } from '@/controllers/statistics/ip-owners/history.controller';

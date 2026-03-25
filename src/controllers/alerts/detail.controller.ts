@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Alert, Decision } from '../../models';
-import { createRequestSignal } from '../../utils/request-signal';
-import { errorResponse } from '../../utils/error-response';
+import { Alert, Decision } from '@/models';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Parse meta array values that might be JSON strings

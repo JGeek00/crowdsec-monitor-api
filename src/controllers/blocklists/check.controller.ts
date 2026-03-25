@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { lookupIpsInBlocklists } from '../../utils/blocklist-lookup';
-import { errorResponse } from '../../utils/error-response';
+import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Check if IPs are in any blocklist

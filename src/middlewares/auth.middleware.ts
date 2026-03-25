@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { timingSafeEqual } from 'crypto';
-import { config } from '../config';
-import { errorResponse } from '../utils/error-response';
+import { config } from '@/config';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Optional Bearer token authentication middleware

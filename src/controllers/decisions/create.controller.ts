@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI, databaseService } from '../../services';
-import { CrowdSecCreateAlertPayload } from '../../types/crowdsec.types';
-import { config } from '../../config';
-import { MANUAL_DECISION } from '../../constants/scenarios';
-import { errorResponse } from '../../utils/error-response';
+import { crowdSecAPI, databaseService } from '@/services';
+import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
+import { config } from '@/config';
+import { MANUAL_DECISION } from '@/constants/scenarios';
+import { errorResponse } from '@/utils/error-response';
 
 interface CreateDecisionRequest {
   ip: string;

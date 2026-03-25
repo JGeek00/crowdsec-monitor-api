@@ -9,9 +9,9 @@ import {
   getScenarioHistory,
   getIpOwnerHistory,
   getTargetHistory
-} from '../controllers';
-import { statisticsQueryValidators } from '../validators';
-import { handleValidationErrors } from '../middlewares';
+} from '@/controllers';
+import { statisticsQueryValidators } from '@/validators';
+import { handleValidationErrors } from '@/middlewares';
 
 const router = Router();
 

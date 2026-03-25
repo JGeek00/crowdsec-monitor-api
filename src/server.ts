@@ -1,8 +1,8 @@
-import { config } from './config';
-import { initDatabase } from './config/database';
-import { createApp } from './app';
-import { databaseService, schedulerService, versionCheckerService } from './services';
-import { crowdSecAPI } from './services/crowdsec-api.service';
+import { config } from '@/config';
+import { initDatabase } from '@/config/database';
+import { createApp } from '@/app';
+import { databaseService, schedulerService, versionCheckerService } from '@/services';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import packageJson from '../package.json';
 
 /**

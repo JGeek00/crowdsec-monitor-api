@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { config } from '../config';
-import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload, CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '../types/crowdsec.types';
-import { BLOCKLIST_SCENARIO_PREFIX, MANUAL_DECISION } from '../constants/scenarios';
+import { config } from '@/config';
+import { CrowdSecAlert, CrowdSecDecision, CrowdSecLoginResponse, CrowdSecCreateAlertPayload, CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '@/types/crowdsec.types';
+import { BLOCKLIST_SCENARIO_PREFIX, MANUAL_DECISION } from '@/constants/scenarios';
 
 export class CrowdSecAPIService {
   private client: AxiosInstance;

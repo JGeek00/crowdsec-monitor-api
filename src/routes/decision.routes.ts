@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getAllDecisions, getDecisionById, getDecisionStats, createDecision, deleteDecision } from '../controllers';
-import { paginationValidators, decisionQueryValidators, createDecisionValidators } from '../validators';
-import { handleValidationErrors } from '../middlewares';
+import { getAllDecisions, getDecisionById, getDecisionStats, createDecision, deleteDecision } from '@/controllers';
+import { paginationValidators, decisionQueryValidators, createDecisionValidators } from '@/validators';
+import { handleValidationErrors } from '@/middlewares';
 
 const router = Router();
 

@@ -1,2 +1,2 @@
-export { getTopScenarios } from './list.controller';
-export { getScenarioHistory } from './history.controller';
+export { getTopScenarios } from '@/controllers/statistics/scenarios/list.controller';
+export { getScenarioHistory } from '@/controllers/statistics/scenarios/history.controller';

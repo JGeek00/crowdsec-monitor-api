@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI } from '../../services/crowdsec-api.service';
-import { databaseService } from '../../services/database.service';
-import { versionCheckerService } from '../../services/version-checker.service';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { databaseService } from '@/services/database.service';
+import { versionCheckerService } from '@/services/version-checker.service';
 import packageJson from '../../../package.json';
 
 export const getStatus = async (req: Request, res: Response) => {

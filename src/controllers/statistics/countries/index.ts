@@ -1,2 +1,2 @@
-export { getTopCountries } from './list.controller';
-export { getCountryHistory } from './history.controller';
+export { getTopCountries } from '@/controllers/statistics/countries/list.controller';
+export { getCountryHistory } from '@/controllers/statistics/countries/history.controller';

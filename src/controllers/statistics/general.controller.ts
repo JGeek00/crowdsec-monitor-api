@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { Alert, Decision } from '../../models';
-import { defaults } from '../../config/defaults';
-import { createRequestSignal } from '../../utils/request-signal';
-import { errorResponse } from '../../utils/error-response';
+import { Alert, Decision } from '@/models';
+import { defaults } from '@/config/defaults';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get comprehensive statistics

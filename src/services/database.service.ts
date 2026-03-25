@@ -1,8 +1,8 @@
-import { Blocklist } from '../models';
-import { alertsSyncService } from './alerts-sync.service';
-import { blocklistSyncService } from './blocklist-sync.service';
-import { csBlocklistSyncService } from './cs-blocklist-sync.service';
-import { blocklistReconcileService } from './blocklist-reconcile.service';
+import { Blocklist } from '@/models';
+import { alertsSyncService } from '@/services/alerts-sync.service';
+import { blocklistSyncService } from '@/services/blocklist-sync.service';
+import { csBlocklistSyncService } from '@/services/cs-blocklist-sync.service';
+import { blocklistReconcileService } from '@/services/blocklist-reconcile.service';
 
 /**
  * Facade that delegates to AlertsSyncService and BlocklistSyncService.

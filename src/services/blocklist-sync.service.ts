@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { Blocklist, BlocklistIp } from '../models';
-import { sequelize } from '../config/database';
-import { crowdSecAPI } from './crowdsec-api.service';
-import { CrowdSecCreateAlertPayload } from '../types/crowdsec.types';
-import { countIpsInValue } from '../utils/ip-count';
-import { config } from '../config';
-import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '../constants/regexps';
+import { Blocklist, BlocklistIp } from '@/models';
+import { sequelize } from '@/config/database';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
+import { countIpsInValue } from '@/utils/ip-count';
+import { config } from '@/config';
+import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
 
 class BlocklistSyncService {
   private writeLock: Promise<void> = Promise.resolve();

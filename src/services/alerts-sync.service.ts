@@ -1,8 +1,8 @@
 import { Op } from 'sequelize';
-import { Alert, Decision } from '../models';
-import { crowdSecAPI } from './crowdsec-api.service';
-import { calculateExpiration, calculateRetentionCutoff } from '../utils/duration';
-import { config } from '../config';
+import { Alert, Decision } from '@/models';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
+import { config } from '@/config';
 
 class AlertsSyncService {
   private lastSuccessfulSync: Date | null = null;

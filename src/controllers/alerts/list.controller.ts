@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { Alert } from '../../models';
+import { Alert } from '@/models';
 import { Op } from 'sequelize';
-import { createRequestSignal } from '../../utils/request-signal';
-import { errorResponse } from '../../utils/error-response';
-import { escapeLike } from '../../utils/sql';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
+import { escapeLike } from '@/utils/sql';
 
 /**
  * Parse meta array values that might be JSON strings

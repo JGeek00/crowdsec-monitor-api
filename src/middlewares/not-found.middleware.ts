@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { errorResponse } from '../utils/error-response';
+import { errorResponse } from '@/utils/error-response';
 
 export const notFoundHandler = (
   req: Request,

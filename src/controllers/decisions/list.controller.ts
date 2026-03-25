@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { Decision } from '../../models';
+import { Decision } from '@/models';
 import { Op } from 'sequelize';
-import { createRequestSignal } from '../../utils/request-signal';
-import { errorResponse } from '../../utils/error-response';
-import { escapeLike } from '../../utils/sql';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
+import { escapeLike } from '@/utils/sql';
 
 /**
  * Get all decisions with filtering and pagination

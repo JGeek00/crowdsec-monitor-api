@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
-import { BlocklistIp } from '../models';
-import { isIpv4, isIpv4InCidr } from './ip';
+import { BlocklistIp } from '@/models';
+import { isIpv4, isIpv4InCidr } from '@/utils/ip';
 
 /**
  * Look up which blocklist each IP belongs to (if any).

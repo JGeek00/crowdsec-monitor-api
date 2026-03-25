@@ -3,10 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import { config } from './config';
-import routes from './routes';
-import { errorHandler } from './middlewares/error.middleware';
-import { notFoundHandler } from './middlewares/not-found.middleware';
+import { config } from '@/config';
+import routes from '@/routes';
+import { errorHandler } from '@/middlewares/error.middleware';
+import { notFoundHandler } from '@/middlewares/not-found.middleware';
 
 export const createApp = (): Application => {
   const app = express();

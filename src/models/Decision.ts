@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database';
-import { SourceInfo } from './Alert';
+import { sequelize } from '@/config/database';
+import { SourceInfo } from '@/models/Alert';
 
 export interface DecisionAttributes {
   id: number;

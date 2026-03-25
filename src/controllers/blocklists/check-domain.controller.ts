@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { lookupIpsInBlocklists } from '../../utils/blocklist-lookup';
-import { resolveIps } from '../../utils/dns-resolve';
-import { config } from '../../config';
-import { errorResponse } from '../../utils/error-response';
+import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
+import { resolveIps } from '@/utils/dns-resolve';
+import { config } from '@/config';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Resolve DNS for a domain using the configured DNS server and check if any

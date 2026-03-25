@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { Alert } from '../../../models';
+import { Alert } from '@/models';
 import { QueryTypes } from 'sequelize';
-import { createRequestSignal } from '../../../utils/request-signal';
-import { errorResponse } from '../../../utils/error-response';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get scenario history (alerts grouped by date for a specific scenario)

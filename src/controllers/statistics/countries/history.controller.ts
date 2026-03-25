@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Alert } from '../../../models';
-import { createRequestSignal } from '../../../utils/request-signal';
-import { errorResponse } from '../../../utils/error-response';
+import { Alert } from '@/models';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get country history (alerts grouped by date for a specific country)

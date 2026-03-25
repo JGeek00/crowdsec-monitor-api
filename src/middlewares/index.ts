@@ -1,4 +1,4 @@
-export { errorHandler } from './error.middleware';
-export { notFoundHandler } from './not-found.middleware';
-export { handleValidationErrors } from './validation.middleware';
-export { optionalAuth } from './auth.middleware';
+export { errorHandler } from '@/middlewares/error.middleware';
+export { notFoundHandler } from '@/middlewares/not-found.middleware';
+export { handleValidationErrors } from '@/middlewares/validation.middleware';
+export { optionalAuth } from '@/middlewares/auth.middleware';

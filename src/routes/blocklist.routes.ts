@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist, checkDomainBlocklist } from '../controllers';
-import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators, createBlocklistValidators } from '../validators';
-import { handleValidationErrors } from '../middlewares';
+import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist, checkDomainBlocklist } from '@/controllers';
+import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators, createBlocklistValidators } from '@/validators';
+import { handleValidationErrors } from '@/middlewares';
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Decision } from '../../models';
-import { createRequestSignal } from '../../utils/request-signal';
-import { errorResponse } from '../../utils/error-response';
+import { Decision } from '@/models';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get decisions statistics

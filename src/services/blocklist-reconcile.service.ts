@@ -1,5 +1,5 @@
-import { Blocklist, BlocklistIp } from '../models';
-import { crowdSecAPI } from './crowdsec-api.service';
+import { Blocklist, BlocklistIp } from '@/models';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
 
 // Scenario format used when pushing blocklist alerts: external/blocklist (<name>)
 const SCENARIO_REGEX = /^external\/blocklist \((.+)\)$/;

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI } from '../../services';
-import { isValidDate } from '../../utils/date-validator';
-import { CrowdSecAllowlist } from '../../types/crowdsec.types';
-import { errorResponse } from '../../utils/error-response';
+import { crowdSecAPI } from '@/services';
+import { isValidDate } from '@/utils/date-validator';
+import { CrowdSecAllowlist } from '@/types/crowdsec.types';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Sanitize allowlist items by converting invalid expiration dates to null

@@ -1,8 +1,8 @@
-import { Alert } from './Alert';
-import { Decision } from './Decision';
-import { Blocklist } from './Blocklist';
-import { BlocklistIp } from './BlocklistIp';
-import { CsBlocklist } from './CsBlocklist';
+import { Alert } from '@/models/Alert';
+import { Decision } from '@/models/Decision';
+import { Blocklist } from '@/models/Blocklist';
+import { BlocklistIp } from '@/models/BlocklistIp';
+import { CsBlocklist } from '@/models/CsBlocklist';
 
 // Define associations
 Alert.hasMany(Decision, {

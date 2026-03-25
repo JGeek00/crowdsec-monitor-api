@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { BlocklistIp } from '../../models';
-import { Blocklist, CsBlocklist } from '../../models';
-import { createRequestSignal } from '../../utils/request-signal';
-import { errorResponse } from '../../utils/error-response';
+import { BlocklistIp } from '@/models';
+import { Blocklist, CsBlocklist } from '@/models';
+import { createRequestSignal } from '@/utils/request-signal';
+import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get IPs for a specific blocklist with pagination.

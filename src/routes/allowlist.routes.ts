@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getAllowlists, getAllowlistByName, checkAllowlist } from '../controllers';
-import { checkAllowlistValidators } from '../validators';
-import { handleValidationErrors } from '../middlewares';
+import { getAllowlists, getAllowlistByName, checkAllowlist } from '@/controllers';
+import { checkAllowlistValidators } from '@/validators';
+import { handleValidationErrors } from '@/middlewares';
 
 const router = Router();
 

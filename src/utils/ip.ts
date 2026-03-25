@@ -1,4 +1,4 @@
-import { ipv4Regex } from '../constants/regexps';
+import { ipv4Regex } from '@/constants/regexps';
 
 export function isIpv4(ip: string): boolean {
   return ipv4Regex.test(ip);

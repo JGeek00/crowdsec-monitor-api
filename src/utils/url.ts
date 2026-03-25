@@ -1,4 +1,4 @@
-import { ipToInt32 } from './ip';
+import { ipToInt32 } from '@/utils/ip';
 
 const PRIVATE_IPV4_RANGES: Array<[string, number]> = [
   ['127.0.0.0', 8],    // loopback

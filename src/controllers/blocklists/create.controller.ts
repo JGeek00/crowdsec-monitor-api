@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { Blocklist } from '../../models';
-import { databaseService } from '../../services';
-import { errorResponse } from '../../utils/error-response';
-import { assertSafeUrl } from '../../utils/url';
+import { Blocklist } from '@/models';
+import { databaseService } from '@/services';
+import { errorResponse } from '@/utils/error-response';
+import { assertSafeUrl } from '@/utils/url';
 
 /**
  * Add a new blocklist URL.

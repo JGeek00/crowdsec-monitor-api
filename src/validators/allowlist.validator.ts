@@ -1,5 +1,5 @@
 import { body, ValidationChain } from 'express-validator';
-import { ipv4Regex, ipv6Regex } from '../constants/regexps';
+import { ipv4Regex, ipv6Regex } from '@/constants/regexps';
 
 /**
  * Validation rules for checking if IPs are in allowlists (POST /v1/allowlists/check)
