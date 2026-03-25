@@ -1,0 +1,19 @@
+name: You have a question about the service
+description: |
+  You want ask something that's not related with a feature request or a bug.
+labels: ["question"]
+body:
+  - type: markdown
+    id: important-info
+    attributes:
+      value: |
+       Make sure to check the [README](https://github.com/JGeek00/crowdsec-monitor-api/README.md) first.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Write your question here giving the maximum detail possible.
+      placeholder: |
+        Write your question here...
+    validations:
+      required: true

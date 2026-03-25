@@ -1,0 +1,40 @@
+name: Report a bug
+description: |
+  You detected something wrong on the service.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the problem you are running into.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-results
+    attributes:
+      label: Expected results
+      description: What is expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual-results
+    attributes:
+      label: Actual results
+      description: What is actually happening.
+    validations:
+      required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: Version
+      description: |
+        The version where you detected the problem.
+      value: |
+        - Service version: v1.6.0
+    validations:
+      required: true

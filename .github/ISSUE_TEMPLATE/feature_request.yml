@@ -1,0 +1,14 @@
+name: Request a new feature or an improvement for the service
+description: |
+  You want a new feature for the service, or an improvement for an existing one.
+labels: ["feature request"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the feature that you want on the service.
+      placeholder: |
+        Write the details here...
+    validations:
+      required: true
