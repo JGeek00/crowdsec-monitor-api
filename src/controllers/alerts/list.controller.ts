@@ -3,6 +3,7 @@ import { Alert } from '../../models';
 import { Op } from 'sequelize';
 import { createRequestSignal } from '../../utils/request-signal';
 import { errorResponse } from '../../utils/error-response';
+import { escapeLike } from '../../utils/sql';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -56,7 +57,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     if (scenario) {
       const scenarios = Array.isArray(scenario) ? scenario : [scenario];
       where.scenario = {
-        [Op.or]: scenarios.map(s => ({ [Op.like]: `%${s}%` }))
+        [Op.or]: scenarios.map(s => ({ [Op.like]: `%${escapeLike(String(s))}%` }))
       };
     }
     

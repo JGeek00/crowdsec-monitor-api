@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Blocklist } from '../../models';
 import { databaseService } from '../../services';
 import { errorResponse } from '../../utils/error-response';
+import { assertSafeUrl } from '../../utils/url';
 
 /**
  * Add a new blocklist URL.
@@ -13,6 +14,12 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
 
     if (!url || typeof url !== 'string' || url.trim() === '') {
       res.status(400).json(errorResponse('Validation error', 'url is required'));
+      return;
+    }
+    try {
+      assertSafeUrl(url.trim());
+    } catch (err) {
+      res.status(400).json(errorResponse('Validation error', err instanceof Error ? err.message : 'Invalid URL'));
       return;
     }
     if (!name || typeof name !== 'string' || name.trim() === '') {

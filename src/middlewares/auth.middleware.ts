@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { timingSafeEqual } from 'crypto';
 import { config } from '../config';
 import { errorResponse } from '../utils/error-response';
 
@@ -33,8 +34,13 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction): v
 
   const token = parts[1];
 
-  // Validate token against configured password
-  if (token !== config.auth.apiPassword) {
+  // Validate token using constant-time comparison to prevent timing oracle attacks
+  const tokenBuf = Buffer.from(token);
+  const secretBuf = Buffer.from(config.auth.apiPassword);
+  if (
+    tokenBuf.length !== secretBuf.length ||
+    !timingSafeEqual(tokenBuf, secretBuf)
+  ) {
     res.status(401).json(errorResponse('Unauthorized', 'Invalid credentials'));
     return;
   }

@@ -3,6 +3,7 @@ import { Decision } from '../../models';
 import { Op } from 'sequelize';
 import { createRequestSignal } from '../../utils/request-signal';
 import { errorResponse } from '../../utils/error-response';
+import { escapeLike } from '../../utils/sql';
 
 /**
  * Get all decisions with filtering and pagination
@@ -24,7 +25,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     }
     
     if (value) {
-      where.value = { [Op.like]: `%${value}%` };
+      where.value = { [Op.like]: `%${escapeLike(String(value))}%` };
     }
     
     if (simulated !== undefined) {
@@ -45,7 +46,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     if (scenario) {
       const scenarios = Array.isArray(scenario) ? scenario : [scenario];
       where.scenario = {
-        [Op.or]: scenarios.map(s => ({ [Op.like]: `%${s}%` }))
+        [Op.or]: scenarios.map(s => ({ [Op.like]: `%${escapeLike(String(s))}%` }))
       };
     }
 

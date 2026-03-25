@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist, checkDomainBlocklist } from '../controllers';
-import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators } from '../validators';
+import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators, createBlocklistValidators } from '../validators';
 import { handleValidationErrors } from '../middlewares';
 
 const router = Router();
@@ -28,7 +28,7 @@ router.post('/check-domain', checkDomainBlocklistValidators, handleValidationErr
  * Add a new blocklist URL
  * Body: { url: string, name: string }
  */
-router.post('/', createBlocklist);
+router.post('/', createBlocklistValidators, handleValidationErrors, createBlocklist);
 
 /**
  * GET /api/v1/blocklists/:blocklistId/ips

@@ -100,13 +100,13 @@ export const alertQueryValidators: ValidationChain[] = [
 export const decisionQueryValidators: ValidationChain[] = [
   query('type')
     .optional()
-    .isString()
-    .trim(),
+    .isIn(['ban', 'captcha', 'throttle', 'allow'])
+    .withMessage('type must be one of: ban, captcha, throttle, allow'),
   
   query('scope')
     .optional()
-    .isString()
-    .trim(),
+    .isIn(['Ip', 'Range', 'ip', 'range'])
+    .withMessage('scope must be one of: Ip, Range'),
   
   query('value')
     .optional()

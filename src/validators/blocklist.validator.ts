@@ -2,6 +2,25 @@ import { body, ValidationChain } from 'express-validator';
 import { ipv4Regex, ipv6Regex } from '../constants/regexps';
 
 /**
+ * Validation rules for creating a new blocklist (POST /v1/blocklists)
+ */
+export const createBlocklistValidators: ValidationChain[] = [
+  body('url')
+    .isString().withMessage('url must be a string')
+    .trim()
+    .notEmpty().withMessage('url is required')
+    .isURL({ protocols: ['http', 'https'], require_protocol: true })
+    .withMessage('url must be a valid http or https URL')
+    .isLength({ max: 2048 }).withMessage('url must be at most 2048 characters'),
+
+  body('name')
+    .isString().withMessage('name must be a string')
+    .trim()
+    .notEmpty().withMessage('name is required')
+    .isLength({ max: 100 }).withMessage('name must be at most 100 characters'),
+];
+
+/**
  * Validation rules for checking if IPs are in blocklists (POST /v1/blocklists/check)
  */
 export const checkBlocklistValidators: ValidationChain[] = [
