@@ -45,13 +45,13 @@ if (bumpType === 'beta') {
   }
   switch (bumpType) {
     case 'major':
-      newVersion = betaMode ? `${major + 1}.0.0-beta.1` : `${major + 1}.0.0`;
+      newVersion = (isBeta && !betaMode) ? `${major}.${minor}.${bugfix}` : betaMode ? `${major + 1}.0.0-beta.1` : `${major + 1}.0.0`;
       break;
     case 'minor':
-      newVersion = betaMode ? `${major}.${minor + 1}.0-beta.1` : `${major}.${minor + 1}.0`;
+      newVersion = (isBeta && !betaMode) ? `${major}.${minor}.${bugfix}` : betaMode ? `${major}.${minor + 1}.0-beta.1` : `${major}.${minor + 1}.0`;
       break;
     case 'bugfix':
-      newVersion = betaMode ? `${major}.${minor}.${bugfix + 1}-beta.1` : `${major}.${minor}.${bugfix + 1}`;
+      newVersion = (isBeta && !betaMode) ? `${major}.${minor}.${bugfix}` : betaMode ? `${major}.${minor}.${bugfix + 1}-beta.1` : `${major}.${minor}.${bugfix + 1}`;
       break;
   }
 }
