@@ -37,3 +37,47 @@ The resulting code in the `dist/` directory is ready for production deployment.
 | `npm run build:compile` | Compile TypeScript only (no obfuscation) |
 | `npm run build:obfuscate` | Obfuscate existing compiled code |
 | `npm start` | Run production build from dist directory |
+
+## Version Bump Scripts
+
+Versions follow the format `MAJOR.MINOR.BUGFIX` or `MAJOR.MINOR.BUGFIX-beta.N`.
+
+Before running any bump script, make sure a changelog file exists at `changelog/vX.Y.Z.md` matching the new target version, otherwise the script will abort.
+
+### Stable releases
+
+| Command | Description |
+|---------|-------------|
+| `npm run bump-version:major` | Bumps `X.0.0` — resets minor and bugfix |
+| `npm run bump-version:minor` | Bumps `x.X.0` — resets bugfix |
+| `npm run bump-version:bugfix` | Bumps `x.x.X` |
+
+> If the current version is a beta (e.g. `1.8.0-beta.5`), these scripts **drop the beta suffix** and produce the stable version (`1.8.0`) without incrementing any number.
+
+### Beta releases
+
+| Command | Description |
+|---------|-------------|
+| `npm run bump-version:major:beta` | Bumps `X.0.0-beta.1` — starts a new major beta |
+| `npm run bump-version:minor:beta` | Bumps `x.X.0-beta.1` — starts a new minor beta |
+| `npm run bump-version:bugfix:beta` | Bumps `x.x.X-beta.1` — starts a new bugfix beta |
+| `npm run bump-version:beta` | Bumps `x.x.x-beta.X` — increments the beta number |
+
+> `bump-version:major:beta`, `bump-version:minor:beta` and `bump-version:bugfix:beta` **cannot be used if the current version is already a beta**. Use `bump-version:beta` instead.
+>
+> `bump-version:beta` **requires** the current version to already be a beta. Use one of the `:beta` variants above to start a new beta cycle.
+
+### Examples
+
+| Current version | Command | Result |
+|---|---|---|
+| `1.8.0` | `bump-version:major` | `2.0.0` |
+| `1.8.0` | `bump-version:minor` | `1.9.0` |
+| `1.8.0` | `bump-version:bugfix` | `1.8.1` |
+| `1.8.0-beta.5` | `bump-version:major` | `2.0.0` |
+| `1.8.0-beta.5` | `bump-version:minor` | `1.9.0` |
+| `1.8.0-beta.5` | `bump-version:bugfix` | `1.8.1` |
+| `1.8.0-beta.5` | `bump-version:beta` | `1.8.0-beta.6` |
+| `1.8.0` | `bump-version:major:beta` | `2.0.0-beta.1` |
+| `1.8.0` | `bump-version:minor:beta` | `1.9.0-beta.1` |
+| `1.8.0` | `bump-version:bugfix:beta` | `1.8.1-beta.1` |

@@ -5,9 +5,10 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const bumpType = process.argv[2];
+const betaMode = process.argv[3] === 'beta';
 
 if (!['major', 'minor', 'bugfix', 'beta'].includes(bumpType)) {
-  console.error('Usage: node scripts/bump-version.js <major|minor|bugfix|beta>');
+  console.error('Usage: node scripts/bump-version.js <major|minor|bugfix|beta> [beta]');
   process.exit(1);
 }
 
@@ -31,23 +32,28 @@ const isBeta = betaN !== null;
 
 let newVersion;
 
-switch (bumpType) {
-  case 'major':
-    newVersion = `${major + 1}.0.0`;
-    break;
-  case 'minor':
-    newVersion = `${major}.${minor + 1}.0`;
-    break;
-  case 'bugfix':
-    newVersion = `${major}.${minor}.${bugfix + 1}`;
-    break;
-  case 'beta':
-    if (isBeta) {
-      newVersion = `${major}.${minor}.${bugfix}-beta.${betaN + 1}`;
-    } else {
-      newVersion = `${major}.${minor}.${bugfix}-beta.1`;
-    }
-    break;
+if (bumpType === 'beta') {
+  if (!isBeta) {
+    console.error(`Current version ${currentVersion} is not a beta. Use bump-version:major:beta, bump-version:minor:beta or bump-version:bugfix:beta to start a new beta.`);
+    process.exit(1);
+  }
+  newVersion = `${major}.${minor}.${bugfix}-beta.${betaN + 1}`;
+} else {
+  if (betaMode && isBeta) {
+    console.error(`Current version ${currentVersion} is already a beta. Use bump-version:beta to increment the beta number.`);
+    process.exit(1);
+  }
+  switch (bumpType) {
+    case 'major':
+      newVersion = betaMode ? `${major + 1}.0.0-beta.1` : `${major + 1}.0.0`;
+      break;
+    case 'minor':
+      newVersion = betaMode ? `${major}.${minor + 1}.0-beta.1` : `${major}.${minor + 1}.0`;
+      break;
+    case 'bugfix':
+      newVersion = betaMode ? `${major}.${minor}.${bugfix + 1}-beta.1` : `${major}.${minor}.${bugfix + 1}`;
+      break;
+  }
 }
 
 const changelogPath = path.join(__dirname, '..', 'changelog', `v${newVersion}.md`);
