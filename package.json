@@ -22,7 +22,7 @@
     "bump-version:bugfix": "node scripts/bump-version.js bugfix",
     "bump-version:bugfix:beta": "node scripts/bump-version.js bugfix beta",
     "bump-version:beta": "node scripts/bump-version.js beta",
-    "build:prod": "npm run build:prod:compile && npm run build:prod:obfuscate",
+    "build:prod": "pnpm run build:prod:compile && pnpm run build:prod:obfuscate",
     "build:prod:compile": "tsc --sourceMap false --declaration false --declarationMap false && tsc-alias",
     "build:prod:obfuscate": "node scripts/obfuscate.js"
   },
