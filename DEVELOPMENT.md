@@ -1,12 +1,16 @@
 # 🛠️ Development & Build
 
+## Prerequisites
+
+This project uses pnpm. Installation guide [here](https://pnpm.io/installation).
+
 ## Development Mode
 
 Run the API in development mode with hot-reload:
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## Production Build
@@ -14,7 +18,7 @@ npm run dev
 The production build process compiles TypeScript and obfuscates the resulting JavaScript code for enhanced security:
 
 ```bash
-npm run build:prod
+pnpm build:prod
 ```
 
 This command performs two steps:
@@ -33,10 +37,10 @@ The resulting code in the `dist/` directory is ready for production deployment.
 
 | Command | Description |
 |---------|-------------|
-| `npm run build` | Full build: compile + obfuscate |
-| `npm run build:compile` | Compile TypeScript only (no obfuscation) |
-| `npm run build:obfuscate` | Obfuscate existing compiled code |
-| `npm start` | Run production build from dist directory |
+| `pnpm build` | Full build: compile + obfuscate |
+| `pnpm build:compile` | Compile TypeScript only (no obfuscation) |
+| `pnpm build:obfuscate` | Obfuscate existing compiled code |
+| `pnpm start` | Run production build from dist directory |
 
 ## Version Bump Scripts
 
@@ -48,9 +52,9 @@ Before running any bump script, make sure a changelog file exists at `changelog/
 
 | Command | Description |
 |---------|-------------|
-| `npm run bump-version:major` | Bumps `X.0.0` — resets minor and bugfix |
-| `npm run bump-version:minor` | Bumps `x.X.0` — resets bugfix |
-| `npm run bump-version:bugfix` | Bumps `x.x.X` |
+| `pnpm bump-version:major` | Bumps `X.0.0` — resets minor and bugfix |
+| `pnpm bump-version:minor` | Bumps `x.X.0` — resets bugfix |
+| `pnpm bump-version:bugfix` | Bumps `x.x.X` |
 
 > If the current version is a beta (e.g. `1.8.0-beta.5`), these scripts **drop the beta suffix** and produce the stable version (`1.8.0`) without incrementing any number.
 
@@ -58,10 +62,10 @@ Before running any bump script, make sure a changelog file exists at `changelog/
 
 | Command | Description |
 |---------|-------------|
-| `npm run bump-version:major:beta` | Bumps `X.0.0-beta.1` — starts a new major beta |
-| `npm run bump-version:minor:beta` | Bumps `x.X.0-beta.1` — starts a new minor beta |
-| `npm run bump-version:bugfix:beta` | Bumps `x.x.X-beta.1` — starts a new bugfix beta |
-| `npm run bump-version:beta` | Bumps `x.x.x-beta.X` — increments the beta number |
+| `pnpm bump-version:major:beta` | Bumps `X.0.0-beta.1` — starts a new major beta |
+| `pnpm bump-version:minor:beta` | Bumps `x.X.0-beta.1` — starts a new minor beta |
+| `pnpm bump-version:bugfix:beta` | Bumps `x.x.X-beta.1` — starts a new bugfix beta |
+| `pnpm bump-version:beta` | Bumps `x.x.x-beta.X` — increments the beta number |
 
 > `bump-version:major:beta`, `bump-version:minor:beta` and `bump-version:bugfix:beta` **cannot be used if the current version is already a beta**. Use `bump-version:beta` instead.
 >
