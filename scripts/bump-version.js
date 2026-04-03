@@ -62,5 +62,7 @@ if (!fs.existsSync(changelogPath)) {
   process.exit(1);
 }
 
-execSync(`npm version ${newVersion}`, { stdio: 'inherit' });
+pkg.version = newVersion;
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+execSync(`git add package.json && git commit -m "${newVersion}" && git tag "v${newVersion}"`, { stdio: 'inherit' });
 console.log(`${currentVersion} → ${newVersion}`);
