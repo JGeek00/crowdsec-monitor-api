@@ -1,0 +1,6 @@
+minimumReleaseAge: 1440
+allowBuilds:
+  sqlite3: true
+saveExact: true
+blockExoticSubdeps: true
+trustPolicy: "no-downgrade"

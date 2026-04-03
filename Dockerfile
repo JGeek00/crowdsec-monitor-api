@@ -1,33 +1,46 @@
-# Build stage
+#################
+## BUILD STAGE ##
+#################
 FROM node:24-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
 COPY tsconfig.json ./
 
+# Install pnpm
+RUN npm install -g pnpm@latest-10
+
 # Install dependencies
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY src ./src
 COPY scripts ./scripts
 
 # Build application
-RUN npm run build:prod
+RUN pnpm run build:prod
 
-# Production stage
+
+
+######################
+## PRODUCTION STAGE ##
+######################
 FROM node:24-alpine
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache traceroute
+# Install pnpm
+RUN npm install -g pnpm@latest-10
 
 # Install production dependencies only
 COPY package*.json ./
-RUN npm ci --only=production
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
