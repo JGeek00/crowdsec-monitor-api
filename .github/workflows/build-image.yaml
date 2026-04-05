@@ -65,12 +65,21 @@ jobs:
           echo "Changelog file found: $CHANGELOG_FILE"
           echo "CHANGELOG_PATH=$CHANGELOG_FILE" >> $GITHUB_ENV
 
+      - name: "Set up QEMU"
+        uses: docker/setup-qemu-action@v3
+
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+        
       - name: "Build and push Docker image"
-        run: |
-          CHANNEL_TAG="${{ steps.release_type.outputs.CHANNEL_TAG || 'latest' }}"
-          docker build . --tag ghcr.io/jgeek00/crowdsec-monitor-api:${CHANNEL_TAG} --tag ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
-          docker push ghcr.io/jgeek00/crowdsec-monitor-api:${CHANNEL_TAG}
-          docker push ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.release_type.outputs.CHANNEL_TAG || 'latest' }}
+            ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
 
       - name: "Create GitHub Release"
         uses: softprops/action-gh-release@v1
