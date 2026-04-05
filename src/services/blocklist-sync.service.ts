@@ -4,6 +4,7 @@ import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { countIpsInValue } from '@/utils/ip-count';
+import { buildAllowlistMatcher } from '@/utils/ip';
 import { config } from '@/config';
 import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
 
@@ -16,10 +17,20 @@ class BlocklistSyncService {
     return next;
   }
 
+  private async fetchAllowlistEntries(): Promise<string[]> {
+    try {
+      const allowlists = await crowdSecAPI.getAllowlists();
+      return allowlists.flatMap(al => al.items.map(item => item.value));
+    } catch {
+      console.error('Failed to fetch allowlists from CrowdSec. No allowlist filtering will be applied.');
+      return [];
+    }
+  }
+
   /**
    * Fetch a blocklist URL, store IPs in the local DB, and push to CrowdSec.
    */
-  async refreshBlocklist(blocklist: Blocklist): Promise<void> {
+  async refreshBlocklist(blocklist: Blocklist, allowlistEntries?: string[]): Promise<{ allowlistSkipped: number }> {
     const CHUNK_SIZE = 1000;
 
     await this.acquireWriteLock(() =>
@@ -41,6 +52,12 @@ class BlocklistSyncService {
 
     const totalIpCount = ips.reduce((sum: number, v: string) => sum + countIpsInValue(v), 0);
 
+    // Apply allowlist filter
+    const entries = allowlistEntries ?? await this.fetchAllowlistEntries();
+    const isAllowlisted = buildAllowlistMatcher(entries);
+    const allowlistFiltered = ips.filter(ip => !isAllowlisted(ip));
+    const allowlistSkipped = ips.length - allowlistFiltered.length;
+
     // Fetch currently active decisions from CrowdSec to avoid pushing duplicates
     let activeDecisions: Set<string>;
     try {
@@ -49,10 +66,10 @@ class BlocklistSyncService {
       console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
       throw new Error(`Failed to fetch active decisions from CrowdSec`);
     }
-    const uniqueNewIps = [...new Set(ips.filter((ip) => !activeDecisions.has(ip)))];
-    const skipped = ips.length - uniqueNewIps.length;
-    if (skipped > 0) {
-      console.log(`  Skipping ${skipped} IPs already blocked in CrowdSec for "${blocklist.name}"`);
+    const uniqueNewIps = [...new Set(allowlistFiltered.filter((ip) => !activeDecisions.has(ip)))];
+    const alreadyBlocked = allowlistFiltered.length - uniqueNewIps.length;
+    if (alreadyBlocked > 0) {
+      console.log(`  Skipping ${alreadyBlocked} IPs already blocked in CrowdSec for "${blocklist.name}"`);
     }
 
     // Save all IPs from the list to the DB (regardless of what's already in CrowdSec)
@@ -120,7 +137,14 @@ class BlocklistSyncService {
       blocklist.update({ last_successful_refresh: new Date() })
     );
 
-    console.log(`✓ Refreshed "${blocklist.name}": ${ips.length} IPs stored in DB, ${uniqueNewIps.length} pushed to CrowdSec (${skipped} skipped, already blocked)`);
+    const parts = [
+      `${uniqueNewIps.length} pushed to CrowdSec`,
+      alreadyBlocked > 0 ? `${alreadyBlocked} already blocked` : null,
+      allowlistSkipped > 0 ? `${allowlistSkipped} in allowlist` : null,
+    ].filter(Boolean).join(', ');
+    console.log(`✓ Refreshed "${blocklist.name}": ${ips.length} IPs in list — ${parts}`);
+
+    return { allowlistSkipped };
   }
 
   /**
@@ -151,20 +175,25 @@ class BlocklistSyncService {
   /**
    * Refresh every enabled blocklist and push to CrowdSec.
    */
-  async syncBlocklists(): Promise<{ refreshed: number; ips: number; errors: number }> {
+  async syncBlocklists(): Promise<{ refreshed: number; ips: number; errors: number; allowlistSkipped: number }> {
     let refreshed = 0;
     let ipsCount = 0;
     let errors = 0;
+    let totalAllowlistSkipped = 0;
 
     const blocklists = await Blocklist.findAll({ where: { enabled: true } });
 
     if (blocklists.length === 0) {
-      return { refreshed: 0, ips: 0, errors: 0 };
+      return { refreshed: 0, ips: 0, errors: 0, allowlistSkipped: 0 };
     }
+
+    // Fetch allowlist entries once for all blocklists
+    const allowlistEntries = await this.fetchAllowlistEntries();
 
     for (const blocklist of blocklists) {
       try {
-        await this.refreshBlocklist(blocklist);
+        const { allowlistSkipped } = await this.refreshBlocklist(blocklist, allowlistEntries);
+        totalAllowlistSkipped += allowlistSkipped;
         ipsCount += await BlocklistIp.count({ where: { blocklist_id: blocklist.id } });
         refreshed++;
       } catch (error) {
@@ -177,7 +206,7 @@ class BlocklistSyncService {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');
     }
 
-    return { refreshed, ips: ipsCount, errors };
+    return { refreshed, ips: ipsCount, errors, allowlistSkipped: totalAllowlistSkipped };
   }
 }
 
