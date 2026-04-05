@@ -67,7 +67,6 @@ class VersionCheckerService {
         console.log(`📦 New version available: ${latestVersionTag} (current: ${currentVersion})`);
       } else {
         this.latestVersion = null;
-        console.log(`✓ Version up to date: ${currentVersion}`);
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {

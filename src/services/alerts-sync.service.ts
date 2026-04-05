@@ -23,7 +23,6 @@ class AlertsSyncService {
     // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
     let alerts: Awaited<ReturnType<typeof crowdSecAPI.getAlerts>>;
     try {
-      console.log('Starting alerts sync...');
       const results = await Promise.all([
         crowdSecAPI.getAlerts({ origin: 'crowdsec' }),
         crowdSecAPI.getAlerts({ origin: 'cscli' }),
@@ -125,8 +124,6 @@ class AlertsSyncService {
             errors++;
           }
         }
-
-        console.log(`✓ Alerts sync completed: ${synced} new, ${updated} updated, ${decisionsCount} decisions synced, ${errors} errors`);
 
         await this.cleanupOldData();
         this.lastSuccessfulSync = new Date();

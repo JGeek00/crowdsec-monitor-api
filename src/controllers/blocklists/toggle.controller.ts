@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '@/models';
 import { databaseService } from '@/services';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
 
 /**
@@ -18,6 +19,12 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
 
     if (typeof enabled !== 'boolean') {
       res.status(400).json(errorResponse('Validation error', '"enabled" must be a boolean'));
+      return;
+    }
+
+    if (enabled && !crowdSecAPI.isBouncerConnected()) {
+      console.error('[Blocklist] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
+      res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
       return;
     }
 

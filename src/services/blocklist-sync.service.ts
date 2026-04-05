@@ -159,11 +159,8 @@ class BlocklistSyncService {
     const blocklists = await Blocklist.findAll({ where: { enabled: true } });
 
     if (blocklists.length === 0) {
-      console.log('No enabled blocklists configured, skipping refresh.');
       return { refreshed: 0, ips: 0, errors: 0 };
     }
-
-    console.log(`Starting blocklists refresh (${blocklists.length} enabled list(s))...`);
 
     for (const blocklist of blocklists) {
       try {
@@ -180,7 +177,6 @@ class BlocklistSyncService {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');
     }
 
-    console.log(`✓ Blocklists refresh completed: ${refreshed} refreshed, ${ipsCount} total entries, ${errors} errors`);
     return { refreshed, ips: ipsCount, errors };
   }
 }

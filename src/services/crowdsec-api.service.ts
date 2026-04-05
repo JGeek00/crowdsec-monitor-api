@@ -8,6 +8,7 @@ export class CrowdSecAPIService {
   private token: string | null = null;
   private tokenExpiration: Date | null = null;
   private loginPromise: Promise<boolean> | null = null;
+  private bouncerConnected: boolean = false;
 
   constructor() {
     this.client = axios.create({
@@ -385,6 +386,36 @@ export class CrowdSecAPIService {
       // Token might be invalid, don't log as error
       return false;
     }
+  }
+
+  /**
+   * Check if the bouncer API key (CROWDSEC_BOUNCER_KEY) is valid and CrowdSec is reachable.
+   * Stores the result in internal state so endpoints can read it before performing blocklist operations.
+   */
+  async checkBouncerConnection(): Promise<void> {
+    try {
+      await this.client.get('/v1/decisions', {
+        headers: {
+          'X-Api-Key': config.crowdsec.bouncerKey,
+        },
+      });
+      this.bouncerConnected = true;
+      console.log('✓ CrowdSec bouncer API key validated successfully');
+    } catch (error) {
+      this.bouncerConnected = false;
+      if (axios.isAxiosError(error) && error.response) {
+        console.error(`✗ CrowdSec bouncer API key validation failed: HTTP ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      } else {
+        console.error('✗ CrowdSec bouncer API key validation failed: Unable to reach CrowdSec LAPI');
+      }
+    }
+  }
+
+  /**
+   * Returns whether the bouncer API key check on startup was successful.
+   */
+  isBouncerConnected(): boolean {
+    return this.bouncerConnected;
   }
 
   /**

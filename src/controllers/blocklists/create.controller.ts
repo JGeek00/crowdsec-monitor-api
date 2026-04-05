@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '@/models';
 import { databaseService } from '@/services';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
 import { assertSafeUrl } from '@/utils/url';
 
@@ -10,6 +11,12 @@ import { assertSafeUrl } from '@/utils/url';
  */
 export async function createBlocklist(req: Request, res: Response): Promise<void> {
   try {
+    if (!crowdSecAPI.isBouncerConnected()) {
+      console.error('[Blocklist] Cannot create blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
+      res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
+      return;
+    }
+
     const { url, name } = req.body;
 
     if (!url || typeof url !== 'string' || url.trim() === '') {

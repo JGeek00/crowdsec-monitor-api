@@ -39,115 +39,108 @@ const validateEnvironment = (): void => {
   }
 };
 
+const formatInterval = (seconds: number): string => {
+  if (seconds >= 3600 && seconds % 3600 === 0) return `${seconds / 3600}h`;
+  if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60}m`;
+  return `${seconds}s`;
+};
+
+const step = (label: string, status: '✓' | '⚠' | '✗', detail?: string): void => {
+  const paddedLabel = label.padEnd(36, '.');
+  const suffix = detail ? ` (${detail})` : '';
+  console.log(`  ${paddedLabel} ${status}${suffix}`);
+};
+
 const startServer = async (): Promise<void> => {
   try {
+    console.log('');
+    console.log('  ╔══════════════════════════════════════╗');
+    console.log(`  ║   CrowdSec Monitor API  v${packageJson.version.padEnd(12)}║`);
+    console.log('  ╚══════════════════════════════════════╝');
+    console.log('');
+
     // Validate environment variables first
-    console.log('Validating environment configuration...');
     validateEnvironment();
-    console.log('✓ Environment configuration valid');
+    step('Environment', '✓');
 
     // Initialize database
-    console.log('Initializing database...');
     await initDatabase();
+    step('Database', '✓', config.database.mode);
 
     // Test CrowdSec connection
-    console.log('Testing CrowdSec LAPI connection...');
     const isConnected = await crowdSecAPI.testConnection();
     if (!isConnected) {
-      console.warn('⚠ Warning: Unable to connect to CrowdSec LAPI. Please check your configuration.');
+      step('CrowdSec LAPI', '⚠', 'unreachable — check config');
     } else {
-      console.log('✓ CrowdSec LAPI connection successful');
+      step('CrowdSec LAPI', '✓', config.crowdsec.lapiUrl);
     }
+
+    // Verify bouncer API key (CROWDSEC_BOUNCER_KEY) by requesting active decisions
+    await crowdSecAPI.checkBouncerConnection();
+    step('Bouncer key', '✓');
 
     // Initial data sync
     if (isConnected) {
-      console.log('Performing initial data sync...');
       await databaseService.syncAll();
+      step('Initial data sync', '✓');
     }
 
-    // Setup automatic sync with interval-based scheduler
-    console.log(`Setting up automatic sync (interval: ${config.sync.intervalSeconds}s)...`);
+    // Setup schedulers
     schedulerService.schedule(
       'data-sync',
-      async () => {
-        console.log('Running scheduled sync...');
-        await databaseService.syncAll();
-      },
-      {
-        intervalSeconds: config.sync.intervalSeconds,
-        runImmediately: false, // Already ran initial sync
-      }
+      async () => { await databaseService.syncAll(); },
+      { intervalSeconds: config.sync.intervalSeconds, runImmediately: false }
     );
 
-    // Setup version check (every hour = 3600 seconds)
-    console.log('Setting up automatic version check (interval: 1 hour)...');
     schedulerService.schedule(
       'version-check',
-      async () => {
-        await versionCheckerService.checkForNewVersion();
-      },
-      {
-        intervalSeconds: 3600, // 1 hour
-        runImmediately: true, // Check immediately on startup
-      }
+      async () => { await versionCheckerService.checkForNewVersion(); },
+      { intervalSeconds: 3600, runImmediately: true }
     );
 
-    // Setup blocklists sync
-    console.log(`Setting up automatic blocklists sync (interval: ${config.blocklists.refreshTimeSeconds}s)...`);
     schedulerService.schedule(
       'blocklists-sync',
-      async () => {
-        console.log('Running scheduled blocklists sync...');
-        await databaseService.syncBlocklists();
-      },
-      {
-        intervalSeconds: config.blocklists.refreshTimeSeconds,
-        runImmediately: true,
-      }
+      async () => { await databaseService.syncBlocklists(); },
+      { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true }
     );
 
-    // Setup CrowdSec-managed blocklists sync
-    console.log(`Setting up automatic CrowdSec blocklists sync (interval: ${config.crowdsecBlocklists.refreshTimeSeconds}s)...`);
     schedulerService.schedule(
       'cs-blocklists-sync',
-      async () => {
-        console.log('Running scheduled CrowdSec blocklists sync...');
-        await databaseService.syncCsBlocklists();
-      },
-      {
-        intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds,
-        runImmediately: true,
-      }
+      async () => { await databaseService.syncCsBlocklists(); },
+      { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true }
     );
 
-    // Setup blocklist reconciliation: deactivate DB IPs removed from CrowdSec
-    console.log(`Setting up automatic blocklist reconciliation (interval: ${config.blocklistReconcile.intervalSeconds}s)...`);
     schedulerService.schedule(
       'blocklist-reconcile',
-      async () => {
-        console.log('Running scheduled blocklist reconciliation...');
-        await databaseService.reconcileBlocklistIps();
-      },
-      {
-        intervalSeconds: config.blocklistReconcile.intervalSeconds,
-        runImmediately: false,
-      }
+      async () => { await databaseService.reconcileBlocklistIps(); },
+      { intervalSeconds: config.blocklistReconcile.intervalSeconds, runImmediately: false }
     );
+
+    console.log('');
+    console.log('  Schedulers:');
+    console.log(`    ↻ Alerts sync            every ${formatInterval(config.sync.intervalSeconds)}`);
+    console.log(`    ↻ Blocklists sync        every ${formatInterval(config.blocklists.refreshTimeSeconds)}`);
+    console.log(`    ↻ CS blocklists sync     every ${formatInterval(config.crowdsecBlocklists.refreshTimeSeconds)}`);
+    console.log(`    ↻ Blocklist reconcile    every ${formatInterval(config.blocklistReconcile.intervalSeconds)}`);
+    console.log(`    ↻ Version check          every 1h`);
 
     // Create and start Express app
     const app = createApp();
-    
+
     app.listen(config.server.port, () => {
-      console.log('=================================');
-      console.log(`✓ Server running on port ${config.server.port}`);
-      console.log(`✓ Environment: ${config.server.nodeEnv}`);
-      console.log(`✓ Version: ${packageJson.version}`);
-      console.log(`✓ API available at: http://localhost:${config.server.port}/api`);
-      console.log(`✓ Refreshing alerts every ${config.sync.intervalSeconds} seconds`);
-      console.log('=================================');
+      console.log('');
+      console.log('  ┌─────────────────────────────────────┐');
+      console.log('  │  Server ready                       │');
+      console.log(`  │  Port:        ${String(config.server.port).padEnd(22)}│`);
+      console.log(`  │  Environment: ${config.server.nodeEnv.padEnd(22)}│`);
+      console.log(`  │  API:         http://localhost:${config.server.port}/api │`);
+      console.log('  └─────────────────────────────────────┘');
+      console.log('');
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('');
+    console.error('  ✗ Failed to start server:', error);
+    console.error('');
     process.exit(1);
   }
 };
@@ -168,13 +161,13 @@ process.on('uncaughtException', (error: Error) => {
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  console.log('\n  Shutting down gracefully (SIGTERM)...');
   schedulerService.stopAll();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
+  console.log('\n  Shutting down gracefully (SIGINT)...');
   schedulerService.stopAll();
   process.exit(0);
 });

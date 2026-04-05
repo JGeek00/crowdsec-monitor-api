@@ -23,9 +23,6 @@ export const createApp = (): Application => {
       message: { error: 'Too many requests', message: 'Too many requests from this IP, please try again later.' },
     });
     app.use('/api/v1/', limiter);
-    console.log(`Rate limiting enabled: ${config.rateLimit.max} requests per ${config.rateLimit.windowMs / 60000} minutes`);
-  } else {
-    console.log('Rate limiting disabled');
   }
 
   // Body parsing middleware

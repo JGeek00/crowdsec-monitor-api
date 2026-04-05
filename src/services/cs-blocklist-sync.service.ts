@@ -20,7 +20,6 @@ class CsBlocklistSyncService {
     });
 
     if (alerts.length === 0) {
-      console.log('No CrowdSec-managed blocklists found (origin=lists).');
       return { synced: 0, ips: 0, errors: 0 };
     }
 
@@ -36,8 +35,6 @@ class CsBlocklistSyncService {
       }
     }
     const deduplicatedAlerts = Array.from(alertsByName.values());
-
-    console.log(`Syncing ${deduplicatedAlerts.length} unique CrowdSec blocklist(s) (from ${alerts.length} alert(s))...`);
 
     for (const alert of deduplicatedAlerts) {
       try {
@@ -71,14 +68,12 @@ class CsBlocklistSyncService {
         const count = decisions.length;
         ipsCount += count;
         synced++;
-        console.log(`✓ Synced CrowdSec blocklist "${name}" (id=${alert.id}): ${count} IPs`);
       } catch (error) {
         errors++;
         console.error(`✗ Failed to sync CrowdSec blocklist alert id=${alert.id}:`, error);
       }
     }
 
-    console.log(`CrowdSec blocklists sync complete: ${synced} synced, ${ipsCount} IPs, ${errors} error(s).`);
     return { synced, ips: ipsCount, errors };
   }
 }
