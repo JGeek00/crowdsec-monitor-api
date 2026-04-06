@@ -13,7 +13,7 @@ import {
 import { statisticsQueryValidators } from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * @route   GET /api/statistics

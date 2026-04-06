@@ -2,8 +2,7 @@ import { CsBlocklist, BlocklistIp } from '@/models';
 import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-
-const CHUNK_SIZE = 1000;
+import appDefaults from '@/constants/app-defaults';
 
 class CsBlocklistSyncService {
   /**
@@ -55,8 +54,8 @@ class CsBlocklistSyncService {
             { transaction: t }
           );
 
-          for (let i = 0; i < decisions.length; i += CHUNK_SIZE) {
-            const chunk = decisions.slice(i, i + CHUNK_SIZE).map((decision) => ({
+          for (let i = 0; i < decisions.length; i += appDefaults.blocklists.writeChunkSize) {
+            const chunk = decisions.slice(i, i + appDefaults.blocklists.writeChunkSize).map((decision) => ({
               cs_blocklist_id: `crowdsec-${alert.id}`,
               blocklist_name: decision.scenario,
               value: decision.value,

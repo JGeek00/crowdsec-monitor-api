@@ -5,7 +5,7 @@ import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration'
 import { config } from '@/config';
 import { AlertAttributes } from '@/models/Alert';
 import { DecisionAttributes } from '@/models/Decision';
-import { ALERTS_ORIGINS_FETCH } from '@/constants/app-defaults';
+import appDefaults from '@/constants/app-defaults';
 
 class AlertsSyncService {
   private lastSuccessfulSync: Date | null = null;
@@ -26,7 +26,7 @@ class AlertsSyncService {
     // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
     let alerts: Awaited<ReturnType<typeof crowdSecAPI.getAlerts>>;
     try {
-      const results = await Promise.all(ALERTS_ORIGINS_FETCH.map(origin => crowdSecAPI.getAlerts({ origin })));
+      const results = await Promise.all(appDefaults.alerts.originsFetch.map(origin => crowdSecAPI.getAlerts({ origin })));
       alerts = results.flat();
     } catch (error) {
       console.error('Error fetching alerts from LAPI:', error);

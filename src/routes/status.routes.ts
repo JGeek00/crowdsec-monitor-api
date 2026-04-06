@@ -3,7 +3,7 @@ import { healthCheck } from '@/controllers/status/health.controller';
 import { getStatus } from '@/controllers/status/status.controller';
 import { optionalAuth } from '@/middlewares';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * @route   GET /api/health

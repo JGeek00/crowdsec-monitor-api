@@ -3,7 +3,8 @@ import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
 import { databaseService, schedulerService, versionCheckerService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import packageJson from '../package.json';
+import packageJson from '@package.json';
+import appDefaults from './constants/app-defaults';
 
 /**
  * Validate required environment variables
@@ -87,31 +88,31 @@ const startServer = async (): Promise<void> => {
 
     // Setup schedulers
     schedulerService.schedule(
-      'data-sync',
+      appDefaults.scheduler.dataSync,
       async () => { await databaseService.syncAll(); },
       { intervalSeconds: config.sync.intervalSeconds, runImmediately: false }
     );
 
     schedulerService.schedule(
-      'version-check',
+      appDefaults.scheduler.versionCheck,
       async () => { await versionCheckerService.checkForNewVersion(); },
       { intervalSeconds: 3600, runImmediately: true }
     );
 
     schedulerService.schedule(
-      'blocklists-sync',
+      appDefaults.scheduler.blocklistsSync,
       async () => { await databaseService.syncBlocklists(); },
       { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true }
     );
 
     schedulerService.schedule(
-      'cs-blocklists-sync',
+      appDefaults.scheduler.csBlocklistsSync,
       async () => { await databaseService.syncCsBlocklists(); },
       { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true }
     );
 
     schedulerService.schedule(
-      'blocklist-reconcile',
+      appDefaults.scheduler.blocklistReconcile,
       async () => { await databaseService.reconcileBlocklistIps(); },
       { intervalSeconds: config.blocklistReconcile.intervalSeconds, runImmediately: false }
     );

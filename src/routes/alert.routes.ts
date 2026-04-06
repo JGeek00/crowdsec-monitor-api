@@ -3,7 +3,7 @@ import { getAllAlerts, getAlertById, getAlertStats, deleteAlert } from '@/contro
 import { paginationValidators, alertQueryValidators } from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
 
-const router = Router();
+const router: Router= Router();
 
 /**
  * @route   GET /api/alerts

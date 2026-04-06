@@ -3,7 +3,7 @@ import { getAllDecisions, getDecisionById, getDecisionStats, createDecision, del
 import { paginationValidators, decisionQueryValidators, createDecisionValidators } from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * @route   GET /api/decisions

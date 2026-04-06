@@ -7,7 +7,7 @@ import statisticsRoutes from '@/routes/statistics.routes';
 import statusRoutes from '@/routes/status.routes';
 import { optionalAuth } from '@/middlewares';
 
-const router = Router();
+const router: Router = Router();
 
 // Mount routes with optional authentication
 router.use('/alerts', optionalAuth, alertRoutes);

@@ -3,7 +3,7 @@ import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, dele
 import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators, createBlocklistValidators } from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * GET /api/v1/blocklists
