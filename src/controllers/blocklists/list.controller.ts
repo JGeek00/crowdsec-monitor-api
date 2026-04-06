@@ -96,6 +96,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
 
     const mapItem = (item: any, type: 'api' | 'cs') => {
       const obj = item.toJSON();
+      obj.id = String(obj.id);
       obj.type = type;
       if (onlyIps && Array.isArray(obj.blocklistIps)) {
         obj.blocklistIps = obj.blocklistIps.map((ip: any) => ip.value);
@@ -191,6 +192,7 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
       : null;
 
     const result: any = apiBlocklist.toJSON();
+    result.id = String(result.id);
     result.type = 'api';
     if (ips !== null) {
       result.blocklistIps = onlyIps ? ips.map((ip: any) => ip.value) : ips;
