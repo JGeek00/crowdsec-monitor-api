@@ -1,8 +1,6 @@
+import { BLOCKLIST_SCENARIO_REGEX, CS_MONITOR_BLOCKLIST_IMPORT_ORIGIN } from '@/constants/app-defaults';
 import { Blocklist, BlocklistIp } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-
-// Scenario format used when pushing blocklist alerts: external/blocklist (<name>)
-const SCENARIO_REGEX = /^external\/blocklist \((.+)\)$/;
 
 class BlocklistReconcileService {
   /**
@@ -18,13 +16,13 @@ class BlocklistReconcileService {
 
     const alerts = await crowdSecAPI.getAlerts({
       has_active_decision: true,
-      origin: 'cs-monitor-blocklist-import',
+      origin: CS_MONITOR_BLOCKLIST_IMPORT_ORIGIN,
     });
 
     // Extract unique blocklist names from alert scenario fields
     const activeBlocklistNames = new Set<string>();
     for (const alert of alerts) {
-      const match = alert.scenario.match(SCENARIO_REGEX);
+      const match = alert.scenario.match(BLOCKLIST_SCENARIO_REGEX);
       if (match) {
         activeBlocklistNames.add(match[1]);
       }

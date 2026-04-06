@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { defaults } from '@/config/defaults';
+import { defaults } from '@/config/env-defaults';
 import { dnsServers } from '@/constants/dns-servers';
 
 dotenv.config();
@@ -133,4 +133,4 @@ export const config = {
   },
 };
 
-export { defaults } from '@/config/defaults';
+export { defaults } from '@/config/env-defaults';

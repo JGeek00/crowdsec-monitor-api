@@ -3,6 +3,9 @@ import { Alert, Decision } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { config } from '@/config';
+import { AlertAttributes } from '@/models/Alert';
+import { DecisionAttributes } from '@/models/Decision';
+import { ALERTS_ORIGINS_FETCH } from '@/constants/app-defaults';
 
 class AlertsSyncService {
   private lastSuccessfulSync: Date | null = null;
@@ -23,12 +26,7 @@ class AlertsSyncService {
     // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
     let alerts: Awaited<ReturnType<typeof crowdSecAPI.getAlerts>>;
     try {
-      const results = await Promise.all([
-        crowdSecAPI.getAlerts({ origin: 'crowdsec' }),
-        crowdSecAPI.getAlerts({ origin: 'cscli' }),
-        crowdSecAPI.getAlerts({ origin: 'console' }),
-        crowdSecAPI.getAlerts({ origin: 'appsec' }),
-      ]);
+      const results = await Promise.all(ALERTS_ORIGINS_FETCH.map(origin => crowdSecAPI.getAlerts({ origin })));
       alerts = results.flat();
     } catch (error) {
       console.error('Error fetching alerts from LAPI:', error);
@@ -47,7 +45,7 @@ class AlertsSyncService {
           try {
             const existingAlert = await Alert.findByPk(alert.id);
 
-            const alertData = {
+            const alertData: Omit<AlertAttributes, 'created_at'> = {
               id: alert.id,
               uuid: alert.uuid,
               scenario: alert.scenario,
@@ -91,7 +89,7 @@ class AlertsSyncService {
                 try {
                   const existingDecision = await Decision.findByPk(decision.id);
 
-                  const decisionData = {
+                  const decisionData: Omit<DecisionAttributes, 'created_at'> = {
                     id: decision.id,
                     alert_id: alertInstance.id,
                     origin: decision.origin,
