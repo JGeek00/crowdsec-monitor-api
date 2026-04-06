@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { AlertRaw, EventData } from '@/interfaces/alert.interface';
 
 /**
  * Get target history (alerts grouped by date for a specific target)
@@ -20,9 +21,9 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
     // Filter by target and group by date in JavaScript
     const dateMap = new Map<string, number>();
 
-    alerts.forEach((alert: any) => {
+    (alerts as unknown as AlertRaw[]).forEach((alert) => {
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
         
         // Check if this alert contains the target_fqdn we're looking for
         let hasTarget = false;
@@ -43,7 +44,7 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
         
         // If this alert contains the target, count it for this date
         if (hasTarget) {
-          const date = new Date(alert.crowdsec_created_at).toISOString().split('T')[0];
+          const date = new Date(alert.crowdsec_created_at as Date | string).toISOString().split('T')[0];
           dateMap.set(date, (dateMap.get(date) || 0) + 1);
         }
       }

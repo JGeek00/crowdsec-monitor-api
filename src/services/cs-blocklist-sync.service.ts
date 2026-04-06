@@ -1,4 +1,5 @@
 import { CsBlocklist, BlocklistIp } from '@/models';
+import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 
@@ -59,7 +60,7 @@ class CsBlocklistSyncService {
               cs_blocklist_id: `crowdsec-${alert.id}`,
               blocklist_name: decision.scenario,
               value: decision.value,
-              origin: 'cs_blocklist' as const,
+              origin: BLOCKLIST_IP_ORIGIN.CS_BLOCKLIST,
             }));
             await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
           }

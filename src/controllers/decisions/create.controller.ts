@@ -4,13 +4,7 @@ import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { config } from '@/config';
 import { MANUAL_DECISION } from '@/constants/scenarios';
 import { errorResponse } from '@/utils/error-response';
-
-interface CreateDecisionRequest {
-  ip: string;
-  duration: string;
-  reason: string;
-  type: 'ban' | 'captcha' | 'throttle' | 'allow';
-}
+import type { CreateDecisionRequest } from '@/interfaces/decision.interface';
 
 /**
  * Create a decision in CrowdSec LAPI

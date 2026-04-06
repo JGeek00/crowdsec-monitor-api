@@ -1,11 +1,12 @@
 import dotenv from 'dotenv';
 import { defaults } from '@/config/env-defaults';
 import { dnsServers } from '@/constants/dns-servers';
+import { DB_MODE, DbMode } from '@/interfaces/database.interface';
 
 dotenv.config();
 
 // Validate and parse DB_MODE with its required env vars
-const parseDbMode = (): 'sqlite' | 'postgres' => {
+const parseDbMode = (): DbMode => {
   const mode = (process.env.DB_MODE || 'sqlite').trim().toLowerCase();
 
   if (mode === 'sqlite') {
@@ -13,7 +14,7 @@ const parseDbMode = (): 'sqlite' | 'postgres' => {
       console.error('ERROR: DB_MODE is sqlite but DB_PATH is not defined.');
       process.exit(1);
     }
-    return 'sqlite';
+    return DB_MODE.SQLITE;
   }
 
   if (mode === 'postgres') {
@@ -23,7 +24,7 @@ const parseDbMode = (): 'sqlite' | 'postgres' => {
       console.error(`ERROR: DB_MODE is postgres but the following variables are not defined: ${missing.join(', ')}`);
       process.exit(1);
     }
-    return 'postgres';
+    return DB_MODE.POSTGRES;
   }
 
   console.error(`ERROR: Invalid DB_MODE "${mode}". Allowed values: "sqlite", "postgres".`);

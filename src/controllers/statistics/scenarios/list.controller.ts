@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { ScenarioCountRow } from '@/interfaces/statistics.interface';
 
 /**
  * Get top scenarios statistics
@@ -19,7 +20,7 @@ export async function getTopScenarios(req: Request, res: Response): Promise<void
       raw: true,
     });
 
-    const scenarios = scenariosData.map((item: any) => ({
+    const scenarios = (scenariosData as unknown as ScenarioCountRow[]).map((item) => ({
       scenario: item.scenario,
       amount: parseInt(item.count, 10),
     }));

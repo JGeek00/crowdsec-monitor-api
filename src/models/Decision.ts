@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import { SourceInfo } from '@/models/Alert';
+import type { SourceInfo, Alert } from '@/models/Alert';
 
 export interface DecisionAttributes {
   id: number;
@@ -36,7 +36,7 @@ export class Decision extends Model<DecisionAttributes, DecisionCreationAttribut
   public updated_at!: Date;
 
   // Associations will be set in models/index.ts
-  public readonly alert?: any;
+  public readonly alert?: Alert;
 }
 
 Decision.init(

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { AlertRaw, SourceInfo } from '@/interfaces/alert.interface';
 
 /**
  * Get top countries statistics
@@ -16,9 +17,9 @@ export async function getTopCountries(req: Request, res: Response): Promise<void
 
     const countryMap = new Map<string, number>();
 
-    alertsWithSource.forEach((alert: any) => {
+    (alertsWithSource as unknown as AlertRaw[]).forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
         if (source.cn) {
           countryMap.set(source.cn, (countryMap.get(source.cn) || 0) + 1);
         }

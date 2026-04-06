@@ -1,7 +1,13 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
+import type { Blocklist } from './Blocklist';
+import type { CsBlocklist } from './CsBlocklist';
 
-export type BlocklistIpOrigin = 'blocklist' | 'cs_blocklist';
+export const BLOCKLIST_IP_ORIGIN = {
+  BLOCKLIST: 'blocklist',
+  CS_BLOCKLIST: 'cs_blocklist',
+} as const;
+export type BlocklistIpOrigin = typeof BLOCKLIST_IP_ORIGIN[keyof typeof BLOCKLIST_IP_ORIGIN];
 
 export interface BlocklistIpAttributes {
   id: number;
@@ -23,8 +29,8 @@ export class BlocklistIp extends Model<BlocklistIpAttributes, BlocklistIpCreatio
   public origin!: BlocklistIpOrigin;
 
   // Associations set in models/index.ts
-  public readonly blocklist?: any;
-  public readonly csBlocklist?: any;
+  public readonly blocklist?: Blocklist;
+  public readonly csBlocklist?: CsBlocklist;
 }
 
 BlocklistIp.init(

@@ -1,15 +1,17 @@
 import { Request, Response } from 'express';
 import { Alert } from '@/models';
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
+import { AlertAttributes, MetaData, EventData, SourceInfo } from '@/models/Alert';
+import { ParsedMetaData, AlertRaw, AlertListResponse, AlertFilteringInfo } from '@/interfaces/alert.interface';
 
 /**
  * Parse meta array values that might be JSON strings
  * Always returns value as an array of strings
  */
-function parseMetaValues(meta: any[]): any[] {
+function parseMetaValues(meta: MetaData[]): ParsedMetaData[] {
   if (!Array.isArray(meta)) return meta;
   
   return meta.map(item => {
@@ -19,16 +21,16 @@ function parseMetaValues(meta: any[]): any[] {
 
     // If already an array, ensure all elements are strings
     if (Array.isArray(item.value)) {
-      return { ...item, value: item.value.map((v: any) => String(v)) };
+      return { ...item, value: (item.value as unknown[]).map((v: unknown) => String(v)) };
     }
 
     // If it's a string, try to parse it
     if (typeof item.value === 'string') {
       try {
-        const parsed = JSON.parse(item.value);
+        const parsed: unknown = JSON.parse(item.value);
         // If parsed result is an array, convert all elements to strings
         if (Array.isArray(parsed)) {
-          return { ...item, value: parsed.map((v: any) => String(v)) };
+          return { ...item, value: (parsed as unknown[]).map((v: unknown) => String(v)) };
         }
         // If it's not an array, stringify it and wrap in array
         return { ...item, value: [String(parsed)] };
@@ -51,7 +53,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
   try {
     const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner, target } = req.query;
 
-    const where: any = {};
+    const where: WhereOptions<AlertAttributes> = {};
     
     // Filter by scenario (single or multiple)
     if (scenario) {
@@ -62,7 +64,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     }
     
     if (simulated !== undefined) {
-      where.simulated = simulated;
+      where.simulated = String(simulated) === 'true';
     }
 
     // Fetch all alerts for filtering options (from entire database)
@@ -77,7 +79,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     const ipOwnersSet = new Set<string>();
     const targetsSet = new Set<string>();
 
-    allAlerts.forEach((alert: any) => {
+    (allAlerts as unknown as AlertRaw[]).forEach((alert) => {
       // Extract scenarios
       if (alert.scenario) {
         scenariosSet.add(alert.scenario);
@@ -85,7 +87,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
       // Extract countries, ipOwners from source
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
         
         if (source.cn) {
           countriesSet.add(source.cn);
@@ -98,12 +100,12 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
       // Extract targets from events
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
         
         if (Array.isArray(events)) {
-          events.forEach((event: any) => {
+          events.forEach((event) => {
             if (event.meta && Array.isArray(event.meta)) {
-              event.meta.forEach((metaItem: any) => {
+              event.meta.forEach((metaItem) => {
                 if (metaItem.key === 'target_fqdn' && metaItem.value) {
                   targetsSet.add(metaItem.value);
                 }
@@ -154,9 +156,9 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
       const targets = Array.isArray(target) ? target : [target];
       alerts = alerts.filter(alert => {
         if (alert.events && Array.isArray(alert.events)) {
-          return alert.events.some((event: any) => {
+          return alert.events.some((event) => {
             if (event.meta && Array.isArray(event.meta)) {
-              return event.meta.some((metaItem: any) => 
+              return event.meta.some((metaItem) => 
                 metaItem.key === 'target_fqdn' && 
                 metaItem.value && 
                 targets.includes(metaItem.value)
@@ -183,7 +185,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
       paginatedAlerts = alerts.slice(offset as number, (offset as number) + (limit as number));
     }
 
-    const response: any = {
+    const response: AlertListResponse = {
       filtering: {
         countries: Array.from(countriesSet).sort(),
         scenarios: Array.from(scenariosSet).sort(),
@@ -191,18 +193,18 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
         targets: Array.from(targetsSet).sort(),
       },
       items: paginatedAlerts.map(alert => {
-        const json = alert.toJSON();
+        const json = alert.toJSON() as unknown as Record<string, unknown>;
         
         // Parse meta values
-        if (json.meta && Array.isArray(json.meta)) {
-          json.meta = parseMetaValues(json.meta);
+        if (Array.isArray(json.meta)) {
+          json.meta = parseMetaValues(json.meta as MetaData[]);
         }
 
         // Parse meta values in events
-        if (json.events && Array.isArray(json.events)) {
-          json.events = json.events.map((event: any) => {
-            if (event.meta && Array.isArray(event.meta)) {
-              event.meta = parseMetaValues(event.meta);
+        if (Array.isArray(json.events)) {
+          json.events = (json.events as EventData[]).map((event) => {
+            if (Array.isArray(event.meta)) {
+              return { ...event, meta: parseMetaValues(event.meta) };
             }
             return event;
           });

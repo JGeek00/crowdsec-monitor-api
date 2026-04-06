@@ -1,8 +1,9 @@
 import { Sequelize } from 'sequelize';
 import { config } from '@/config/index';
+import { DB_MODE } from '@/interfaces/database.interface';
 
 function createSequelize(): Sequelize {
-  if (config.database.mode === 'postgres') {
+  if (config.database.mode === DB_MODE.POSTGRES) {
     return new Sequelize({
       dialect: 'postgres',
       host: config.database.postgres.host,
@@ -63,7 +64,7 @@ async function initSQLite(): Promise<void> {
   const [oldLists] = await sequelize.query(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='lists'"
   );
-  if ((oldLists as any[]).length > 0) {
+  if ((oldLists as unknown[]).length > 0) {
     console.log('⚙️  Migrating old blocklist tables to new schema...');
     await sequelize.query('DROP TABLE IF EXISTS blocklist_ips');
     await sequelize.query('DROP TABLE IF EXISTS lists');
@@ -103,7 +104,7 @@ async function initPostgres(): Promise<void> {
   const [oldLists] = await sequelize.query(
     "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename='lists'"
   );
-  if ((oldLists as any[]).length > 0) {
+  if ((oldLists as unknown[]).length > 0) {
     console.log('⚙️  Migrating old blocklist tables to new schema...');
     await sequelize.query('DROP TABLE IF EXISTS blocklist_ips');
     await sequelize.query('DROP TABLE IF EXISTS lists');
@@ -139,7 +140,7 @@ export const initDatabase = async (): Promise<void> => {
     await sequelize.authenticate();
     console.log('✓ Database connection established successfully.');
 
-    if (config.database.mode === 'sqlite') {
+    if (config.database.mode === DB_MODE.SQLITE) {
       await initSQLite();
     } else {
       await initPostgres();

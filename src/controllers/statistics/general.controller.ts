@@ -4,6 +4,8 @@ import { Alert, Decision } from '@/models';
 import { defaults } from '@/config/env-defaults';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { AlertRaw, EventData, SourceInfo } from '@/interfaces/alert.interface';
+import { DateCountRow, ScenarioCountRow } from '@/interfaces/statistics.interface';
 
 /**
  * Get comprehensive statistics
@@ -39,7 +41,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       where: {
         crowdsec_created_at: { [Op.gte]: twentyFourHoursAgo },
       },
-    } as any);
+    });
 
     // 2. Active decisions (not expired)
     const now = new Date();
@@ -48,7 +50,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
         expiration: { [Op.gt]: now },
         ...(sinceDate ? { crowdsec_created_at: { [Op.gte]: sinceDate } } : {}),
       },
-    } as any);
+    });
 
     // 3. Activity history - Get all alerts and decisions grouped by date
     const alertsByDate = await Alert.findAll({
@@ -60,7 +62,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       group: [Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at'))],
       order: [[Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at')), 'ASC']],
       raw: true,
-    }) as any[];
+    }) as unknown as DateCountRow[];
 
     const decisionsByDate = await Decision.findAll({
       attributes: [
@@ -71,19 +73,19 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       group: [Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at'))],
       order: [[Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at')), 'ASC']],
       raw: true,
-    }) as any[];
+    }) as unknown as DateCountRow[];
 
     // Combine alerts and decisions by date
     const activityMap = new Map<string, { amountAlerts: number; amountDecisions: number }>();
 
-    alertsByDate.forEach((item: any) => {
+    alertsByDate.forEach((item) => {
       const date = item.date;
       const existing = activityMap.get(date) || { amountAlerts: 0, amountDecisions: 0 };
       existing.amountAlerts = parseInt(item.count, 10);
       activityMap.set(date, existing);
     });
 
-    decisionsByDate.forEach((item: any) => {
+    decisionsByDate.forEach((item) => {
       const date = item.date;
       const existing = activityMap.get(date) || { amountAlerts: 0, amountDecisions: 0 };
       existing.amountDecisions = parseInt(item.count, 10);
@@ -109,10 +111,10 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     const ipOwnerMap = new Map<string, number>();
     const targetMap = new Map<string, number>();
 
-    alertsWithSource.forEach((alert: any) => {
+    (alertsWithSource as unknown as AlertRaw[]).forEach((alert) => {
       if (alert.source) {
         // Parse JSON if needed
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
 
         // Count by country
         if (source.cn) {
@@ -127,15 +129,15 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
       // Count by target (search for target_fqdn in events[].meta[])
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
         
         // Collect unique target_fqdn values from this alert's events
         const targetsInAlert = new Set<string>();
         
         if (Array.isArray(events)) {
-          events.forEach((event: any) => {
+          events.forEach((event) => {
             if (event.meta && Array.isArray(event.meta)) {
-              event.meta.forEach((metaItem: any) => {
+              event.meta.forEach((metaItem) => {
                 if (metaItem.key === 'target_fqdn' && metaItem.value) {
                   targetsInAlert.add(metaItem.value);
                 }
@@ -179,7 +181,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       raw: true,
     });
 
-    const topScenarios = scenariosData.map((item: any) => ({
+    const topScenarios = (scenariosData as unknown as ScenarioCountRow[]).map((item) => ({
       scenario: item.scenario,
       amount: parseInt(item.count, 10),
     }));

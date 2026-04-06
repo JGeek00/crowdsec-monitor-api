@@ -38,14 +38,15 @@ export const deleteDecision = async (req: Request, res: Response): Promise<void>
       message: 'Decision deleted successfully',
       nbDeleted: nbDeleted.toString()
     });
-  } catch (error: any) {
-    console.error('Error deleting decision:', error.message);
+  } catch (error: unknown) {
+    const err = error as { message?: string; response?: { status?: number } };
+    console.error('Error deleting decision:', err.message);
     
-    if (error.response?.status === 404) {
+    if (err.response?.status === 404) {
       res.status(404).json(errorResponse('Decision not found', `Decision with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(error.response?.status || 500).json(errorResponse('Failed to delete decision', error.message));
+    res.status(err.response?.status || 500).json(errorResponse('Failed to delete decision', err.message ?? 'Unknown error'));
   }
 };

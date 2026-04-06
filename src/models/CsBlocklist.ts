@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
+import type { BlocklistIp } from './BlocklistIp';
 
 export interface CsBlocklistAttributes {
   id: string;
@@ -13,7 +14,7 @@ export class CsBlocklist extends Model<CsBlocklistAttributes, CsBlocklistCreatio
   public name!: string;
 
   // Associations set in models/index.ts
-  public readonly blocklistIps?: any[];
+  public readonly blocklistIps?: BlocklistIp[];
 }
 
 CsBlocklist.init(

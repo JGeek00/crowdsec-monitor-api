@@ -169,7 +169,7 @@ class AlertsSyncService {
     return { synced: 0, errors: 0 };
   }
 
-  async syncAll(): Promise<{ alerts: any }> {
+  async syncAll(): Promise<{ alerts: { synced: number; updated: number; errors: number; decisions: number } }> {
     const alerts = await this.syncAlerts();
     return { alerts };
   }

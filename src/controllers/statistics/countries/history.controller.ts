@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { AlertRaw, SourceInfo } from '@/interfaces/alert.interface';
 
 /**
  * Get country history (alerts grouped by date for a specific country)
@@ -21,11 +22,11 @@ export async function getCountryHistory(req: Request, res: Response): Promise<vo
     // Filter by country and group by date in JavaScript
     const dateMap = new Map<string, number>();
 
-    alerts.forEach((alert: any) => {
+    (alerts as unknown as AlertRaw[]).forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
         if (source.cn && source.cn.toUpperCase() === countryCode) {
-          const date = new Date(alert.crowdsec_created_at).toISOString().split('T')[0];
+          const date = new Date(alert.crowdsec_created_at as Date | string).toISOString().split('T')[0];
           dateMap.set(date, (dateMap.get(date) || 0) + 1);
         }
       }

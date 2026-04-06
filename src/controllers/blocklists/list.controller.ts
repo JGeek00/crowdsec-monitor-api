@@ -3,22 +3,9 @@ import { literal } from 'sequelize';
 import { Blocklist, BlocklistIp, CsBlocklist } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-
-const COUNT_API_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
-  literal('(SELECT COUNT(*) FROM blocklist_ips WHERE blocklist_ips.blocklist_id = "Blocklist"."id")'),
-  'count_ips',
-];
-
-const COUNT_CS_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
-  literal('(SELECT COUNT(*) FROM blocklist_ips WHERE blocklist_ips.cs_blocklist_id = "CsBlocklist"."id")'),
-  'count_ips',
-];
-
-const IPS_INCLUDE_OPTION = {
-  model: BlocklistIp,
-  as: 'blocklistIps',
-  attributes: { exclude: ['created_at', 'updated_at'] },
-};
+import { BlocklistIpAttributes } from '@/models/BlocklistIp';
+import { BlocklistItem, BlocklistListResponse, BlocklistType } from '@/interfaces/blocklist.interface';
+import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE, BLOCKLISTS_IPS_INCLUDE_OPTION } from '@/helpers/blocklists.helper';
 
 /**
  * Get all blocklists (api-managed first, then cs-managed).
@@ -41,7 +28,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
     const onlyApi = get_only === 'blocklists';
     const onlyCs = get_only === 'cs_blocklists';
 
-    const includeOption = includeIps ? [IPS_INCLUDE_OPTION] : [];
+    const includeOption = includeIps ? [BLOCKLISTS_IPS_INCLUDE_OPTION] : [];
 
     const [totalApi, totalCs] = await Promise.all([
       onlyCs ? Promise.resolve(0) : Blocklist.count(),
@@ -49,18 +36,18 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
     ]);
     const total = totalApi + totalCs;
 
-    let apiRows: any[] = [];
-    let csRows: any[] = [];
+    let apiRows: Blocklist[] = [];
+    let csRows: CsBlocklist[] = [];
 
     if (unpaged === 'true') {
       [apiRows, csRows] = await Promise.all([
         onlyCs ? Promise.resolve([]) : Blocklist.findAll({
-          attributes: { include: [COUNT_API_IPS_ATTRIBUTE] },
+          attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
           order: [['name', 'ASC']],
           include: includeOption,
         }),
         onlyApi ? Promise.resolve([]) : CsBlocklist.findAll({
-          attributes: { include: [COUNT_CS_IPS_ATTRIBUTE] },
+          attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
           order: [['name', 'ASC']],
           include: includeOption,
         }),
@@ -75,7 +62,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       await Promise.all([
         apiLimit > 0
           ? Blocklist.findAll({
-              attributes: { include: [COUNT_API_IPS_ATTRIBUTE] },
+              attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
               order: [['name', 'ASC']],
               include: includeOption,
               limit: apiLimit,
@@ -84,7 +71,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
           : Promise.resolve(),
         csLimit > 0
           ? CsBlocklist.findAll({
-              attributes: { include: [COUNT_CS_IPS_ATTRIBUTE] },
+              attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
               order: [['name', 'ASC']],
               include: includeOption,
               limit: csLimit,
@@ -94,12 +81,12 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       ]);
     }
 
-    const mapItem = (item: any, type: 'api' | 'cs') => {
-      const obj = item.toJSON();
+    const mapItem = (item: Blocklist | CsBlocklist, type: BlocklistType): BlocklistItem => {
+      const obj = item.toJSON() as BlocklistItem;
       obj.id = String(obj.id);
       obj.type = type;
       if (onlyIps && Array.isArray(obj.blocklistIps)) {
-        obj.blocklistIps = obj.blocklistIps.map((ip: any) => ip.value);
+        obj.blocklistIps = (obj.blocklistIps as BlocklistIpAttributes[]).map((ip) => ip.value);
       }
       return obj;
     };
@@ -109,7 +96,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       ...csRows.map((row) => mapItem(row, 'cs')),
     ];
 
-    const response: any = { items };
+    const response: BlocklistListResponse = { items };
 
     if (unpaged !== 'true') {
       const page = Math.floor(off / lim) + 1;
@@ -128,81 +115,3 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * Get a specific blocklist by ID.
- * Looks up api-managed blocklists first, then cs-managed blocklists.
- * Query params:
- *   - include_ips=full       → include blocklistIps as full objects
- *   - include_ips=ip_string  → include blocklistIps as plain IP strings
- */
-export async function getBlocklistById(req: Request, res: Response): Promise<void> {
-  const { signal, cleanup } = createRequestSignal(req);
-  try {
-    const { id } = req.params;
-    const includeIps = req.query.include_ips === 'full' || req.query.include_ips === 'ip_string';
-    const onlyIps = req.query.include_ips === 'ip_string';
-
-    const isCsId = (id as string).startsWith('crowdsec-');
-
-    if (isCsId) {
-      const csBlocklist = await CsBlocklist.findByPk(id as string, {
-        attributes: { include: [COUNT_CS_IPS_ATTRIBUTE] },
-      });
-
-      if (!csBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
-        return;
-      }
-
-      const ips = includeIps
-        ? await BlocklistIp.findAll({
-            where: { cs_blocklist_id: id as string },
-            order: [['id', 'ASC']],
-            attributes: { exclude: ['created_at', 'updated_at'] },
-            raw: true,
-          })
-        : null;
-
-      const result: any = csBlocklist.toJSON();
-      result.type = 'cs';
-      if (ips !== null) {
-        result.blocklistIps = onlyIps ? ips.map((ip: any) => ip.value) : ips;
-      }
-      res.status(200).json({ data: result });
-      return;
-    }
-
-    const numId = Number(id);
-    const apiBlocklist = await Blocklist.findByPk(numId, {
-      attributes: { include: [COUNT_API_IPS_ATTRIBUTE] },
-    });
-
-    if (!apiBlocklist) {
-      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
-      return;
-    }
-
-    const ips = includeIps
-      ? await BlocklistIp.findAll({
-          where: { blocklist_id: numId },
-          order: [['id', 'ASC']],
-          attributes: { exclude: ['created_at', 'updated_at'] },
-          raw: true,
-        })
-      : null;
-
-    const result: any = apiBlocklist.toJSON();
-    result.id = String(result.id);
-    result.type = 'api';
-    if (ips !== null) {
-      result.blocklistIps = onlyIps ? ips.map((ip: any) => ip.value) : ips;
-    }
-    res.status(200).json({ data: result });
-  } catch (error) {
-    if (signal.aborted) return;
-    console.error('Error fetching blocklist:', error);
-    res.status(500).json(errorResponse('Failed to fetch blocklist', error instanceof Error ? error.message : 'Unknown error'));
-  } finally {
-    cleanup();
-  }
-}

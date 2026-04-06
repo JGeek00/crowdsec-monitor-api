@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { AlertRaw, EventData } from '@/interfaces/alert.interface';
 
 /**
  * Get top targets statistics
@@ -16,17 +17,17 @@ export async function getTopTargets(req: Request, res: Response): Promise<void> 
 
     const targetMap = new Map<string, number>();
 
-    alerts.forEach((alert: any) => {
+    (alerts as unknown as AlertRaw[]).forEach((alert) => {
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
         
         // Collect unique target_fqdn values from this alert's events
         const targetsInAlert = new Set<string>();
         
         if (Array.isArray(events)) {
-          events.forEach((event: any) => {
+          events.forEach((event) => {
             if (event.meta && Array.isArray(event.meta)) {
-              event.meta.forEach((metaItem: any) => {
+              event.meta.forEach((metaItem) => {
                 if (metaItem.key === 'target_fqdn' && metaItem.value) {
                   targetsInAlert.add(metaItem.value);
                 }

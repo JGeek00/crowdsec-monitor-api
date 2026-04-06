@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { BlocklistIp } from '@/models';
 import { Blocklist, CsBlocklist } from '@/models';
+import { FindAndCountOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { BlocklistIpAttributes } from '@/models/BlocklistIp';
+import { BlocklistIpsResponse } from '@/interfaces/blocklist.interface';
 
 /**
  * Get IPs for a specific blocklist with pagination.
@@ -39,7 +42,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
       whereClause = { blocklist_id: numId };
     }
 
-    const queryOptions: any = {
+    const queryOptions: FindAndCountOptions<BlocklistIpAttributes> = {
       where: whereClause,
       order: [['id', 'ASC']],
       attributes: onlyStrings ? ['value'] : { exclude: ['created_at', 'updated_at'] },
@@ -55,8 +58,10 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
       raw: true,
     });
 
-    const items = onlyStrings ? ips.map((ip: any) => ip.value) : ips;
-    const response: any = { items };
+    const items: BlocklistIpAttributes[] | string[] = onlyStrings
+      ? (ips as BlocklistIpAttributes[]).map((ip) => ip.value)
+      : (ips as BlocklistIpAttributes[]);
+    const response: BlocklistIpsResponse = { items };
 
     if (unpaged !== 'true') {
       const page = Math.floor(Number(offset) / Number(limit)) + 1;

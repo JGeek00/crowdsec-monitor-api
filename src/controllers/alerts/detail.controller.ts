@@ -2,12 +2,14 @@ import { Request, Response } from 'express';
 import { Alert, Decision } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { MetaData } from '@/models/Alert';
+import { ParsedMetaData, AlertResponse } from '@/interfaces/alert.interface';
 
 /**
  * Parse meta array values that might be JSON strings
  * Always returns value as an array of strings
  */
-function parseMetaValues(meta: any[]): any[] {
+function parseMetaValues(meta: MetaData[]): ParsedMetaData[] {
   if (!Array.isArray(meta)) return meta;
   
   return meta.map(item => {
@@ -17,16 +19,16 @@ function parseMetaValues(meta: any[]): any[] {
 
     // If already an array, ensure all elements are strings
     if (Array.isArray(item.value)) {
-      return { ...item, value: item.value.map((v: any) => String(v)) };
+      return { ...item, value: (item.value as unknown[]).map((v: unknown) => String(v)) };
     }
 
     // If it's a string, try to parse it
     if (typeof item.value === 'string') {
       try {
-        const parsed = JSON.parse(item.value);
+        const parsed: unknown = JSON.parse(item.value);
         // If parsed result is an array, convert all elements to strings
         if (Array.isArray(parsed)) {
-          return { ...item, value: parsed.map((v: any) => String(v)) };
+          return { ...item, value: (parsed as unknown[]).map((v: unknown) => String(v)) };
         }
         // If it's not an array, stringify it and wrap in array
         return { ...item, value: [String(parsed)] };
@@ -67,18 +69,18 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
     }
 
     // Convert to plain object and remove timestamps
-    const plainAlert: any = alert.toJSON();
+    const plainAlert = alert.toJSON() as unknown as AlertResponse;
 
     // Parse meta values
     if (plainAlert.meta && Array.isArray(plainAlert.meta)) {
-      plainAlert.meta = parseMetaValues(plainAlert.meta);
+      plainAlert.meta = parseMetaValues(plainAlert.meta as unknown as MetaData[]);
     }
 
     // Parse meta values in events
     if (plainAlert.events && Array.isArray(plainAlert.events)) {
-      plainAlert.events = plainAlert.events.map((event: any) => {
+      plainAlert.events = plainAlert.events.map((event) => {
         if (event.meta && Array.isArray(event.meta)) {
-          event.meta = parseMetaValues(event.meta);
+          event.meta = parseMetaValues(event.meta as unknown as MetaData[]);
         }
         return event;
       });
@@ -86,7 +88,7 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
 
     // Clean decisions if present
     if (plainAlert.decisions) {
-      plainAlert.decisions = plainAlert.decisions.map((decision: any) => {
+      plainAlert.decisions = plainAlert.decisions.map((decision) => {
         return decision;
       });
     }

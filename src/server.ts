@@ -146,7 +146,7 @@ const startServer = async (): Promise<void> => {
 };
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   schedulerService.stopAll();
   process.exit(1);

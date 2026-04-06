@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import { Decision } from '@/models';
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
+import { DecisionAttributes } from '@/models/Decision';
+import { SourceInfo } from '@/models/Alert';
+import { DecisionRaw, DecisionListResponse } from '@/interfaces/decision.interface';
 
 /**
  * Get all decisions with filtering and pagination
@@ -14,14 +17,14 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
   try {
     const { limit = 100, offset = 0, unpaged = false, type, scope, value, simulated, scenario, ip_address, country, ip_owner, only_active } = req.query;
 
-    const where: any = {};
+    const where: WhereOptions<DecisionAttributes> = {};
     
     if (type) {
-      where.type = type;
+      where.type = String(type);
     }
     
     if (scope) {
-      where.scope = scope;
+      where.scope = String(scope);
     }
     
     if (value) {
@@ -29,7 +32,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     }
     
     if (simulated !== undefined) {
-      where.simulated = simulated;
+      where.simulated = String(simulated) === 'true';
     }
 
     // Filter by only active decisions (expiration > now)
@@ -54,7 +57,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     if (ip_address) {
       const ipAddresses = Array.isArray(ip_address) ? ip_address : [ip_address];
       where.value = {
-        [Op.in]: ipAddresses
+        [Op.in]: ipAddresses.map(String)
       };
     }
 
@@ -68,9 +71,9 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     const countriesSet = new Set<string>();
     const ipOwnersSet = new Set<string>();
 
-    allDecisions.forEach((decision: any) => {
+    (allDecisions as unknown as DecisionRaw[]).forEach((decision) => {
       if (decision.source) {
-        const source = typeof decision.source === 'string' ? JSON.parse(decision.source) : decision.source;
+        const source = typeof decision.source === 'string' ? JSON.parse(decision.source) as SourceInfo : decision.source;
         
         if (source.cn) {
           countriesSet.add(source.cn);
@@ -126,7 +129,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
       paginatedDecisions = decisions.slice(offset as number, (offset as number) + (limit as number));
     }
 
-    const response: any = {
+    const response: DecisionListResponse = {
       filtering: {
         countries: Array.from(countriesSet).sort(),
         ipOwners: Array.from(ipOwnersSet).sort(),

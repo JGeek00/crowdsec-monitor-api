@@ -34,14 +34,15 @@ export const deleteAlert = async (req: Request, res: Response): Promise<void> =>
       message: 'Alert deleted successfully',
       nbDeleted: nbDeleted.toString()
     });
-  } catch (error: any) {
-    console.error('Error deleting alert:', error.message);
+  } catch (error: unknown) {
+    const err = error as { message?: string; response?: { status?: number } };
+    console.error('Error deleting alert:', err.message);
     
-    if (error.response?.status === 404) {
+    if (err.response?.status === 404) {
       res.status(404).json(errorResponse('Alert not found', `Alert with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(error.response?.status || 500).json(errorResponse('Failed to delete alert', error.message));
+    res.status(err.response?.status || 500).json(errorResponse('Failed to delete alert', err.message ?? 'Unknown error'));
   }
 };

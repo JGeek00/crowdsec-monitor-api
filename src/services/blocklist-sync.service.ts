@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Blocklist, BlocklistIp } from '@/models';
+import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
@@ -8,6 +9,7 @@ import { buildAllowlistMatcher } from '@/utils/ip';
 import { config } from '@/config';
 import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
 import { BLOCKLIST_WRITE_CHUNK_SIZE, CS_MONITOR_BLOCKLIST_IMPORT_ORIGIN } from '@/constants/app-defaults';
+import { DB_MODE } from '@/interfaces/database.interface';
 
 class BlocklistSyncService {
   private writeLock: Promise<void> = Promise.resolve();
@@ -82,7 +84,7 @@ class BlocklistSyncService {
             blocklist_id: blocklist.id,
             blocklist_name: blocklist.name,
             value,
-            origin: 'blocklist' as const,
+            origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
           }));
           await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
         }
@@ -202,7 +204,7 @@ class BlocklistSyncService {
       }
     }
 
-    if (config.database.mode === 'sqlite') {
+    if (config.database.mode === DB_MODE.SQLITE) {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');
     }
 

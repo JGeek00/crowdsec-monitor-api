@@ -1,4 +1,5 @@
 import { body, ValidationChain } from 'express-validator';
+import { DECISION_TYPE } from '@/interfaces/decision.interface';
 
 /**
  * Validation rules for creating a decision (POST /v1/decisions)
@@ -30,6 +31,6 @@ export const createDecisionValidators: ValidationChain[] = [
   body('type')
     .notEmpty()
     .withMessage('type is required')
-    .isIn(['ban', 'captcha', 'throttle', 'allow'])
-    .withMessage('type must be one of: ban, captcha, throttle, allow'),
+    .isIn(Object.values(DECISION_TYPE))
+    .withMessage(`type must be one of: ${Object.values(DECISION_TYPE).join(', ')}`),
 ];
