@@ -141,25 +141,29 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
     const includeIps = req.query.include_ips === 'full' || req.query.include_ips === 'ip_string';
     const onlyIps = req.query.include_ips === 'ip_string';
 
-    const numId = Number(id);
+    const isCsId = (id as string).startsWith('crowdsec-');
 
-    // Try api-managed first
-    const apiBlocklist = await Blocklist.findByPk(numId, {
-      attributes: { include: [COUNT_API_IPS_ATTRIBUTE] },
-    });
+    if (isCsId) {
+      const csBlocklist = await CsBlocklist.findByPk(id as string, {
+        attributes: { include: [COUNT_CS_IPS_ATTRIBUTE] },
+      });
 
-    if (apiBlocklist) {
+      if (!csBlocklist) {
+        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+        return;
+      }
+
       const ips = includeIps
         ? await BlocklistIp.findAll({
-            where: { blocklist_id: numId },
+            where: { cs_blocklist_id: id as string },
             order: [['id', 'ASC']],
             attributes: { exclude: ['created_at', 'updated_at'] },
             raw: true,
           })
         : null;
 
-      const result: any = apiBlocklist.toJSON();
-      result.type = 'api';
+      const result: any = csBlocklist.toJSON();
+      result.type = 'cs';
       if (ips !== null) {
         result.blocklistIps = onlyIps ? ips.map((ip: any) => ip.value) : ips;
       }
@@ -167,27 +171,27 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Fall back to cs-managed
-    const csBlocklist = await CsBlocklist.findByPk(numId, {
-      attributes: { include: [COUNT_CS_IPS_ATTRIBUTE] },
+    const numId = Number(id);
+    const apiBlocklist = await Blocklist.findByPk(numId, {
+      attributes: { include: [COUNT_API_IPS_ATTRIBUTE] },
     });
 
-    if (!csBlocklist) {
+    if (!apiBlocklist) {
       res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
       return;
     }
 
     const ips = includeIps
       ? await BlocklistIp.findAll({
-          where: { cs_blocklist_id: numId },
+          where: { blocklist_id: numId },
           order: [['id', 'ASC']],
           attributes: { exclude: ['created_at', 'updated_at'] },
           raw: true,
         })
       : null;
 
-    const result: any = csBlocklist.toJSON();
-    result.type = 'cs';
+    const result: any = apiBlocklist.toJSON();
+    result.type = 'api';
     if (ips !== null) {
       result.blocklistIps = onlyIps ? ips.map((ip: any) => ip.value) : ips;
     }

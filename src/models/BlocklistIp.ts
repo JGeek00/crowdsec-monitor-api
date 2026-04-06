@@ -6,7 +6,7 @@ export type BlocklistIpOrigin = 'blocklist' | 'cs_blocklist';
 export interface BlocklistIpAttributes {
   id: number;
   blocklist_id: number | null;
-  cs_blocklist_id: number | null;
+  cs_blocklist_id: string | null;
   blocklist_name: string;
   value: string;
   origin: BlocklistIpOrigin;
@@ -17,7 +17,7 @@ export interface BlocklistIpCreationAttributes extends Optional<BlocklistIpAttri
 export class BlocklistIp extends Model<BlocklistIpAttributes, BlocklistIpCreationAttributes> implements BlocklistIpAttributes {
   public id!: number;
   public blocklist_id!: number | null;
-  public cs_blocklist_id!: number | null;
+  public cs_blocklist_id!: string | null;
   public blocklist_name!: string;
   public value!: string;
   public origin!: BlocklistIpOrigin;
@@ -46,7 +46,7 @@ BlocklistIp.init(
       onDelete: 'CASCADE',
     },
     cs_blocklist_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(50),
       allowNull: true,
       references: {
         model: 'cs_blocklists',

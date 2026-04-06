@@ -70,6 +70,12 @@ async function initSQLite(): Promise<void> {
     console.log('✓ Old blocklist tables dropped.');
   }
 
+  // Migration: drop cs_blocklists so sync() recreates it with the new VARCHAR(50) id column.
+  // FK-referencing rows in blocklist_ips are deleted first.
+  await sequelize.query('DELETE FROM blocklist_ips WHERE cs_blocklist_id IS NOT NULL;').catch(() => {});
+  await sequelize.query('DROP TABLE IF EXISTS cs_blocklists;').catch(() => {});
+  console.log('✓ cs_blocklists dropped (will be recreated with VARCHAR id and re-synced on startup).');
+
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
@@ -103,6 +109,15 @@ async function initPostgres(): Promise<void> {
     await sequelize.query('DROP TABLE IF EXISTS lists');
     console.log('✓ Old blocklist tables dropped.');
   }
+
+  // Migration: change cs_blocklists.id and blocklist_ips.cs_blocklist_id from INTEGER to VARCHAR(50).
+  // Delete FK-referencing rows, drop the FK constraint, then alter both columns.
+  await sequelize.query('DELETE FROM blocklist_ips WHERE cs_blocklist_id IS NOT NULL;').catch(() => {});
+  await sequelize.query('DELETE FROM cs_blocklists;').catch(() => {});
+  await sequelize.query('ALTER TABLE blocklist_ips DROP CONSTRAINT IF EXISTS blocklist_ips_cs_blocklist_id_fkey;').catch(() => {});
+  await sequelize.query('ALTER TABLE cs_blocklists ALTER COLUMN id TYPE VARCHAR(50) USING id::text;').catch(() => {});
+  await sequelize.query('ALTER TABLE blocklist_ips ALTER COLUMN cs_blocklist_id TYPE VARCHAR(50) USING cs_blocklist_id::text;').catch(() => {});
+  console.log('✓ cs_blocklists schema migrated to VARCHAR id (will be re-synced on startup).');
 
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();

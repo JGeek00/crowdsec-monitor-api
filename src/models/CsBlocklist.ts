@@ -2,14 +2,14 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
 
 export interface CsBlocklistAttributes {
-  id: number;
+  id: string;
   name: string;
 }
 
 export interface CsBlocklistCreationAttributes extends Optional<CsBlocklistAttributes, never> {}
 
 export class CsBlocklist extends Model<CsBlocklistAttributes, CsBlocklistCreationAttributes> implements CsBlocklistAttributes {
-  public id!: number;
+  public id!: string;
   public name!: string;
 
   // Associations set in models/index.ts
@@ -19,10 +19,9 @@ export class CsBlocklist extends Model<CsBlocklistAttributes, CsBlocklistCreatio
 CsBlocklist.init(
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(50),
       primaryKey: true,
       allowNull: false,
-      autoIncrement: false,
     },
     name: {
       type: DataTypes.STRING,

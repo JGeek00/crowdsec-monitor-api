@@ -50,13 +50,13 @@ class CsBlocklistSyncService {
           });
 
           await CsBlocklist.create(
-            { id: alert.id, name },
+            { id: `crowdsec-${alert.id}`, name },
             { transaction: t }
           );
 
           for (let i = 0; i < decisions.length; i += CHUNK_SIZE) {
             const chunk = decisions.slice(i, i + CHUNK_SIZE).map((decision) => ({
-              cs_blocklist_id: alert.id,
+              cs_blocklist_id: `crowdsec-${alert.id}`,
               blocklist_name: decision.scenario,
               value: decision.value,
               origin: 'cs_blocklist' as const,

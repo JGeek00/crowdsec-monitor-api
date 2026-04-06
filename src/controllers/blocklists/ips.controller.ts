@@ -19,21 +19,24 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
     const { blocklistId } = req.params;
     const { limit = 50, offset = 0, unpaged, ip_string } = req.query;
     const onlyStrings = ip_string === 'true';
-    const numId = Number(blocklistId);
+    const isCsId = (blocklistId as string).startsWith('crowdsec-');
+    let whereClause: Record<string, number | string>;
 
-    // Determine which table this ID belongs to
-    const apiBlocklist = await Blocklist.findByPk(numId);
-    let whereClause: Record<string, number>;
-
-    if (apiBlocklist) {
-      whereClause = { blocklist_id: numId };
-    } else {
-      const csBlocklist = await CsBlocklist.findByPk(numId);
+    if (isCsId) {
+      const csBlocklist = await CsBlocklist.findByPk(blocklistId as string);
       if (!csBlocklist) {
         res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
         return;
       }
-      whereClause = { cs_blocklist_id: numId };
+      whereClause = { cs_blocklist_id: blocklistId as string };
+    } else {
+      const numId = Number(blocklistId);
+      const apiBlocklist = await Blocklist.findByPk(numId);
+      if (!apiBlocklist) {
+        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+        return;
+      }
+      whereClause = { blocklist_id: numId };
     }
 
     const queryOptions: any = {
