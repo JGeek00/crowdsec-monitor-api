@@ -24,9 +24,9 @@ class AlertsSyncService {
 
   async syncAlerts(): Promise<{ synced: number; updated: number; errors: number; decisions: number }> {
     // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
-    let alerts: Awaited<ReturnType<typeof crowdSecAPI.getAlerts>>;
+    let alerts: Awaited<ReturnType<typeof crowdSecAPI.alerts.getAlerts>>;
     try {
-      const results = await Promise.all(appDefaults.alerts.originsFetch.map(origin => crowdSecAPI.getAlerts({ origin })));
+      const results = await Promise.all(appDefaults.alerts.originsFetch.map(origin => crowdSecAPI.alerts.getAlerts({ origin })));
       alerts = results.flat();
     } catch (error) {
       console.error('Error fetching alerts from LAPI:', error);

@@ -50,7 +50,7 @@ export async function createDecision(req: Request, res: Response): Promise<void>
     ];
 
     // Create alert with decision in CrowdSec LAPI
-    const createdIds = await crowdSecAPI.createAlerts(alertPayload);
+    const createdIds = await crowdSecAPI.alerts.createAlerts(alertPayload);
 
     // Sync alerts from LAPI after successful creation
     await databaseService.syncAlerts();

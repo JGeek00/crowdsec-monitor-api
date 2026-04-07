@@ -22,7 +22,7 @@ function sanitizeAllowlists(allowlists: CrowdSecAllowlist[]): CrowdSecAllowlist[
  */
 export async function getAllowlists(req: Request, res: Response): Promise<void> {
   try {
-    const allowlists = await crowdSecAPI.getAllowlists();
+    const allowlists = await crowdSecAPI.allowlists.getAllowlists();
     const sanitizedAllowlists = sanitizeAllowlists(allowlists);
     
     res.status(200).json({

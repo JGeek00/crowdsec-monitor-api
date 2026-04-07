@@ -17,7 +17,7 @@ export const deleteAlert = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const nbDeleted = await crowdSecAPI.deleteAlert(id);
+    const nbDeleted = await crowdSecAPI.alerts.deleteAlert(id);
 
     if (nbDeleted === 0) {
       res.status(404).json(errorResponse('Alert not found', `Alert with ID ${id} was not found`));

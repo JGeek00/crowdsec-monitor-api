@@ -24,7 +24,7 @@ export async function getAllowlistByName(req: Request, res: Response): Promise<v
   try {
     const allowlist_name = req.params.allowlist_name as string;
 
-    const allowlist = await crowdSecAPI.getAllowlistByName(allowlist_name);
+    const allowlist = await crowdSecAPI.allowlists.getAllowlistByName(allowlist_name);
 
     if (!allowlist) {
       res.status(404).json(errorResponse('Allowlist not found', `Allowlist '${allowlist_name}' was not found`));

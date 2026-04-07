@@ -14,7 +14,7 @@ class CsBlocklistSyncService {
     let ipsCount = 0;
     let errors = 0;
 
-    const alerts = await crowdSecAPI.getAlerts({
+    const alerts = await crowdSecAPI.alerts.getAlerts({
       has_active_decision: true,
       origin: 'lists',
     });

@@ -18,7 +18,7 @@ export const deleteDecision = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const nbDeleted = await crowdSecAPI.deleteDecision(id);
+    const nbDeleted = await crowdSecAPI.decisions.deleteDecision(id);
 
     if (nbDeleted === 0) {
       res.status(404).json(errorResponse('Decision not found', `Decision with ID ${id} was not found`));

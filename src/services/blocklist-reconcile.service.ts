@@ -14,7 +14,7 @@ class BlocklistReconcileService {
   async reconcile(): Promise<{ deactivated: number }> {
     console.log('Starting blocklist reconciliation with CrowdSec...');
 
-    const alerts = await crowdSecAPI.getAlerts({
+    const alerts = await crowdSecAPI.alerts.getAlerts({
       has_active_decision: true,
       origin: appDefaults.blocklists.importOrigin,
     });

@@ -9,7 +9,7 @@ export async function checkAllowlist(req: Request, res: Response): Promise<void>
   try {
     const { ips } = req.body;
 
-    const results = await crowdSecAPI.checkAllowlist(ips);
+    const results = await crowdSecAPI.allowlists.checkAllowlist(ips);
 
     res.status(200).json({
       results,

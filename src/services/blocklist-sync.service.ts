@@ -22,7 +22,7 @@ class BlocklistSyncService {
 
   private async fetchAllowlistEntries(): Promise<string[]> {
     try {
-      const allowlists = await crowdSecAPI.getAllowlists();
+      const allowlists = await crowdSecAPI.allowlists.getAllowlists();
       return allowlists.flatMap(al => al.items.map(item => item.value));
     } catch {
       console.error('Failed to fetch allowlists from CrowdSec. No allowlist filtering will be applied.');
@@ -63,7 +63,7 @@ class BlocklistSyncService {
     // Fetch currently active decisions from CrowdSec to avoid pushing duplicates
     let activeDecisions: Set<string>;
     try {
-      activeDecisions = await crowdSecAPI.getActiveDecisions();
+      activeDecisions = await crowdSecAPI.decisions.getActiveDecisions();
     } catch {
       console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
       throw new Error(`Failed to fetch active decisions from CrowdSec`);
@@ -128,7 +128,7 @@ class BlocklistSyncService {
           },
         ];
 
-        await crowdSecAPI.createAlerts(payload);
+        await crowdSecAPI.alerts.createAlerts(payload);
 
         const batchNum = Math.floor(i / appDefaults.blocklists.writeChunkSize) + 1;
         console.log(`  Batch ${batchNum}/${batchCount} sent (${chunk.length} decisions)`);
@@ -155,7 +155,7 @@ class BlocklistSyncService {
   async deleteBlocklistAlerts(blocklist: Blocklist): Promise<void> {
     const scenario = `external/blocklist (${blocklist.name})`;
 
-    const alerts = await crowdSecAPI.getAlerts({
+    const alerts = await crowdSecAPI.alerts.getAlerts({
       origin: appDefaults.blocklists.importOrigin,
       scenario,
     });
@@ -163,7 +163,7 @@ class BlocklistSyncService {
     if (alerts.length > 0) {
       console.log(`Deleting ${alerts.length} alert(s) for blocklist "${blocklist.name}" from CrowdSec...`);
       for (const alert of alerts) {
-        await crowdSecAPI.deleteAlert(alert.id);
+        await crowdSecAPI.alerts.deleteAlert(alert.id);
       }
     }
 
