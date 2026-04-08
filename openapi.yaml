@@ -1383,9 +1383,9 @@ paths:
                     successful: null
                     blocklistImport:
                       step: import
-                      fetched: true
-                      parsed: true
-                      imported: false
+                      fetched: successful
+                      parsed: successful
+                      imported: running
                       processIps:
                         totalIps: 5000
                         processedIps: 2500
@@ -2058,17 +2058,20 @@ components:
           description: Current step of the blocklist operation
           example: import
         fetched:
-          type: boolean
-          description: Whether the blocklist URL has been fetched
-          example: true
+          type: string
+          enum: [pending, running, successful, failed]
+          description: Status of the fetch step
+          example: successful
         parsed:
-          type: boolean
-          description: Whether the fetched data has been parsed
-          example: true
+          type: string
+          enum: [pending, running, successful, failed]
+          description: Status of the parse step
+          example: successful
         imported:
-          type: boolean
-          description: Whether all IPs have been pushed to CrowdSec
-          example: false
+          type: string
+          enum: [pending, running, successful, failed]
+          description: Status of the import step (pushing IPs to CrowdSec)
+          example: running
         processIps:
           $ref: '#/components/schemas/ProcessBlocklistIps'
 

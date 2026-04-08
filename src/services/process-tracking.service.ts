@@ -1,7 +1,7 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage, Server } from 'http';
 import type { Process, ProcessBlocklist, ProcessBlocklistIps, ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
-import { PROCESS_BLOCKLIST_STEP } from '@/types/process.types';
+import { PROCESS_BLOCKLIST_STEP, PROCESS_BLOCKLIST_FIELD_STATUS, PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
 import { config } from '@/config';
 
 const PROCESS_RETENTION_MS = config.processes.finishedRetentionMs;
@@ -99,7 +99,8 @@ class ProcessTrackingService {
     const p = this.processes.get(id);
     const bl = p?.[field] as ProcessBlocklist | undefined;
     if (!bl) return;
-    bl.fetched = true;
+    bl.fetched = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
+    bl.parsed = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
     bl.step = PROCESS_BLOCKLIST_STEP.PARSE;
     this.broadcast();
   }
@@ -108,7 +109,8 @@ class ProcessTrackingService {
     const p = this.processes.get(id);
     const bl = p?.[field] as ProcessBlocklist | undefined;
     if (!bl) return;
-    bl.parsed = true;
+    bl.parsed = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
+    bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
     bl.step = PROCESS_BLOCKLIST_STEP.IMPORT;
     bl.processIps.totalIps = totalIps;
     this.broadcast();
@@ -126,7 +128,7 @@ class ProcessTrackingService {
     const p = this.processes.get(id);
     const bl = p?.[field] as ProcessBlocklist | undefined;
     if (!bl) return;
-    bl.imported = true;
+    bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
     bl.processIps.processedIps = bl.processIps.totalIps;
     this.broadcast();
   }
@@ -148,6 +150,15 @@ class ProcessTrackingService {
     if (!p) return;
     p.endDatetime = new Date().toISOString();
     p.successful = successful;
+    if (!successful) {
+      for (const field of Object.values(PROCESS_FIELD_BLOCKLIST) as ProcessFieldBlocklist[]) {
+        const bl = p[field] as ProcessBlocklist | undefined;
+        if (!bl) continue;
+        if (bl.fetched === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) bl.fetched = PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
+        if (bl.parsed === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) bl.parsed = PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
+        if (bl.imported === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
+      }
+    }
     this.broadcast();
     const timer = setTimeout(() => this.processes.delete(id), PROCESS_RETENTION_MS);
     timer.unref();
@@ -164,9 +175,9 @@ class ProcessTrackingService {
   private initialProcessBlocklist(): ProcessBlocklist {
     return {
       step: PROCESS_BLOCKLIST_STEP.FETCH,
-      fetched: false,
-      parsed: false,
-      imported: false,
+      fetched: PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING,
+      parsed: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
+      imported: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
       processIps: { totalIps: 0, processedIps: 0 },
     };
   }

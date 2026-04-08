@@ -1906,9 +1906,9 @@ curl "http://localhost:3000/api/v1/processes"
       "successful": null,
       "blocklistImport": {
         "step": "import",
-        "fetched": true,
-        "parsed": true,
-        "imported": false,
+        "fetched": "successful",
+        "parsed": "successful",
+        "imported": "running",
         "processIps": {
           "totalIps": 5000,
           "processedIps": 2500
@@ -1947,9 +1947,9 @@ curl "http://localhost:3000/api/v1/processes"
 | Field | Type | Description |
 |-------|------|-------------|
 | `step` | `'fetch'` \| `'parse'` \| `'import'` | Current step of the operation |
-| `fetched` | boolean | Whether the blocklist URL has been fetched |
-| `parsed` | boolean | Whether the fetched data has been parsed |
-| `imported` | boolean | Whether all IPs have been pushed to CrowdSec |
+| `fetched` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the fetch step |
+| `parsed` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the parse step |
+| `imported` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the import step (pushing IPs to CrowdSec) |
 | `processIps` | ProcessBlocklistIps | IP counters |
 
 **ProcessBlocklistIps object:**

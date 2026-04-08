@@ -1,3 +1,11 @@
+export const PROCESS_BLOCKLIST_FIELD_STATUS = {
+  PENDING: 'pending',
+  RUNNING: 'running',
+  SUCCESSFUL: 'successful',
+  FAILED: 'failed',
+} as const;
+export type ProcessBlocklistFieldStatus = typeof PROCESS_BLOCKLIST_FIELD_STATUS[keyof typeof PROCESS_BLOCKLIST_FIELD_STATUS];
+
 export const PROCESS_BLOCKLIST_STEP = {
   FETCH: 'fetch',
   PARSE: 'parse',
@@ -24,9 +32,9 @@ export interface ProcessBlocklistIps {
 
 export interface ProcessBlocklist {
   step: ProcessBlocklistStep;
-  fetched: boolean;
-  parsed: boolean;
-  imported: boolean;
+  fetched: ProcessBlocklistFieldStatus;
+  parsed: ProcessBlocklistFieldStatus;
+  imported: ProcessBlocklistFieldStatus;
   processIps: ProcessBlocklistIps;
 }
 
