@@ -6,6 +6,7 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { AlertRaw, EventData, SourceInfo } from '@/interfaces/alert.interface';
 import { DateCountRow, ScenarioCountRow } from '@/interfaces/statistics.interface';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get comprehensive statistics
@@ -27,11 +28,11 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
     // Build where clause for filtering by date
     const whereClauseAlerts = sinceDate
-      ? { crowdsec_created_at: { [Op.gte]: sinceDate } }
+      ? { [Alert.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } }
       : {};
     
     const whereClauseDecisions = sinceDate
-      ? { crowdsec_created_at: { [Op.gte]: sinceDate } }
+      ? { [Decision.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } }
       : {};
 
     // 1. Alerts in last 24 hours
@@ -39,7 +40,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
     const alertsLast24Hours = await Alert.count({
       where: {
-        crowdsec_created_at: { [Op.gte]: twentyFourHoursAgo },
+        [Alert.col.crowdsecCreatedAt]: { [Op.gte]: twentyFourHoursAgo },
       },
     });
 
@@ -48,30 +49,30 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     const activeDecisions = await Decision.count({
       where: {
         expiration: { [Op.gt]: now },
-        ...(sinceDate ? { crowdsec_created_at: { [Op.gte]: sinceDate } } : {}),
+        ...(sinceDate ? { [Decision.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } } : {}),
       },
     });
 
     // 3. Activity history - Get all alerts and decisions grouped by date
     const alertsByDate = await Alert.findAll({
       attributes: [
-        [Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at')), 'date'],
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],
+        [Alert.sequelize!.fn('DATE', Alert.sequelize!.col(Alert.col.crowdsecCreatedAt)), 'date'],
+        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
       ],
       where: whereClauseAlerts,
-      group: [Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at'))],
-      order: [[Alert.sequelize!.fn('DATE', Alert.sequelize!.col('crowdsec_created_at')), 'ASC']],
+      group: [Alert.sequelize!.fn('DATE', Alert.sequelize!.col(Alert.col.crowdsecCreatedAt))],
+      order: [[Alert.sequelize!.fn('DATE', Alert.sequelize!.col(Alert.col.crowdsecCreatedAt)), DB_SORTING.ASC]],
       raw: true,
     }) as unknown as DateCountRow[];
 
     const decisionsByDate = await Decision.findAll({
       attributes: [
-        [Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at')), 'date'],
-        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],
+        [Decision.sequelize!.fn('DATE', Decision.sequelize!.col(Decision.col.crowdsecCreatedAt)), 'date'],
+        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col(Decision.col.id)), 'count'],
       ],
       where: whereClauseDecisions,
-      group: [Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at'))],
-      order: [[Decision.sequelize!.fn('DATE', Decision.sequelize!.col('crowdsec_created_at')), 'ASC']],
+      group: [Decision.sequelize!.fn('DATE', Decision.sequelize!.col(Decision.col.crowdsecCreatedAt))],
+      order: [[Decision.sequelize!.fn('DATE', Decision.sequelize!.col(Decision.col.crowdsecCreatedAt)), DB_SORTING.ASC]],
       raw: true,
     }) as unknown as DateCountRow[];
 
@@ -176,7 +177,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       ],
       where: whereClauseAlerts,
       group: ['scenario'],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'DESC']],
+      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), DB_SORTING.DESC]],
       limit: limit,
       raw: true,
     });

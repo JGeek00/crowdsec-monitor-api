@@ -4,8 +4,9 @@ import { Blocklist, BlocklistIp, CsBlocklist } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { BlocklistIpAttributes } from '@/models/BlocklistIp';
-import { BlocklistItem, BlocklistListResponse, BlocklistType } from '@/interfaces/blocklist.interface';
+import { BLOCKLIST_TYPE, BlocklistItem, BlocklistListResponse, BlocklistType } from '@/interfaces/blocklist.interface';
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE, BLOCKLISTS_IPS_INCLUDE_OPTION } from '@/helpers/blocklists.helper';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get all blocklists (api-managed first, then cs-managed).
@@ -43,12 +44,12 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       [apiRows, csRows] = await Promise.all([
         onlyCs ? Promise.resolve([]) : Blocklist.findAll({
           attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
-          order: [['name', 'ASC']],
+          order: [[Blocklist.col.name, DB_SORTING.ASC]],
           include: includeOption,
         }),
         onlyApi ? Promise.resolve([]) : CsBlocklist.findAll({
           attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
-          order: [['name', 'ASC']],
+          order: [[CsBlocklist.col.name, DB_SORTING.ASC]],
           include: includeOption,
         }),
       ]);
@@ -63,7 +64,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
         apiLimit > 0
           ? Blocklist.findAll({
               attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
-              order: [['name', 'ASC']],
+              order: [[Blocklist.col.name, DB_SORTING.ASC]],
               include: includeOption,
               limit: apiLimit,
               offset: apiOffset,
@@ -72,7 +73,7 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
         csLimit > 0
           ? CsBlocklist.findAll({
               attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
-              order: [['name', 'ASC']],
+              order: [[CsBlocklist.col.name, DB_SORTING.ASC]],
               include: includeOption,
               limit: csLimit,
               offset: csOffset,
@@ -92,8 +93,8 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
     };
 
     const items = [
-      ...apiRows.map((row) => mapItem(row, 'api')),
-      ...csRows.map((row) => mapItem(row, 'cs')),
+      ...apiRows.map((row) => mapItem(row, BLOCKLIST_TYPE.API)),
+      ...csRows.map((row) => mapItem(row, BLOCKLIST_TYPE.CROWDSEC)),
     ];
 
     const response: BlocklistListResponse = { items };

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get alerts statistics
@@ -15,17 +16,17 @@ export async function getAlertStats(req: Request, res: Response): Promise<void> 
 
     const topScenarios = await Alert.findAll({
       attributes: [
-        'scenario',
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],
+        Alert.col.scenario,
+        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
       ],
-      group: ['scenario'],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'DESC']],
+      group: [Alert.col.scenario],
+      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), DB_SORTING.DESC]],
       limit: 10,
     });
 
     // Get all alerts with source information for grouping
     const allAlerts = await Alert.findAll({
-      attributes: ['source'],
+      attributes: [Alert.col.source],
     });
 
     // Group by country

@@ -3,6 +3,7 @@ import { Alert } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { ScenarioCountRow } from '@/interfaces/statistics.interface';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get top scenarios statistics
@@ -13,10 +14,10 @@ export async function getTopScenarios(req: Request, res: Response): Promise<void
     const scenariosData = await Alert.findAll({
       attributes: [
         'scenario',
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'count'],
+        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
       ],
       group: ['scenario'],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col('id')), 'DESC']],
+      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), DB_SORTING.DESC]],
       raw: true,
     });
 

@@ -4,46 +4,10 @@ import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { AlertAttributes, MetaData, EventData, SourceInfo } from '@/models/Alert';
-import { ParsedMetaData, AlertRaw, AlertListResponse, AlertFilteringInfo } from '@/interfaces/alert.interface';
-
-/**
- * Parse meta array values that might be JSON strings
- * Always returns value as an array of strings
- */
-function parseMetaValues(meta: MetaData[]): ParsedMetaData[] {
-  if (!Array.isArray(meta)) return meta;
-  
-  return meta.map(item => {
-    if (item.value === undefined || item.value === null) {
-      return { ...item, value: [] };
-    }
-
-    // If already an array, ensure all elements are strings
-    if (Array.isArray(item.value)) {
-      return { ...item, value: (item.value as unknown[]).map((v: unknown) => String(v)) };
-    }
-
-    // If it's a string, try to parse it
-    if (typeof item.value === 'string') {
-      try {
-        const parsed: unknown = JSON.parse(item.value);
-        // If parsed result is an array, convert all elements to strings
-        if (Array.isArray(parsed)) {
-          return { ...item, value: (parsed as unknown[]).map((v: unknown) => String(v)) };
-        }
-        // If it's not an array, stringify it and wrap in array
-        return { ...item, value: [String(parsed)] };
-      } catch {
-        // If parsing fails, wrap the string in an array
-        return { ...item, value: [item.value] };
-      }
-    }
-
-    // For any other type, convert to string and wrap in array
-    return { ...item, value: [String(item.value)] };
-  });
-}
+import { AlertAttributes, EventData, SourceInfo } from '@/models/Alert';
+import { AlertRaw, AlertListResponse } from '@/interfaces/alert.interface';
+import { DB_SORTING } from '@/interfaces/database.interface';
+import { parseAlertMeta } from '@/utils/parse-meta-values';
 
 /**
  * Get all alerts with filtering and pagination
@@ -69,7 +33,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
     // Fetch all alerts for filtering options (from entire database)
     const allAlerts = await Alert.findAll({
-      attributes: ['scenario', 'source', 'events'],
+      attributes: [Alert.col.scenario, Alert.col.source, Alert.col.events],
       raw: true,
     });
 
@@ -120,9 +84,9 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     let alerts = await Alert.findAll({
       where,
       attributes: {
-        exclude: ['created_at', 'updated_at']
+        exclude: [Alert.col.createdAt, Alert.col.updatedAt]
       },
-      order: [['crowdsec_created_at', 'DESC']],
+      order: [[Alert.col.crowdsecCreatedAt, DB_SORTING.DESC]],
     });
 
     // Filter by IP address in JavaScript (since source is JSON)
@@ -192,26 +156,9 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
         ipOwners: Array.from(ipOwnersSet).sort(),
         targets: Array.from(targetsSet).sort(),
       },
-      items: paginatedAlerts.map(alert => {
-        const json = alert.toJSON() as unknown as Record<string, unknown>;
-        
-        // Parse meta values
-        if (Array.isArray(json.meta)) {
-          json.meta = parseMetaValues(json.meta as MetaData[]);
-        }
-
-        // Parse meta values in events
-        if (Array.isArray(json.events)) {
-          json.events = (json.events as EventData[]).map((event) => {
-            if (Array.isArray(event.meta)) {
-              return { ...event, meta: parseMetaValues(event.meta) };
-            }
-            return event;
-          });
-        }
-
-        return json;
-      }),
+      items: paginatedAlerts.map(alert =>
+        parseAlertMeta(alert.toJSON() as AlertAttributes)
+      ),
     };
 
     // Include pagination info only when paginated

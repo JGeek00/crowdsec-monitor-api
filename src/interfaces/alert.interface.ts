@@ -33,7 +33,7 @@ export type AlertResponse = AlertWithParsedMeta & {
 
 export interface AlertListResponse {
   filtering: AlertFilteringInfo;
-  items: Record<string, unknown>[];
+  items: AlertWithParsedMeta[];
   pagination?: PaginationInfo;
   total?: number;
 }

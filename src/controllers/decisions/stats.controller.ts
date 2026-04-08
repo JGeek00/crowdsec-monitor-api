@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Decision } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get decisions statistics
@@ -14,19 +15,19 @@ export async function getDecisionStats(req: Request, res: Response): Promise<voi
     const byType = await Decision.findAll({
       attributes: [
         'type',
-        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],
+        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col(Decision.col.id)), 'count'],
       ],
       group: ['type'],
-      order: [[Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'DESC']],
+      order: [[Decision.sequelize!.fn('COUNT', Decision.sequelize!.col(Decision.col.id)), DB_SORTING.DESC]],
     });
 
     const byScope = await Decision.findAll({
       attributes: [
         'scope',
-        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'count'],
+        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col(Decision.col.id)), 'count'],
       ],
       group: ['scope'],
-      order: [[Decision.sequelize!.fn('COUNT', Decision.sequelize!.col('id')), 'DESC']],
+      order: [[Decision.sequelize!.fn('COUNT', Decision.sequelize!.col(Decision.col.id)), DB_SORTING.DESC]],
     });
 
     res.json({

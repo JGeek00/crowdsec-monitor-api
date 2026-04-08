@@ -6,6 +6,7 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { BlocklistIpAttributes } from '@/models/BlocklistIp';
 import { BlocklistIpsResponse } from '@/interfaces/blocklist.interface';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get IPs for a specific blocklist with pagination.
@@ -31,7 +32,7 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
         res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
         return;
       }
-      whereClause = { cs_blocklist_id: blocklistId as string };
+      whereClause = { [BlocklistIp.col.csBlocklistId]: blocklistId as string };
     } else {
       const numId = Number(blocklistId);
       const apiBlocklist = await Blocklist.findByPk(numId);
@@ -39,12 +40,12 @@ export async function getBlocklistIps(req: Request, res: Response): Promise<void
         res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
         return;
       }
-      whereClause = { blocklist_id: numId };
+      whereClause = { [BlocklistIp.col.blocklistId]: numId };
     }
 
     const queryOptions: FindAndCountOptions<BlocklistIpAttributes> = {
       where: whereClause,
-      order: [['id', 'ASC']],
+      order: [['id', DB_SORTING.ASC]],
       attributes: onlyStrings ? ['value'] : { exclude: ['created_at', 'updated_at'] },
     };
 

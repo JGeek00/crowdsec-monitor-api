@@ -82,7 +82,7 @@ class AlertsSyncService {
               const lapiDecisionIds = alert.decisions.map(d => d.id);
 
               await Decision.destroy({
-                where: { alert_id: alertInstance.id, id: { [Op.notIn]: lapiDecisionIds } },
+                where: { [Decision.col.alertId]: alertInstance.id, [Decision.col.id]: { [Op.notIn]: lapiDecisionIds } },
               });
 
               for (const decision of alert.decisions) {
@@ -115,7 +115,7 @@ class AlertsSyncService {
                 }
               }
             } else {
-              await Decision.destroy({ where: { alert_id: alertInstance.id } });
+              await Decision.destroy({ where: { [Decision.col.alertId]: alertInstance.id } });
             }
           } catch (error) {
             console.error(`Error syncing alert ${alert.id}:`, error);

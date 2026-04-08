@@ -77,7 +77,7 @@ class BlocklistSyncService {
     // Save all IPs from the list to the DB (regardless of what's already in CrowdSec)
     await this.acquireWriteLock(async () => {
       await sequelize.transaction(async (t) => {
-        await BlocklistIp.destroy({ where: { blocklist_id: blocklist.id }, transaction: t });
+        await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id }, transaction: t });
 
         for (let i = 0; i < ips.length; i += appDefaults.blocklists.writeChunkSize) {
           const chunk = ips.slice(i, i + appDefaults.blocklists.writeChunkSize).map((value: string) => ({
@@ -168,7 +168,7 @@ class BlocklistSyncService {
     }
 
     await this.acquireWriteLock(async () => {
-      await BlocklistIp.destroy({ where: { blocklist_id: blocklist.id } });
+      await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
     });
 
     console.log(`✓ Deleted alerts and IPs for blocklist "${blocklist.name}"`);
@@ -196,7 +196,7 @@ class BlocklistSyncService {
       try {
         const { allowlistSkipped } = await this.refreshBlocklist(blocklist, allowlistEntries);
         totalAllowlistSkipped += allowlistSkipped;
-        ipsCount += await BlocklistIp.count({ where: { blocklist_id: blocklist.id } });
+        ipsCount += await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
         refreshed++;
       } catch (error) {
         console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}): ${error instanceof Error ? error.message : error}`);

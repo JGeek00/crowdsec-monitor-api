@@ -78,6 +78,31 @@ export class Alert extends Model<AlertAttributes, AlertCreationAttributes> imple
 
   // Associations will be set in models/index.ts
   public readonly decisions?: Decision[];
+
+  // Column name references for use in Sequelize queries instead of string literals
+  static readonly col = {
+    id: 'id',
+    uuid: 'uuid',
+    scenario: 'scenario',
+    scenarioVersion: 'scenario_version',
+    scenarioHash: 'scenario_hash',
+    message: 'message',
+    capacity: 'capacity',
+    leakspeed: 'leakspeed',
+    simulated: 'simulated',
+    remediation: 'remediation',
+    eventsCount: 'events_count',
+    machineId: 'machine_id',
+    source: 'source',
+    labels: 'labels',
+    meta: 'meta',
+    events: 'events',
+    crowdsecCreatedAt: 'crowdsec_created_at',
+    startAt: 'start_at',
+    stopAt: 'stop_at',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  } as const;
 }
 
 Alert.init(

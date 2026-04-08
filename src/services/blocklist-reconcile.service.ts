@@ -37,7 +37,7 @@ class BlocklistReconcileService {
     if (missing.length > 0) {
       for (const blocklist of missing) {
         await blocklist.update({ enabled: false });
-        await BlocklistIp.destroy({ where: { blocklist_id: blocklist.id } });
+        await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
         console.log(`  Disabled blocklist "${blocklist.name}" and removed its IPs (no active alerts found in CrowdSec)`);
       }
     }

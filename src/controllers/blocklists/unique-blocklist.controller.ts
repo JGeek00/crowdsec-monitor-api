@@ -7,6 +7,7 @@ import { CsBlocklistAttributes } from "@/models/CsBlocklist";
 import { errorResponse } from "@/utils/error-response";
 import { createRequestSignal } from "@/utils/request-signal";
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE } from '@/helpers/blocklists.helper';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get a specific blocklist by ID.
@@ -36,8 +37,8 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
 
       const ips = includeIps
         ? await BlocklistIp.findAll({
-            where: { cs_blocklist_id: id as string },
-            order: [['id', 'ASC']],
+            where: { [BlocklistIp.col.csBlocklistId]: id as string },
+            order: [['id', DB_SORTING.ASC]],
             attributes: { exclude: ['created_at', 'updated_at'] },
             raw: true,
           })
@@ -64,8 +65,8 @@ export async function getBlocklistById(req: Request, res: Response): Promise<voi
 
     const ips = includeIps
       ? await BlocklistIp.findAll({
-          where: { blocklist_id: numId },
-          order: [['id', 'ASC']],
+          where: { [BlocklistIp.col.blocklistId]: numId },
+          order: [['id', DB_SORTING.ASC]],
           attributes: { exclude: ['created_at', 'updated_at'] },
           raw: true,
         })

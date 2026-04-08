@@ -37,6 +37,23 @@ export class Decision extends Model<DecisionAttributes, DecisionCreationAttribut
 
   // Associations will be set in models/index.ts
   public readonly alert?: Alert;
+
+  // Column name references for use in Sequelize queries instead of string literals
+  static readonly col = {
+    id: 'id',
+    alertId: 'alert_id',
+    origin: 'origin',
+    type: 'type',
+    scope: 'scope',
+    value: 'value',
+    expiration: 'expiration',
+    scenario: 'scenario',
+    simulated: 'simulated',
+    source: 'source',
+    crowdsecCreatedAt: 'crowdsec_created_at',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  } as const;
 }
 
 Decision.init(

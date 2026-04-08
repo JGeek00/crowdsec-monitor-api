@@ -15,7 +15,7 @@ export async function getCountryHistory(req: Request, res: Response): Promise<vo
 
     // Get all alerts with their dates and sources
     const alerts = await Alert.findAll({
-      attributes: ['crowdsec_created_at', 'source'],
+      attributes: [Alert.col.crowdsecCreatedAt, Alert.col.source],
       raw: true,
     });
 

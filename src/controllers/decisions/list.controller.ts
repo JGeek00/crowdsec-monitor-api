@@ -6,7 +6,8 @@ import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
 import { DecisionAttributes } from '@/models/Decision';
 import { SourceInfo } from '@/models/Alert';
-import { DecisionRaw, DecisionListResponse } from '@/interfaces/decision.interface';
+import { DecisionListResponse } from '@/interfaces/decision.interface';
+import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get all decisions with filtering and pagination
@@ -71,7 +72,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     const countriesSet = new Set<string>();
     const ipOwnersSet = new Set<string>();
 
-    (allDecisions as unknown as DecisionRaw[]).forEach((decision) => {
+    allDecisions.forEach((decision) => {
       if (decision.source) {
         const source = typeof decision.source === 'string' ? JSON.parse(decision.source) as SourceInfo : decision.source;
         
@@ -89,9 +90,9 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     let decisions = await Decision.findAll({
       where,
       attributes: {
-        exclude: ['created_at', 'updated_at']
+        exclude: [Decision.col.createdAt, Decision.col.updatedAt]
       },
-      order: [['crowdsec_created_at', 'DESC']],
+      order: [[Decision.col.crowdsecCreatedAt, DB_SORTING.DESC]],
     });
 
     // Filter by country in JavaScript (since source is JSON)

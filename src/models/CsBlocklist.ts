@@ -15,6 +15,12 @@ export class CsBlocklist extends Model<CsBlocklistAttributes, CsBlocklistCreatio
 
   // Associations set in models/index.ts
   public readonly blocklistIps?: BlocklistIp[];
+
+  // Column name references for use in Sequelize queries instead of string literals
+  static readonly col = {
+    id: 'id',
+    name: 'name',
+  } as const;
 }
 
 CsBlocklist.init(
