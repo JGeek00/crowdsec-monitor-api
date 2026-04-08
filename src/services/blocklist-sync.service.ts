@@ -3,6 +3,8 @@ import { Blocklist, BlocklistIp } from '@/models';
 import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { processTrackingService } from '@/services/process-tracking.service';
+import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { countIpsInValue } from '@/utils/ip-count';
 import { buildAllowlistMatcher } from '@/utils/ip';
@@ -33,7 +35,12 @@ class BlocklistSyncService {
   /**
    * Fetch a blocklist URL, store IPs in the local DB, and push to CrowdSec.
    */
-  async refreshBlocklist(blocklist: Blocklist, allowlistEntries?: string[]): Promise<{ allowlistSkipped: number }> {
+  async refreshBlocklist(
+    blocklist: Blocklist,
+    allowlistEntries?: string[],
+    processId?: string,
+    processField?: ProcessFieldBlocklist,
+  ): Promise<{ allowlistSkipped: number }> {
 
     await this.acquireWriteLock(() =>
       blocklist.update({ last_refresh_attempt: new Date() })
@@ -43,6 +50,10 @@ class BlocklistSyncService {
       responseType: 'text',
       timeout: 30000,
     });
+
+    if (processId && processField) {
+      processTrackingService.markFetched(processId, processField);
+    }
 
     const ips = response.data
       .split('\n')
@@ -72,6 +83,10 @@ class BlocklistSyncService {
     const alreadyBlocked = allowlistFiltered.length - uniqueNewIps.length;
     if (alreadyBlocked > 0) {
       console.log(`  Skipping ${alreadyBlocked} IPs already blocked in CrowdSec for "${blocklist.name}"`);
+    }
+
+    if (processId && processField) {
+      processTrackingService.markParsed(processId, processField, uniqueNewIps.length);
     }
 
     // Save all IPs from the list to the DB (regardless of what's already in CrowdSec)
@@ -130,9 +145,17 @@ class BlocklistSyncService {
 
         await crowdSecAPI.alerts.createAlerts(payload);
 
+        if (processId && processField) {
+          processTrackingService.addImportedIps(processId, processField, chunk.length);
+        }
+
         const batchNum = Math.floor(i / appDefaults.blocklists.writeChunkSize) + 1;
         console.log(`  Batch ${batchNum}/${batchCount} sent (${chunk.length} decisions)`);
       }
+    }
+
+    if (processId && processField) {
+      processTrackingService.markBlocklistOpComplete(processId, processField);
     }
 
     await this.acquireWriteLock(() =>
@@ -152,8 +175,18 @@ class BlocklistSyncService {
   /**
    * Delete all CrowdSec alerts for a blocklist and wipe its local IPs.
    */
-  async deleteBlocklistAlerts(blocklist: Blocklist): Promise<void> {
+  async deleteBlocklistAlerts(
+    blocklist: Blocklist,
+    processId?: string,
+    processField?: ProcessFieldBlocklistOps,
+  ): Promise<void> {
     const scenario = `external/blocklist (${blocklist.name})`;
+
+    // Count local IPs for progress tracking before deletion
+    let localIpCount = 0;
+    if (processId && processField) {
+      localIpCount = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+    }
 
     const alerts = await crowdSecAPI.alerts.getAlerts({
       origin: appDefaults.blocklists.importOrigin,
@@ -170,6 +203,10 @@ class BlocklistSyncService {
     await this.acquireWriteLock(async () => {
       await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
     });
+
+    if (processId && processField) {
+      processTrackingService.setDeletedIps(processId, processField, localIpCount);
+    }
 
     console.log(`✓ Deleted alerts and IPs for blocklist "${blocklist.name}"`);
   }

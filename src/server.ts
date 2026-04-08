@@ -1,7 +1,7 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
-import { databaseService, schedulerService, versionCheckerService } from '@/services';
+import { databaseService, schedulerService, versionCheckerService, processTrackingService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import packageJson from '@package.json';
 import appDefaults from './constants/app-defaults';
@@ -128,7 +128,7 @@ const startServer = async (): Promise<void> => {
     // Create and start Express app
     const app = createApp();
 
-    app.listen(config.server.port, () => {
+    const server = app.listen(config.server.port, () => {
       console.log('');
       console.log('  ┌─────────────────────────────────────┐');
       console.log('  │  Server ready                       │');
@@ -138,6 +138,8 @@ const startServer = async (): Promise<void> => {
       console.log('  └─────────────────────────────────────┘');
       console.log('');
     });
+
+    processTrackingService.setupWebSocket(server);
   } catch (error) {
     console.error('');
     console.error('  ✗ Failed to start server:', error);

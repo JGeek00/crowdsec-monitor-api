@@ -28,4 +28,7 @@ export const defaults = {
   statistics: {
     topItemsLimit: 10, // Default limit for top items in statistics
   },
+  processes: {
+    finishedRetentionTime: 3600, // 1 hour in seconds
+  },
 };

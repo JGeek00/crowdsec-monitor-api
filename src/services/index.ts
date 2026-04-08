@@ -4,3 +4,4 @@ export { schedulerService } from '@/services/scheduler.service';
 export { versionCheckerService } from '@/services/version-checker.service';
 export { csBlocklistSyncService } from '@/services/cs-blocklist-sync.service';
 export { blocklistReconcileService } from '@/services/blocklist-reconcile.service';
+export { processTrackingService } from '@/services/process-tracking.service';

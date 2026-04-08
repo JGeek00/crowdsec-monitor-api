@@ -22,3 +22,6 @@ export {
   getIpOwnerHistory,
   getTargetHistory
 } from '@/controllers/statistics';
+
+// Process controllers
+export { getProcesses } from '@/controllers/processes';

@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { Blocklist } from '@/models';
-import { databaseService } from '@/services';
+import { Blocklist, BlocklistIp } from '@/models';
+import { databaseService, processTrackingService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
+import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
 
 /**
  * Enable or disable a blocklist.
@@ -38,13 +39,24 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
 
     res.status(200).json({ data: blocklist });
 
-    const crowdsecOp = enabled
-      ? databaseService.refreshBlocklist(blocklist)
-      : databaseService.deleteBlocklistAlerts(blocklist);
+    let processId: string;
+    let crowdsecOp: Promise<unknown>;
 
-    crowdsecOp.catch((error) => {
-      console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${error instanceof Error ? error.message : error}`);
-    });
+    if (enabled) {
+      processId = processTrackingService.createBlocklistEnableProcess();
+      crowdsecOp = databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
+    } else {
+      const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+      processId = processTrackingService.createBlocklistDisableProcess(totalIps);
+      crowdsecOp = databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DISABLE);
+    }
+
+    crowdsecOp
+      .then(() => processTrackingService.completeProcess(processId, true))
+      .catch((error) => {
+        processTrackingService.completeProcess(processId, false);
+        console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${error instanceof Error ? error.message : error}`);
+      });
   } catch (error) {
     console.error('Error toggling blocklist:', error);
     res.status(500).json(errorResponse('Failed to toggle blocklist', error instanceof Error ? error.message : 'Unknown error'));

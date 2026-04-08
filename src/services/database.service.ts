@@ -3,6 +3,7 @@ import { alertsSyncService } from '@/services/alerts-sync.service';
 import { blocklistSyncService } from '@/services/blocklist-sync.service';
 import { csBlocklistSyncService } from '@/services/cs-blocklist-sync.service';
 import { blocklistReconcileService } from '@/services/blocklist-reconcile.service';
+import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 
 /**
  * Facade that delegates to AlertsSyncService and BlocklistSyncService.
@@ -30,12 +31,12 @@ class DatabaseService {
     return alertsSyncService.syncAll();
   }
 
-  async refreshBlocklist(blocklist: Blocklist) {
-    return blocklistSyncService.refreshBlocklist(blocklist);
+  async refreshBlocklist(blocklist: Blocklist, processId?: string, processField?: ProcessFieldBlocklist) {
+    return blocklistSyncService.refreshBlocklist(blocklist, undefined, processId, processField);
   }
 
-  async deleteBlocklistAlerts(blocklist: Blocklist) {
-    return blocklistSyncService.deleteBlocklistAlerts(blocklist);
+  async deleteBlocklistAlerts(blocklist: Blocklist, processId?: string, processField?: ProcessFieldBlocklistOps) {
+    return blocklistSyncService.deleteBlocklistAlerts(blocklist, processId, processField);
   }
 
   async syncBlocklists() {

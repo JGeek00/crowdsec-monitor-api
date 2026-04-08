@@ -121,6 +121,11 @@ export const config = {
     apiPassword: process.env.API_PASSWORD || undefined,
   },
   rateLimit: parseRateLimit(process.env.RATE_LIMIT),
+  processes: {
+    finishedRetentionMs: (process.env.PROCESSES_FINISHED_RETENTION_TIME
+      ? parseInt(process.env.PROCESSES_FINISHED_RETENTION_TIME, 10)
+      : defaults.processes.finishedRetentionTime) * 1000,
+  },
   dns: {
     server: (() => {
       const raw = (process.env.DOMAIN_CHECK_DNS_SERVER || defaults.dns.server).trim().toLowerCase();

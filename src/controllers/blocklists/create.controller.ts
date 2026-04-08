@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '@/models';
-import { databaseService } from '@/services';
+import { databaseService, processTrackingService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
 import { assertSafeUrl } from '@/utils/url';
+import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
 
 /**
  * Add a new blocklist URL.
@@ -52,9 +53,13 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
     res.status(201).json({ data: blocklist });
 
     // Trigger immediate fetch & CrowdSec push in the background
-    databaseService.refreshBlocklist(blocklist).catch((err) =>
-      console.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`)
-    );
+    const processId = processTrackingService.createBlocklistImportProcess();
+    databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
+      .then(() => processTrackingService.completeProcess(processId, true))
+      .catch((err) => {
+        processTrackingService.completeProcess(processId, false);
+        console.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+      });
   } catch (error) {
     console.error('Error creating blocklist:', error);
     res.status(500).json(errorResponse('Failed to create blocklist', error instanceof Error ? error.message : 'Unknown error'));
