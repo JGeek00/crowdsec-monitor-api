@@ -187,6 +187,11 @@ class BlocklistSyncService {
       scenario,
     });
 
+    const totalDecisions = alerts.reduce((sum, a) => sum + (a.decisions?.length ?? 0), 0);
+    if (processId && processField) {
+      processTrackingService.setIpsToDelete(processId, processField, totalDecisions);
+    }
+
     if (alerts.length > 0) {
       console.log(`Deleting ${alerts.length} alert(s) for blocklist "${blocklist.name}" from CrowdSec...`);
       let processedIps = 0;

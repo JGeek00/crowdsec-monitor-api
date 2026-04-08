@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage, Server } from 'http';
-import type { Process, ProcessBlocklist, ProcessBlocklistIps, ProcessBlocklistRefresh, ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
+import type { Process, ProcessBlocklist, ProcessBlocklistIps, ProcessBlocklistProgress, ProcessBlocklistRefresh, ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 import { PROCESS_BLOCKLIST_STEP, PROCESS_BLOCKLIST_FIELD_STATUS, PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
 import { config } from '@/config';
 
@@ -81,28 +81,28 @@ class ProcessTrackingService {
     return id;
   }
 
-  createBlocklistDisableProcess(totalIps: number): string {
+  createBlocklistDisableProcess(blocklistIps: number): string {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
-      blocklistDisable: { totalIps, processedIps: 0 },
+      blocklistDisable: { blocklistIps, ipsToDelete: 0, processedIps: 0 },
     };
     this.processes.set(id, process);
     this.broadcast();
     return id;
   }
 
-  createBlocklistDeleteProcess(totalIps: number): string {
+  createBlocklistDeleteProcess(blocklistIps: number): string {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
-      blocklistDelete: { totalIps, processedIps: 0 },
+      blocklistDelete: { blocklistIps, ipsToDelete: 0, processedIps: 0 },
     };
     this.processes.set(id, process);
     this.broadcast();
@@ -174,6 +174,14 @@ class ProcessTrackingService {
   }
 
   // ─── Disable / Delete IP progress ───────────────────────────────────────────
+
+  setIpsToDelete(id: string, field: ProcessFieldBlocklistOps, ipsToDelete: number): void {
+    const p = this.processes.get(id);
+    const bl = p?.[field] as ProcessBlocklistIps | undefined;
+    if (!bl) return;
+    bl.ipsToDelete = ipsToDelete;
+    this.broadcast();
+  }
 
   setDeletedIps(id: string, field: ProcessFieldBlocklistOps, processedIps: number): void {
     const p = this.processes.get(id);

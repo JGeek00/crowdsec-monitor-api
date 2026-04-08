@@ -25,8 +25,14 @@ export const PROCESS_FIELD_BLOCKLIST_OPS = {
 } as const;
 export type ProcessFieldBlocklistOps = typeof PROCESS_FIELD_BLOCKLIST_OPS[keyof typeof PROCESS_FIELD_BLOCKLIST_OPS];
 
-export interface ProcessBlocklistIps {
+export interface ProcessBlocklistProgress {
   totalIps: number;
+  processedIps: number;
+}
+
+export interface ProcessBlocklistIps {
+  blocklistIps: number;
+  ipsToDelete: number;
   processedIps: number;
 }
 
@@ -42,7 +48,7 @@ export interface ProcessBlocklist {
   fetched: ProcessBlocklistFieldStatus;
   parsed: ProcessBlocklistFieldStatus;
   imported: ProcessBlocklistFieldStatus;
-  processIps: ProcessBlocklistIps;
+  processIps: ProcessBlocklistProgress;
 }
 
 export interface Process {
