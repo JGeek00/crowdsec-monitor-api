@@ -51,6 +51,8 @@ tags:
     description: Imported blocklists from CrowdSec LAPI (origins blocklist-import and lists)
   - name: Statistics
     description: Statistics and aggregated data operations
+  - name: Processes
+    description: Background process tracking for blocklist operations
 
 paths:
   /health:
@@ -1349,6 +1351,47 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /processes:
+    get:
+      tags:
+        - Processes
+      summary: Get background processes
+      operationId: listProcesses
+      description: |
+        Returns all currently active background processes plus completed ones within the
+        configured retention window (default: 1 hour, controlled by `PROCESSES_FINISHED_RETENTION_TIME`).
+
+        Processes are created when adding, deleting, enabling or disabling a blocklist.
+        For real-time updates, use the WebSocket endpoint at `ws://<host>/api/v1/processes/ws`.
+      responses:
+        '200':
+          description: List of processes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Process'
+              example:
+                data:
+                  - id: '3f1a2b4c-0000-0000-0000-000000000001'
+                    beginDatetime: '2026-04-08T10:00:00.000Z'
+                    endDatetime: null
+                    successful: null
+                    blocklistImport:
+                      step: import
+                      fetched: true
+                      parsed: true
+                      imported: false
+                      processIps:
+                        totalIps: 5000
+                        processedIps: 2500
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1993,6 +2036,78 @@ components:
           format: date-time
           description: Last update timestamp
           example: '2026-03-02T19:45:02.611Z'
+
+    ProcessBlocklistIps:
+      type: object
+      properties:
+        totalIps:
+          type: integer
+          description: Total number of IPs to process
+          example: 5000
+        processedIps:
+          type: integer
+          description: Number of IPs processed so far
+          example: 2500
+
+    ProcessBlocklist:
+      type: object
+      properties:
+        step:
+          type: string
+          enum: [fetch, parse, import]
+          description: Current step of the blocklist operation
+          example: import
+        fetched:
+          type: boolean
+          description: Whether the blocklist URL has been fetched
+          example: true
+        parsed:
+          type: boolean
+          description: Whether the fetched data has been parsed
+          example: true
+        imported:
+          type: boolean
+          description: Whether all IPs have been pushed to CrowdSec
+          example: false
+        processIps:
+          $ref: '#/components/schemas/ProcessBlocklistIps'
+
+    Process:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique process identifier
+          example: '3f1a2b4c-0000-0000-0000-000000000001'
+        beginDatetime:
+          type: string
+          format: date-time
+          description: Timestamp when the process started
+          example: '2026-04-08T10:00:00.000Z'
+        endDatetime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the process finished. Null if still running
+          example: null
+        successful:
+          type: boolean
+          nullable: true
+          description: Whether the process finished successfully. Null if still running
+          example: null
+        blocklistImport:
+          $ref: '#/components/schemas/ProcessBlocklist'
+          description: Present only when the process is a blocklist import (new blocklist added)
+        blocklistEnable:
+          $ref: '#/components/schemas/ProcessBlocklist'
+          description: Present only when the process is a blocklist enable operation
+        blocklistDisable:
+          $ref: '#/components/schemas/ProcessBlocklistIps'
+          description: Present only when the process is a blocklist disable operation
+        blocklistDelete:
+          $ref: '#/components/schemas/ProcessBlocklistIps'
+          description: Present only when the process is a blocklist delete operation
 
   responses:
     UnauthorizedError:

@@ -54,6 +54,7 @@ curl -H "Authorization: Bearer your_password_here" \
 **Protected Endpoints:**
 - All `/alerts/*` endpoints (when `API_PASSWORD` is set)
 - All `/decisions/*` endpoints (when `API_PASSWORD` is set)
+- All `/processes/*` endpoints (when `API_PASSWORD` is set)
 - `/status` endpoint (when `API_PASSWORD` is set)
 
 **Public Endpoints:**
@@ -1874,6 +1875,117 @@ curl "http://localhost:3000/api/v1/statistics/targets/api.example.com"
 - Target FQDN must match exactly (case-sensitive)
 - Empty array is returned if the target has no alerts
 - Each alert is counted only once per date, even if the target appears in multiple events within that alert
+
+---
+
+## Processes Endpoints
+
+Background operations (adding, deleting, enabling or disabling a blocklist) run asynchronously after the HTTP response is returned. The Processes API lets clients observe their progress in real time.
+
+Completed processes are retained for a configurable window (default: 1 hour, controlled by `PROCESSES_FINISHED_RETENTION_TIME` in seconds). After that window they are automatically removed from memory.
+
+### GET `/api/v1/processes`
+
+Returns a static snapshot of all active processes plus completed ones still within the retention window.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Example Request:**
+```bash
+curl "http://localhost:3000/api/v1/processes"
+```
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": "3f1a2b4c-0000-0000-0000-000000000001",
+      "beginDatetime": "2026-04-08T10:00:00.000Z",
+      "endDatetime": null,
+      "successful": null,
+      "blocklistImport": {
+        "step": "import",
+        "fetched": true,
+        "parsed": true,
+        "imported": false,
+        "processIps": {
+          "totalIps": 5000,
+          "processedIps": 2500
+        }
+      }
+    },
+    {
+      "id": "7c3d9e2f-0000-0000-0000-000000000002",
+      "beginDatetime": "2026-04-08T09:45:00.000Z",
+      "endDatetime": "2026-04-08T09:45:12.000Z",
+      "successful": true,
+      "blocklistDelete": {
+        "totalIps": 1200,
+        "processedIps": 1200
+      }
+    }
+  ]
+}
+```
+
+**Response Fields (each process object):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string (UUID) | Unique process identifier |
+| `beginDatetime` | string (ISO 8601) | Timestamp when the process started |
+| `endDatetime` | string \| null | Timestamp when the process finished, `null` if still running |
+| `successful` | boolean \| null | `true` if finished without errors, `false` if finished with errors, `null` if still running |
+| `blocklistImport` | ProcessBlocklist? | Present only for new blocklist additions |
+| `blocklistEnable` | ProcessBlocklist? | Present only for blocklist enable operations |
+| `blocklistDisable` | ProcessBlocklistIps? | Present only for blocklist disable operations |
+| `blocklistDelete` | ProcessBlocklistIps? | Present only for blocklist delete operations |
+
+**ProcessBlocklist object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `step` | `'fetch'` \| `'parse'` \| `'import'` | Current step of the operation |
+| `fetched` | boolean | Whether the blocklist URL has been fetched |
+| `parsed` | boolean | Whether the fetched data has been parsed |
+| `imported` | boolean | Whether all IPs have been pushed to CrowdSec |
+| `processIps` | ProcessBlocklistIps | IP counters |
+
+**ProcessBlocklistIps object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalIps` | number | Total IPs to process |
+| `processedIps` | number | IPs processed so far |
+
+---
+
+### WebSocket `ws://<host>/api/v1/processes/ws`
+
+Provides a live stream of process updates. The server pushes the full process array (same format as `GET /api/v1/processes`) every time any process changes state.
+
+**Authentication:** None (authentication is not enforced on the WebSocket upgrade at the protocol level; apply network-level access controls if needed)
+
+**Behaviour:**
+- On connect: the server immediately sends the current snapshot.
+- On any state change: the server broadcasts the updated array to all connected clients.
+- The connection is one-way (server → client); messages sent from the client are ignored.
+
+**Example (browser):**
+```javascript
+const ws = new WebSocket('ws://localhost:3000/api/v1/processes/ws');
+
+ws.onmessage = (event) => {
+  const processes = JSON.parse(event.data);
+  console.log(processes);
+};
+```
+
+**Example (wscat):**
+```bash
+wscat -c ws://localhost:3000/api/v1/processes/ws
+```
 
 ---
 
