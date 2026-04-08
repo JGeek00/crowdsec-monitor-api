@@ -3,7 +3,7 @@ import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
 import { databaseService, schedulerService, versionCheckerService, processTrackingService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import packageJson from '@package.json';
+import packageJson from '../package.json';
 import appDefaults from './constants/app-defaults';
 
 /**
