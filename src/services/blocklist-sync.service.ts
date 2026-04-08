@@ -182,12 +182,6 @@ class BlocklistSyncService {
   ): Promise<void> {
     const scenario = `external/blocklist (${blocklist.name})`;
 
-    // Count local IPs for progress tracking before deletion
-    let localIpCount = 0;
-    if (processId && processField) {
-      localIpCount = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
-    }
-
     const alerts = await crowdSecAPI.alerts.getAlerts({
       origin: appDefaults.blocklists.importOrigin,
       scenario,
@@ -195,18 +189,28 @@ class BlocklistSyncService {
 
     if (alerts.length > 0) {
       console.log(`Deleting ${alerts.length} alert(s) for blocklist "${blocklist.name}" from CrowdSec...`);
+      let processedIps = 0;
       for (const alert of alerts) {
         await crowdSecAPI.alerts.deleteAlert(alert.id);
+        processedIps += alert.decisions?.length ?? 0;
+        if (processId && processField) {
+          processTrackingService.setDeletedIps(processId, processField, processedIps);
+        }
       }
     }
 
     await this.acquireWriteLock(async () => {
-      await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+      while (true) {
+        const chunk = await BlocklistIp.findAll({
+          attributes: ['id'],
+          where: { [BlocklistIp.col.blocklistId]: blocklist.id },
+          limit: appDefaults.blocklists.writeChunkSize,
+        });
+        if (chunk.length === 0) break;
+        await BlocklistIp.destroy({ where: { [BlocklistIp.col.id]: chunk.map((ip) => ip.id) } });
+        if (chunk.length < appDefaults.blocklists.writeChunkSize) break;
+      }
     });
-
-    if (processId && processField) {
-      processTrackingService.setDeletedIps(processId, processField, localIpCount);
-    }
 
     console.log(`✓ Deleted alerts and IPs for blocklist "${blocklist.name}"`);
   }
@@ -226,6 +230,8 @@ class BlocklistSyncService {
       return { refreshed: 0, ips: 0, errors: 0, allowlistSkipped: 0 };
     }
 
+    const processId = processTrackingService.createBlocklistRefreshProcess(blocklists.length);
+
     // Fetch allowlist entries once for all blocklists
     const allowlistEntries = await this.fetchAllowlistEntries();
 
@@ -235,11 +241,15 @@ class BlocklistSyncService {
         totalAllowlistSkipped += allowlistSkipped;
         ipsCount += await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
         refreshed++;
+        processTrackingService.incrementRefreshBlocklist(processId, true);
       } catch (error) {
         console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}): ${error instanceof Error ? error.message : error}`);
         errors++;
+        processTrackingService.incrementRefreshBlocklist(processId, false);
       }
     }
+
+    processTrackingService.completeProcess(processId, errors === 0);
 
     if (config.database.mode === DB_MODE.SQLITE) {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');

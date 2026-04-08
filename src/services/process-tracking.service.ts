@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage, Server } from 'http';
-import type { Process, ProcessBlocklist, ProcessBlocklistIps, ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
+import type { Process, ProcessBlocklist, ProcessBlocklistIps, ProcessBlocklistRefresh, ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 import { PROCESS_BLOCKLIST_STEP, PROCESS_BLOCKLIST_FIELD_STATUS, PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
 import { config } from '@/config';
 
@@ -26,7 +26,23 @@ class ProcessTrackingService {
       });
     });
 
+    // Heartbeat: ping every 30s, terminate clients that don't respond
+    const heartbeatInterval = setInterval(() => {
+      for (const ws of this.wsClients) {
+        if ((ws as WebSocket & { isAlive?: boolean }).isAlive === false) {
+          this.wsClients.delete(ws);
+          ws.terminate();
+          return;
+        }
+        (ws as WebSocket & { isAlive?: boolean }).isAlive = false;
+        ws.ping();
+      }
+    }, 30_000);
+    heartbeatInterval.unref();
+
     wss.on('connection', (ws: WebSocket) => {
+      (ws as WebSocket & { isAlive?: boolean }).isAlive = true;
+      ws.on('pong', () => { (ws as WebSocket & { isAlive?: boolean }).isAlive = true; });
       this.wsClients.add(ws);
       // Send current snapshot immediately on connect
       ws.send(JSON.stringify(this.getVisibleProcesses()));
@@ -91,6 +107,30 @@ class ProcessTrackingService {
     this.processes.set(id, process);
     this.broadcast();
     return id;
+  }
+
+  createBlocklistRefreshProcess(totalBlocklists: number): string {
+    const id = crypto.randomUUID();
+    const process: Process = {
+      id,
+      beginDatetime: new Date().toISOString(),
+      endDatetime: null,
+      successful: null,
+      blocklistRefresh: { totalBlocklists, processedBlocklists: 0, successful: 0, failed: 0 },
+    };
+    this.processes.set(id, process);
+    this.broadcast();
+    return id;
+  }
+
+  incrementRefreshBlocklist(id: string, successful: boolean): void {
+    const p = this.processes.get(id);
+    const rf = p?.blocklistRefresh as ProcessBlocklistRefresh | undefined;
+    if (!rf) return;
+    rf.processedBlocklists++;
+    if (successful) rf.successful++;
+    else rf.failed++;
+    this.broadcast();
   }
 
   // ─── Blocklist (import/enable) step updates ─────────────────────────────────
