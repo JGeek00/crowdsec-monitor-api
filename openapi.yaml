@@ -51,8 +51,6 @@ tags:
     description: Imported blocklists from CrowdSec LAPI (origins blocklist-import and lists)
   - name: Statistics
     description: Statistics and aggregated data operations
-  - name: Processes
-    description: Background process tracking for blocklist operations
 
 paths:
   /health:
@@ -85,7 +83,12 @@ paths:
         - Health
       summary: Get comprehensive status information
       operationId: getStatus
-      description: Returns CrowdSec LAPI connection status, last successful data sync, and API version information. Requires authentication if API_PASSWORD is configured.
+      description: |
+        Returns CrowdSec LAPI connection status, bouncer availability, last successful data sync,
+        API version, and active background processes. Requires authentication if API_PASSWORD is configured.
+
+        For real-time updates, connect to the WebSocket at `ws://<host>/api/v1/status/ws`.
+        On connect the full snapshot is sent; subsequent messages are pushed whenever any field changes.
       responses:
         '200':
           description: Status information retrieved successfully
@@ -109,6 +112,13 @@ paths:
                         type: string
                         format: date-time
                         example: '2026-02-14T10:30:45.123Z'
+                  csBouncer:
+                    type: object
+                    properties:
+                      available:
+                        type: boolean
+                        description: Whether the bouncer API key is valid and CrowdSec LAPI is reachable for blocklist operations
+                        example: true
                   csMonitorApi:
                     type: object
                     properties:
@@ -119,6 +129,11 @@ paths:
                         type: string
                         nullable: true
                         example: null
+                  processes:
+                    type: array
+                    description: Active and recently completed background processes
+                    items:
+                      $ref: '#/components/schemas/Process'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '500':
@@ -1351,47 +1366,6 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /processes:
-    get:
-      tags:
-        - Processes
-      summary: Get background processes
-      operationId: listProcesses
-      description: |
-        Returns all currently active background processes plus completed ones within the
-        configured retention window (default: 1 hour, controlled by `PROCESSES_FINISHED_RETENTION_TIME`).
-
-        Processes are created when adding, deleting, enabling or disabling a blocklist.
-        For real-time updates, use the WebSocket endpoint at `ws://<host>/api/v1/processes/ws`.
-      responses:
-        '200':
-          description: List of processes
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Process'
-              example:
-                data:
-                  - id: '3f1a2b4c-0000-0000-0000-000000000001'
-                    beginDatetime: '2026-04-08T10:00:00.000Z'
-                    endDatetime: null
-                    successful: null
-                    blocklistImport:
-                      step: import
-                      fetched: successful
-                      parsed: successful
-                      imported: running
-                      processIps:
-                        totalIps: 5000
-                        processedIps: 2500
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
 components:
   securitySchemes:
     BearerAuth:
@@ -2037,8 +2011,9 @@ components:
           description: Last update timestamp
           example: '2026-03-02T19:45:02.611Z'
 
-    ProcessBlocklistIps:
+    ProcessBlocklistProgress:
       type: object
+      description: IP processing progress counters (processIps sub-object within ProcessBlocklist)
       properties:
         totalIps:
           type: integer
@@ -2048,6 +2023,23 @@ components:
           type: integer
           description: Number of IPs processed so far
           example: 2500
+
+    ProcessBlocklistIps:
+      type: object
+      description: IP counters for blocklist disable and delete operations
+      properties:
+        blocklistIps:
+          type: integer
+          description: Total number of IPs stored in the blocklist
+          example: 1200
+        ipsToDelete:
+          type: integer
+          description: Total number of CrowdSec decisions to remove
+          example: 1200
+        processedIps:
+          type: integer
+          description: Number of decisions removed so far
+          example: 800
 
     ProcessBlocklist:
       type: object
@@ -2073,7 +2065,7 @@ components:
           description: Status of the import step (pushing IPs to CrowdSec)
           example: running
         processIps:
-          $ref: '#/components/schemas/ProcessBlocklistIps'
+          $ref: '#/components/schemas/ProcessBlocklistProgress'
 
     Process:
       type: object
@@ -2111,6 +2103,34 @@ components:
         blocklistDelete:
           $ref: '#/components/schemas/ProcessBlocklistIps'
           description: Present only when the process is a blocklist delete operation
+        blocklistRefresh:
+          $ref: '#/components/schemas/ProcessBlocklistRefresh'
+          description: Present only when the process is a scheduled/bulk blocklist refresh operation
+        error:
+          type: string
+          nullable: true
+          description: Descriptive error message if the process failed, null otherwise
+          example: null
+
+    ProcessBlocklistRefresh:
+      type: object
+      properties:
+        totalBlocklists:
+          type: integer
+          description: Total number of blocklists to refresh
+          example: 10
+        processedBlocklists:
+          type: integer
+          description: Number of blocklists processed so far
+          example: 5
+        successful:
+          type: integer
+          description: Number of successfully refreshed blocklists
+          example: 4
+        failed:
+          type: integer
+          description: Number of failed blocklist refreshes
+          example: 1
 
   responses:
     UnauthorizedError:

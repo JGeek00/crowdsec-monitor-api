@@ -26,7 +26,7 @@ CrowdSec Monitor API has an **integrated blocklists management system**, so you 
 5. Create the machine on CrowdSec. Open a terminal inside the CrowdSec container and run: ``cscli machines add crowdsec-monitor --password <generated_key> -f /dev/null``.
 6. Paste the generated key on the `CROWDSEC_PASSWORD` variable of the docker compose file.
 7. Create a new bouncer on CrowdSec using ``cscli bouncers add cs-monitor-blocklist-import -o raw`` and copy the key that it generates.
-8. Paste the generated key on the `CROWDSEC_BOUNCER_KEY` variable of the docker compose file.
+8. Paste the generated key on the `CROWDSEC_BOUNCER_KEY` variable of the docker compose file. Failing to complete this two steps will throw log ``✗ CrowdSec bouncer API key validation failed: HTTP 403 - {"message":"access forbidden"}`` on startup.
 9. Set the correct values on the environment variables.
 10. Run ``docker compose up -d``.
 

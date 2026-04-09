@@ -54,7 +54,6 @@ curl -H "Authorization: Bearer your_password_here" \
 **Protected Endpoints:**
 - All `/alerts/*` endpoints (when `API_PASSWORD` is set)
 - All `/decisions/*` endpoints (when `API_PASSWORD` is set)
-- All `/processes/*` endpoints (when `API_PASSWORD` is set)
 - `/status` endpoint (when `API_PASSWORD` is set)
 
 **Public Endpoints:**
@@ -86,7 +85,7 @@ Check if the API is running and responsive.
 
 ### GET `/api/v1/status`
 
-Get comprehensive status information including CrowdSec LAPI connection status, last successful data sync, and API version.
+Get comprehensive status information including CrowdSec LAPI connection status, bouncer availability, last successful data sync, API version, and active background processes.
 
 **Authentication:** Required if `API_PASSWORD` is set
 
@@ -98,18 +97,99 @@ Get comprehensive status information including CrowdSec LAPI connection status, 
     "lastSuccessfulSync": "2026-02-13T10:25:30.123Z",
     "timestamp": "2026-02-13T10:30:45.123Z"
   },
+  "csBouncer": {
+    "available": true
+  },
   "csMonitorApi": {
     "version": "1.0.0",
     "newVersionAvailable": null
-  }
+  },
+  "processes": []
 }
 ```
 
-**Notes:**
-- Performs lightweight check using existing authentication token
-- `lapiConnected` indicates whether the CrowdSec LAPI is reachable
-- `lastSuccessfulSync` is `null` if no successful sync has occurred yet
-- `newVersionAvailable` is currently not implemented (always `null`)
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `csLapi.lapiConnected` | boolean | Whether the CrowdSec LAPI is reachable |
+| `csLapi.lastSuccessfulSync` | string \| null | ISO timestamp of last successful alert sync, `null` if never synced |
+| `csLapi.timestamp` | string | ISO timestamp of last LAPI status check |
+| `csBouncer.available` | boolean | Whether the bouncer API key is valid and LAPI is reachable for blocklist operations |
+| `csMonitorApi.version` | string | Current API version |
+| `csMonitorApi.newVersionAvailable` | string \| null | Latest version string if a newer release exists, `null` otherwise |
+| `processes` | Process[] | Active and recently completed background processes (retention controlled by `PROCESSES_FINISHED_RETENTION_TIME`) |
+
+**Process object fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string (UUID) | Unique process identifier |
+| `beginDatetime` | string (ISO 8601) | Timestamp when the process started |
+| `endDatetime` | string \| null | Timestamp when the process finished, `null` if still running |
+| `successful` | boolean \| null | `true` if finished without errors, `false` if finished with errors, `null` if still running |
+| `error` | string \| null | Descriptive error message if the process failed, `null` otherwise |
+| `blocklistImport` | ProcessBlocklist? | Present only for new blocklist additions |
+| `blocklistEnable` | ProcessBlocklist? | Present only for blocklist enable operations |
+| `blocklistDisable` | ProcessBlocklistIps? | Present only for blocklist disable operations |
+| `blocklistDelete` | ProcessBlocklistIps? | Present only for blocklist delete operations |
+| `blocklistRefresh` | ProcessBlocklistRefresh? | Present only for scheduled/bulk blocklist refresh operations |
+
+**ProcessBlocklist object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `step` | `'fetch'` \| `'parse'` \| `'import'` | Current step of the operation |
+| `fetched` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the fetch step |
+| `parsed` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the parse step |
+| `imported` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the import step (pushing IPs to CrowdSec) |
+| `processIps.totalIps` | number | Total IPs to process |
+| `processIps.processedIps` | number | IPs processed so far |
+
+**ProcessBlocklistIps object** (for `blocklistDisable` / `blocklistDelete`):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `blocklistIps` | number | Total IPs stored in the blocklist |
+| `ipsToDelete` | number | Total CrowdSec decisions to remove |
+| `processedIps` | number | Decisions removed so far |
+
+**ProcessBlocklistRefresh object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalBlocklists` | number | Total number of blocklists to refresh |
+| `processedBlocklists` | number | Blocklists processed so far |
+| `successful` | number | Number of successfully refreshed blocklists |
+| `failed` | number | Number of failed blocklist refreshes |
+
+---
+
+### WebSocket `ws://<host>/api/v1/status/ws`
+
+Connects to a live stream of status updates. The server pushes the full status object (same format as `GET /api/v1/status`) every time any field changes.
+
+**Authentication:** None (authentication is not enforced on the WebSocket upgrade at the protocol level; apply network-level access controls if needed)
+
+**Behaviour:**
+- On connect: the server immediately sends the current snapshot.
+- On any state change: the server broadcasts the updated object to all connected clients.
+- The connection is one-way (server → client); messages sent from the client are ignored.
+
+**Example (browser):**
+```javascript
+const ws = new WebSocket('ws://localhost:3000/api/v1/status/ws');
+
+ws.onmessage = (event) => {
+  const status = JSON.parse(event.data);
+  console.log(status);
+};
+```
+
+**Example (wscat):**
+```bash
+wscat -c ws://localhost:3000/api/v1/status/ws
+```
 
 ---
 
@@ -1875,117 +1955,6 @@ curl "http://localhost:3000/api/v1/statistics/targets/api.example.com"
 - Target FQDN must match exactly (case-sensitive)
 - Empty array is returned if the target has no alerts
 - Each alert is counted only once per date, even if the target appears in multiple events within that alert
-
----
-
-## Processes Endpoints
-
-Background operations (adding, deleting, enabling or disabling a blocklist) run asynchronously after the HTTP response is returned. The Processes API lets clients observe their progress in real time.
-
-Completed processes are retained for a configurable window (default: 1 hour, controlled by `PROCESSES_FINISHED_RETENTION_TIME` in seconds). After that window they are automatically removed from memory.
-
-### GET `/api/v1/processes`
-
-Returns a static snapshot of all active processes plus completed ones still within the retention window.
-
-**Authentication:** Required if `API_PASSWORD` is set
-
-**Example Request:**
-```bash
-curl "http://localhost:3000/api/v1/processes"
-```
-
-**Example Response:**
-```json
-{
-  "data": [
-    {
-      "id": "3f1a2b4c-0000-0000-0000-000000000001",
-      "beginDatetime": "2026-04-08T10:00:00.000Z",
-      "endDatetime": null,
-      "successful": null,
-      "blocklistImport": {
-        "step": "import",
-        "fetched": "successful",
-        "parsed": "successful",
-        "imported": "running",
-        "processIps": {
-          "totalIps": 5000,
-          "processedIps": 2500
-        }
-      }
-    },
-    {
-      "id": "7c3d9e2f-0000-0000-0000-000000000002",
-      "beginDatetime": "2026-04-08T09:45:00.000Z",
-      "endDatetime": "2026-04-08T09:45:12.000Z",
-      "successful": true,
-      "blocklistDelete": {
-        "totalIps": 1200,
-        "processedIps": 1200
-      }
-    }
-  ]
-}
-```
-
-**Response Fields (each process object):**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string (UUID) | Unique process identifier |
-| `beginDatetime` | string (ISO 8601) | Timestamp when the process started |
-| `endDatetime` | string \| null | Timestamp when the process finished, `null` if still running |
-| `successful` | boolean \| null | `true` if finished without errors, `false` if finished with errors, `null` if still running |
-| `blocklistImport` | ProcessBlocklist? | Present only for new blocklist additions |
-| `blocklistEnable` | ProcessBlocklist? | Present only for blocklist enable operations |
-| `blocklistDisable` | ProcessBlocklistIps? | Present only for blocklist disable operations |
-| `blocklistDelete` | ProcessBlocklistIps? | Present only for blocklist delete operations |
-
-**ProcessBlocklist object:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `step` | `'fetch'` \| `'parse'` \| `'import'` | Current step of the operation |
-| `fetched` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the fetch step |
-| `parsed` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the parse step |
-| `imported` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the import step (pushing IPs to CrowdSec) |
-| `processIps` | ProcessBlocklistIps | IP counters |
-
-**ProcessBlocklistIps object:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `totalIps` | number | Total IPs to process |
-| `processedIps` | number | IPs processed so far |
-
----
-
-### WebSocket `ws://<host>/api/v1/processes/ws`
-
-Provides a live stream of process updates. The server pushes the full process array (same format as `GET /api/v1/processes`) every time any process changes state.
-
-**Authentication:** None (authentication is not enforced on the WebSocket upgrade at the protocol level; apply network-level access controls if needed)
-
-**Behaviour:**
-- On connect: the server immediately sends the current snapshot.
-- On any state change: the server broadcasts the updated array to all connected clients.
-- The connection is one-way (server → client); messages sent from the client are ignored.
-
-**Example (browser):**
-```javascript
-const ws = new WebSocket('ws://localhost:3000/api/v1/processes/ws');
-
-ws.onmessage = (event) => {
-  const processes = JSON.parse(event.data);
-  console.log(processes);
-};
-```
-
-**Example (wscat):**
-```bash
-wscat -c ws://localhost:3000/api/v1/processes/ws
-```
 
 ---
 
