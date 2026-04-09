@@ -21,6 +21,7 @@ class StatusBlocklistService {
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
+      error: null,
       blocklistImport: this.initialProcessBlocklist(),
     };
     this.state.processes.push(process);
@@ -34,6 +35,7 @@ class StatusBlocklistService {
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
+      error: null,
       blocklistEnable: this.initialProcessBlocklist(),
     };
     this.state.processes.push(process);
@@ -47,6 +49,7 @@ class StatusBlocklistService {
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
+      error: null,
       blocklistDisable: { blocklistIps, ipsToDelete: 0, processedIps: 0 },
     };
     this.state.processes.push(process);
@@ -60,6 +63,7 @@ class StatusBlocklistService {
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
+      error: null,
       blocklistDelete: { blocklistIps, ipsToDelete: 0, processedIps: 0 },
     };
     this.state.processes.push(process);
@@ -73,6 +77,7 @@ class StatusBlocklistService {
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
+      error: null,
       blocklistRefresh: { totalBlocklists, processedBlocklists: 0, successful: 0, failed: 0 },
     };
     this.state.processes.push(process);
@@ -142,12 +147,13 @@ class StatusBlocklistService {
 
   // ─── Process completion ──────────────────────────────────────────────────────
 
-  completeProcess(id: string, successful: boolean): void {
+  completeProcess(id: string, successful: boolean, error: string | null = null): void {
     const snapshot = this.state;
     const p = snapshot.processes.find(p => p.id === id);
     if (!p) return;
     p.endDatetime = new Date().toISOString();
     p.successful = successful;
+    p.error = error;
     if (!successful) {
       for (const field of Object.values(PROCESS_FIELD_BLOCKLIST) as ProcessFieldBlocklist[]) {
         const bl = p[field] as ProcessBlocklist | undefined;

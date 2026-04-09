@@ -29,7 +29,7 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
     databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DELETE)
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((error) => {
-        statusBlocklistService.completeProcess(processId, false);
+        statusBlocklistService.completeProcess(processId, false, error instanceof Error ? error.message : null);
         console.error(`Error deleting blocklist alerts "${blocklist.name}":`, error);
       });
   } catch (error) {

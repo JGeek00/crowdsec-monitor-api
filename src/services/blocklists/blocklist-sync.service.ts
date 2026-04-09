@@ -13,6 +13,7 @@ import { config } from '@/config';
 import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
 import { DB_MODE } from '@/interfaces/database.interface';
 import appDefaults from '@/constants/app-defaults';
+import { PROCESS_ERRORS } from '@/constants/process-errors';
 
 class BlocklistSyncService {
   private writeLock: Promise<void> = Promise.resolve();
@@ -50,7 +51,7 @@ class BlocklistSyncService {
     const response = await axios.get<string>(blocklist.url, {
       responseType: 'text',
       timeout: 30000,
-    });
+    }).catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.fetchFailed); });
 
     if (processId && processField) {
       statusBlocklistService.markFetched(processId, processField);
@@ -82,7 +83,7 @@ class BlocklistSyncService {
       console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
       crowdSecAPI.setBouncerConnected(false);
       statusService.updateBouncerStatus(false);
-      throw new Error(`Failed to fetch active decisions from CrowdSec`);
+      throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecDecisionsFailed);
     }
     const uniqueNewIps = [...new Set(allowlistFiltered.filter((ip) => !activeDecisions.has(ip)))];
     const alreadyBlocked = allowlistFiltered.length - uniqueNewIps.length;
@@ -95,21 +96,25 @@ class BlocklistSyncService {
     }
 
     // Save all IPs from the list to the DB (regardless of what's already in CrowdSec)
-    await this.acquireWriteLock(async () => {
-      await sequelize.transaction(async (t) => {
-        await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id }, transaction: t });
+    try {
+      await this.acquireWriteLock(async () => {
+        await sequelize.transaction(async (t) => {
+          await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id }, transaction: t });
 
-        for (let i = 0; i < ips.length; i += appDefaults.blocklists.writeChunkSize) {
-          const chunk = ips.slice(i, i + appDefaults.blocklists.writeChunkSize).map((value: string) => ({
-            blocklist_id: blocklist.id,
-            blocklist_name: blocklist.name,
-            value,
-            origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
-          }));
-          await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
-        }
+          for (let i = 0; i < ips.length; i += appDefaults.blocklists.writeChunkSize) {
+            const chunk = ips.slice(i, i + appDefaults.blocklists.writeChunkSize).map((value: string) => ({
+              blocklist_id: blocklist.id,
+              blocklist_name: blocklist.name,
+              value,
+              origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
+            }));
+            await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
+          }
+        });
       });
-    });
+    } catch {
+      throw new Error(PROCESS_ERRORS.blocklistImport.dbWriteFailed);
+    }
 
     const scenario = `external/blocklist (${blocklist.name})`;
     const now = new Date().toISOString();
@@ -148,7 +153,8 @@ class BlocklistSyncService {
           },
         ];
 
-        await crowdSecAPI.alerts.createAlerts(payload);
+        await crowdSecAPI.alerts.createAlerts(payload)
+          .catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecPushFailed); });
 
         if (processId && processField) {
           statusBlocklistService.addImportedIps(processId, processField, chunk.length);
@@ -190,7 +196,7 @@ class BlocklistSyncService {
     const alerts = await crowdSecAPI.alerts.getAlerts({
       origin: appDefaults.blocklists.importOrigin,
       scenario,
-    });
+    }).catch(() => { throw new Error(PROCESS_ERRORS.blocklistDisable.crowdSecAlertsFetchFailed); });
 
     const totalDecisions = alerts.reduce((sum, a) => sum + (a.decisions?.length ?? 0), 0);
     if (processId && processField) {
@@ -201,7 +207,8 @@ class BlocklistSyncService {
       console.log(`Deleting ${alerts.length} alert(s) for blocklist "${blocklist.name}" from CrowdSec...`);
       let processedIps = 0;
       for (const alert of alerts) {
-        await crowdSecAPI.alerts.deleteAlert(alert.id);
+        await crowdSecAPI.alerts.deleteAlert(alert.id)
+          .catch(() => { throw new Error(PROCESS_ERRORS.blocklistDisable.crowdSecAlertDeleteFailed); });
         processedIps += alert.decisions?.length ?? 0;
         if (processId && processField) {
           statusBlocklistService.setDeletedIps(processId, processField, processedIps);
@@ -209,18 +216,22 @@ class BlocklistSyncService {
       }
     }
 
-    await this.acquireWriteLock(async () => {
-      while (true) {
-        const chunk = await BlocklistIp.findAll({
-          attributes: ['id'],
-          where: { [BlocklistIp.col.blocklistId]: blocklist.id },
-          limit: appDefaults.blocklists.writeChunkSize,
-        });
-        if (chunk.length === 0) break;
-        await BlocklistIp.destroy({ where: { [BlocklistIp.col.id]: chunk.map((ip) => ip.id) } });
-        if (chunk.length < appDefaults.blocklists.writeChunkSize) break;
-      }
-    });
+    try {
+      await this.acquireWriteLock(async () => {
+        while (true) {
+          const chunk = await BlocklistIp.findAll({
+            attributes: ['id'],
+            where: { [BlocklistIp.col.blocklistId]: blocklist.id },
+            limit: appDefaults.blocklists.writeChunkSize,
+          });
+          if (chunk.length === 0) break;
+          await BlocklistIp.destroy({ where: { [BlocklistIp.col.id]: chunk.map((ip) => ip.id) } });
+          if (chunk.length < appDefaults.blocklists.writeChunkSize) break;
+        }
+      });
+    } catch {
+      throw new Error(PROCESS_ERRORS.blocklistDisable.dbCleanupFailed);
+    }
 
     console.log(`✓ Deleted alerts and IPs for blocklist "${blocklist.name}"`);
   }
@@ -259,7 +270,7 @@ class BlocklistSyncService {
       }
     }
 
-    statusBlocklistService.completeProcess(processId, errors === 0);
+    statusBlocklistService.completeProcess(processId, errors === 0, errors > 0 ? PROCESS_ERRORS.blocklistRefresh.partialFailure : null);
 
     if (config.database.mode === DB_MODE.SQLITE) {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');

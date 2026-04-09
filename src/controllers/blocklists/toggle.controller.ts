@@ -54,7 +54,7 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
     crowdsecOp
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((error) => {
-        statusBlocklistService.completeProcess(processId, false);
+        statusBlocklistService.completeProcess(processId, false, error instanceof Error ? error.message : null);
         console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${error instanceof Error ? error.message : error}`);
       });
   } catch (error) {

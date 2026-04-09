@@ -56,6 +56,7 @@ export interface Process {
   beginDatetime: string;
   endDatetime: string | null;
   successful: boolean | null;
+  error: string | null;
   blocklistImport?: ProcessBlocklist;
   blocklistEnable?: ProcessBlocklist;
   blocklistDisable?: ProcessBlocklistIps;

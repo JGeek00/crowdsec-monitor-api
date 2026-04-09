@@ -57,7 +57,7 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
     databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
-        statusBlocklistService.completeProcess(processId, false);
+        statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
         console.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
       });
   } catch (error) {
