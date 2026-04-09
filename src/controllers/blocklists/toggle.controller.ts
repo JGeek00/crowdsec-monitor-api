@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Blocklist, BlocklistIp } from '@/models';
-import { databaseService, processTrackingService } from '@/services';
+import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
 import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
@@ -43,18 +43,18 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
     let crowdsecOp: Promise<unknown>;
 
     if (enabled) {
-      processId = processTrackingService.createBlocklistEnableProcess();
+      processId = statusBlocklistService.createBlocklistEnableProcess();
       crowdsecOp = databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
     } else {
       const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
-      processId = processTrackingService.createBlocklistDisableProcess(totalIps);
+      processId = statusBlocklistService.createBlocklistDisableProcess(totalIps);
       crowdsecOp = databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DISABLE);
     }
 
     crowdsecOp
-      .then(() => processTrackingService.completeProcess(processId, true))
+      .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((error) => {
-        processTrackingService.completeProcess(processId, false);
+        statusBlocklistService.completeProcess(processId, false);
         console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${error instanceof Error ? error.message : error}`);
       });
   } catch (error) {

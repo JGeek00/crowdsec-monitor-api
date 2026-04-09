@@ -1,7 +1,7 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
-import { databaseService, schedulerService, versionCheckerService, processTrackingService } from '@/services';
+import { databaseService, schedulerService, versionCheckerService, statusService, webSocketService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import packageJson from '../package.json';
 import appDefaults from './constants/app-defaults';
@@ -75,27 +75,45 @@ const startServer = async (): Promise<void> => {
     } else {
       step('CrowdSec LAPI', '✓', config.crowdsec.lapiUrl);
     }
+    statusService.updateLapiStatus(isConnected, null);
 
     // Verify bouncer API key (CROWDSEC_BOUNCER_KEY) by requesting active decisions
     await crowdSecAPI.checkBouncerConnection();
+    statusService.updateBouncerStatus(crowdSecAPI.isBouncerConnected());
     step('Bouncer key', '✓');
 
     // Initial data sync
     if (isConnected) {
       await databaseService.syncAll();
+      statusService.updateLapiStatus(isConnected, databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
       step('Initial data sync', '✓');
     }
 
     // Setup schedulers
     schedulerService.schedule(
+      appDefaults.scheduler.lapiCheck,
+      async () => {
+        await crowdSecAPI.checkStatus();
+        statusService.updateLapiStatus(crowdSecAPI.getLastLapiConnected(), databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
+      },
+      { intervalSeconds: config.lapiCheck.intervalSeconds, runImmediately: false }
+    );
+
+    schedulerService.schedule(
       appDefaults.scheduler.dataSync,
-      async () => { await databaseService.syncAll(); },
+      async () => {
+        await databaseService.syncAll();
+        statusService.updateLapiStatus(crowdSecAPI.getLastLapiConnected(), databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
+      },
       { intervalSeconds: config.sync.intervalSeconds, runImmediately: false }
     );
 
     schedulerService.schedule(
       appDefaults.scheduler.versionCheck,
-      async () => { await versionCheckerService.checkForNewVersion(); },
+      async () => {
+        await versionCheckerService.checkForNewVersion();
+        statusService.updateVersionInfo(versionCheckerService.getLatestVersion());
+      },
       { intervalSeconds: 3600, runImmediately: true }
     );
 
@@ -119,6 +137,7 @@ const startServer = async (): Promise<void> => {
 
     console.log('');
     console.log('  Schedulers:');
+    console.log(`    ↻ LAPI status check       every ${formatInterval(config.lapiCheck.intervalSeconds)}`);
     console.log(`    ↻ Alerts sync            every ${formatInterval(config.sync.intervalSeconds)}`);
     console.log(`    ↻ Blocklists sync        every ${formatInterval(config.blocklists.refreshTimeSeconds)}`);
     console.log(`    ↻ CS blocklists sync     every ${formatInterval(config.crowdsecBlocklists.refreshTimeSeconds)}`);
@@ -139,7 +158,7 @@ const startServer = async (): Promise<void> => {
       console.log('');
     });
 
-    processTrackingService.setupWebSocket(server);
+    webSocketService.setup(server);
   } catch (error) {
     console.error('');
     console.error('  ✗ Failed to start server:', error);

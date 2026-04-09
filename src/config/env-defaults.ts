@@ -16,6 +16,7 @@ export const defaults = {
   },
   intervals: {
     alertsSync: 30, // 60 seconds
+    lapiCheckInterval: 30, // 30 seconds
     blocklistIpsBanDuration: '24h',
     apiBlocklistsRefreshTime: 14400, // 4 hours
     apiBlocklistsSyncTime: 900, // 15 min

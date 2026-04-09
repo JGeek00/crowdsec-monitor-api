@@ -9,6 +9,7 @@ export class CrowdSecBaseClient {
   private tokenExpiration: Date | null = null;
   private loginPromise: Promise<boolean> | null = null;
   private bouncerConnected: boolean = false;
+  private lastLapiConnected: boolean = false;
 
   constructor() {
     this.client = axios.create({
@@ -110,9 +111,11 @@ export class CrowdSecBaseClient {
 
       const headers = await this.getAuthHeaders();
       await this.client.get('/v1/alerts', { headers });
+      this.lastLapiConnected = true;
       return true;
     } catch (error) {
       console.error('CrowdSec LAPI connection test failed:', error);
+      this.lastLapiConnected = false;
       return false;
     }
   }
@@ -135,8 +138,10 @@ export class CrowdSecBaseClient {
         timeout: 3000,
       });
 
+      this.lastLapiConnected = true;
       return true;
     } catch {
+      this.lastLapiConnected = false;
       return false;
     }
   }
@@ -166,6 +171,13 @@ export class CrowdSecBaseClient {
    */
   isBouncerConnected(): boolean {
     return this.bouncerConnected;
+  }
+
+  /**
+   * Returns the last known LAPI connection status (cached from last check).
+   */
+  getLastLapiConnected(): boolean {
+    return this.lastLapiConnected;
   }
 
   /**

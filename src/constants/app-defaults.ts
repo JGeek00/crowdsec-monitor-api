@@ -10,6 +10,7 @@ export default {
   scheduler: {
     versionCheck: 'version-check',
     dataSync: 'data-sync',
+    lapiCheck: 'lapi-check',
     blocklistsSync: 'blocklists-sync',
     csBlocklistsSync: 'cs-blocklists-sync',
     blocklistReconcile: 'blocklist-reconcile',

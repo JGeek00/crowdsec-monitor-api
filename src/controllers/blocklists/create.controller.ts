@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Blocklist } from '@/models';
-import { databaseService, processTrackingService } from '@/services';
+import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
 import { assertSafeUrl } from '@/utils/url';
@@ -53,11 +53,11 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
     res.status(201).json({ data: blocklist });
 
     // Trigger immediate fetch & CrowdSec push in the background
-    const processId = processTrackingService.createBlocklistImportProcess();
+    const processId = statusBlocklistService.createBlocklistImportProcess();
     databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
-      .then(() => processTrackingService.completeProcess(processId, true))
+      .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
-        processTrackingService.completeProcess(processId, false);
+        statusBlocklistService.completeProcess(processId, false);
         console.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
       });
   } catch (error) {

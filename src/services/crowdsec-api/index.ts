@@ -39,6 +39,10 @@ export class CrowdSecAPIService {
   setBouncerConnected(value: boolean) {
     this.base.setBouncerConnected(value);
   }
+
+  getLastLapiConnected() {
+    return this.base.getLastLapiConnected();
+  }
 }
 
 export const crowdSecAPI = new CrowdSecAPIService();

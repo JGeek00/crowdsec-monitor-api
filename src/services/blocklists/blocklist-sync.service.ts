@@ -3,7 +3,8 @@ import { Blocklist, BlocklistIp } from '@/models';
 import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { processTrackingService } from '@/services/process-tracking.service';
+import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
+import { statusService } from '@/services/status.service';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { countIpsInValue } from '@/utils/ip-count';
@@ -52,7 +53,7 @@ class BlocklistSyncService {
     });
 
     if (processId && processField) {
-      processTrackingService.markFetched(processId, processField);
+      statusBlocklistService.markFetched(processId, processField);
     }
 
     const ips = response.data
@@ -76,9 +77,11 @@ class BlocklistSyncService {
     try {
       activeDecisions = await crowdSecAPI.decisions.getActiveDecisions();
       crowdSecAPI.setBouncerConnected(true);
+      statusService.updateBouncerStatus(true);
     } catch {
       console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
       crowdSecAPI.setBouncerConnected(false);
+      statusService.updateBouncerStatus(false);
       throw new Error(`Failed to fetch active decisions from CrowdSec`);
     }
     const uniqueNewIps = [...new Set(allowlistFiltered.filter((ip) => !activeDecisions.has(ip)))];
@@ -88,7 +91,7 @@ class BlocklistSyncService {
     }
 
     if (processId && processField) {
-      processTrackingService.markParsed(processId, processField, uniqueNewIps.length);
+      statusBlocklistService.markParsed(processId, processField, uniqueNewIps.length);
     }
 
     // Save all IPs from the list to the DB (regardless of what's already in CrowdSec)
@@ -148,7 +151,7 @@ class BlocklistSyncService {
         await crowdSecAPI.alerts.createAlerts(payload);
 
         if (processId && processField) {
-          processTrackingService.addImportedIps(processId, processField, chunk.length);
+          statusBlocklistService.addImportedIps(processId, processField, chunk.length);
         }
 
         const batchNum = Math.floor(i / appDefaults.blocklists.writeChunkSize) + 1;
@@ -157,7 +160,7 @@ class BlocklistSyncService {
     }
 
     if (processId && processField) {
-      processTrackingService.markBlocklistOpComplete(processId, processField);
+      statusBlocklistService.markBlocklistOpComplete(processId, processField);
     }
 
     await this.acquireWriteLock(() =>
@@ -191,7 +194,7 @@ class BlocklistSyncService {
 
     const totalDecisions = alerts.reduce((sum, a) => sum + (a.decisions?.length ?? 0), 0);
     if (processId && processField) {
-      processTrackingService.setIpsToDelete(processId, processField, totalDecisions);
+      statusBlocklistService.setIpsToDelete(processId, processField, totalDecisions);
     }
 
     if (alerts.length > 0) {
@@ -201,7 +204,7 @@ class BlocklistSyncService {
         await crowdSecAPI.alerts.deleteAlert(alert.id);
         processedIps += alert.decisions?.length ?? 0;
         if (processId && processField) {
-          processTrackingService.setDeletedIps(processId, processField, processedIps);
+          statusBlocklistService.setDeletedIps(processId, processField, processedIps);
         }
       }
     }
@@ -237,7 +240,7 @@ class BlocklistSyncService {
       return { refreshed: 0, ips: 0, errors: 0, allowlistSkipped: 0 };
     }
 
-    const processId = processTrackingService.createBlocklistRefreshProcess(blocklists.length);
+    const processId = statusBlocklistService.createBlocklistRefreshProcess(blocklists.length);
 
     // Fetch allowlist entries once for all blocklists
     const allowlistEntries = await this.fetchAllowlistEntries();
@@ -248,15 +251,15 @@ class BlocklistSyncService {
         totalAllowlistSkipped += allowlistSkipped;
         ipsCount += await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
         refreshed++;
-        processTrackingService.incrementRefreshBlocklist(processId, true);
+        statusBlocklistService.incrementRefreshBlocklist(processId, true);
       } catch (error) {
         console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}): ${error instanceof Error ? error.message : error}`);
         errors++;
-        processTrackingService.incrementRefreshBlocklist(processId, false);
+        statusBlocklistService.incrementRefreshBlocklist(processId, false);
       }
     }
 
-    processTrackingService.completeProcess(processId, errors === 0);
+    statusBlocklistService.completeProcess(processId, errors === 0);
 
     if (config.database.mode === DB_MODE.SQLITE) {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');

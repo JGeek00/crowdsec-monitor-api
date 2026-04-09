@@ -116,6 +116,11 @@ export const config = {
       ? parseInt(process.env.BLOCKLIST_RECONCILE_TIME, 10)
       : defaults.intervals.blocklistReconcileTime,
   },
+  lapiCheck: {
+    intervalSeconds: process.env.LAPI_CHECK_INTERVAL
+      ? parseInt(process.env.LAPI_CHECK_INTERVAL, 10)
+      : defaults.intervals.lapiCheckInterval,
+  },
   blocklistBanDuration: process.env.BLOCKLIST_IPS_BAN_DURATION || defaults.intervals.blocklistIpsBanDuration,
   auth: {
     apiPassword: process.env.API_PASSWORD || undefined,
