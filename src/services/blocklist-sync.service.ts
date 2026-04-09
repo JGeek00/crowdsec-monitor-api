@@ -75,8 +75,10 @@ class BlocklistSyncService {
     let activeDecisions: Set<string>;
     try {
       activeDecisions = await crowdSecAPI.decisions.getActiveDecisions();
+      crowdSecAPI.setBouncerConnected(true);
     } catch {
       console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
+      crowdSecAPI.setBouncerConnected(false);
       throw new Error(`Failed to fetch active decisions from CrowdSec`);
     }
     const uniqueNewIps = [...new Set(allowlistFiltered.filter((ip) => !activeDecisions.has(ip)))];

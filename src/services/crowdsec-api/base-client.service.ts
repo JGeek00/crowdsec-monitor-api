@@ -169,6 +169,13 @@ export class CrowdSecBaseClient {
   }
 
   /**
+   * Update the bouncer connected status.
+   */
+  setBouncerConnected(value: boolean): void {
+    this.bouncerConnected = value;
+  }
+
+  /**
    * Handle API errors
    */
   handleError(error: unknown, action: string): void {

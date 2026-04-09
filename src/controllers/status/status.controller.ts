@@ -26,6 +26,9 @@ export const getStatus = async (req: Request, res: Response) => {
   try {
     res.json({
       csLapi: lapiStatus,
+      csBouncer: {
+        available: crowdSecAPI.isBouncerConnected(),
+      },
       csMonitorApi: {
         version: packageJson.version,
         newVersionAvailable: versionCheckerService.getLatestVersion(),

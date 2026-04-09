@@ -35,6 +35,10 @@ export class CrowdSecAPIService {
   isBouncerConnected() {
     return this.base.isBouncerConnected();
   }
+
+  setBouncerConnected(value: boolean) {
+    this.base.setBouncerConnected(value);
+  }
 }
 
 export const crowdSecAPI = new CrowdSecAPIService();
