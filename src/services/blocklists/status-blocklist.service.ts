@@ -14,7 +14,7 @@ class StatusBlocklistService {
 
   // ─── Process creation ────────────────────────────────────────────────────────
 
-  createBlocklistImportProcess(): string {
+  createBlocklistImportProcess(blocklistId: number, blocklistName: string): string {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
@@ -22,13 +22,13 @@ class StatusBlocklistService {
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistImport: this.initialProcessBlocklist(),
+      blocklistImport: this.initialProcessBlocklist(blocklistId, blocklistName),
     };
-    this.state.processes.push(process);
+    this.state.processes = [process, ...this.state.processes];
     return id;
   }
 
-  createBlocklistEnableProcess(): string {
+  createBlocklistEnableProcess(blocklistId: number, blocklistName: string): string {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
@@ -36,13 +36,13 @@ class StatusBlocklistService {
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistEnable: this.initialProcessBlocklist(),
+      blocklistEnable: this.initialProcessBlocklist(blocklistId, blocklistName),
     };
-    this.state.processes.push(process);
+    this.state.processes = [process, ...this.state.processes];
     return id;
   }
 
-  createBlocklistDisableProcess(blocklistIps: number): string {
+  createBlocklistDisableProcess(blocklistIps: number, blocklistId: number, blocklistName: string): string {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
@@ -50,13 +50,13 @@ class StatusBlocklistService {
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistDisable: { blocklistIps, ipsToDelete: 0, processedIps: 0 },
+      blocklistDisable: { blocklistId, blocklistName, blocklistIps, ipsToDelete: 0, processedIps: 0 },
     };
-    this.state.processes.push(process);
+    this.state.processes = [process, ...this.state.processes];
     return id;
   }
 
-  createBlocklistDeleteProcess(blocklistIps: number): string {
+  createBlocklistDeleteProcess(blocklistIps: number, blocklistId: number, blocklistName: string): string {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
@@ -64,9 +64,9 @@ class StatusBlocklistService {
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistDelete: { blocklistIps, ipsToDelete: 0, processedIps: 0 },
+      blocklistDelete: { blocklistId, blocklistName, blocklistIps, ipsToDelete: 0, processedIps: 0 },
     };
-    this.state.processes.push(process);
+    this.state.processes = [process, ...this.state.processes];
     return id;
   }
 
@@ -80,7 +80,7 @@ class StatusBlocklistService {
       error: null,
       blocklistRefresh: { totalBlocklists, processedBlocklists: 0, successful: 0, failed: 0 },
     };
-    this.state.processes.push(process);
+    this.state.processes = [process, ...this.state.processes];
     return id;
   }
 
@@ -171,8 +171,10 @@ class StatusBlocklistService {
 
   // ─── Internals ───────────────────────────────────────────────────────────────
 
-  private initialProcessBlocklist(): ProcessBlocklist {
+  private initialProcessBlocklist(blocklistId: number, blocklistName: string): ProcessBlocklist {
     return {
+      blocklistId,
+      blocklistName,
       step: PROCESS_BLOCKLIST_STEP.FETCH,
       fetched: PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING,
       parsed: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,

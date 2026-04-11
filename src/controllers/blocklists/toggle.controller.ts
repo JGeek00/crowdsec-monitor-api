@@ -46,11 +46,11 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
     let crowdsecOp: Promise<unknown>;
 
     if (enabled) {
-      processId = statusBlocklistService.createBlocklistEnableProcess();
+      processId = statusBlocklistService.createBlocklistEnableProcess(blocklist.id, blocklist.name);
       crowdsecOp = databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
     } else {
       const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
-      processId = statusBlocklistService.createBlocklistDisableProcess(totalIps);
+      processId = statusBlocklistService.createBlocklistDisableProcess(totalIps, blocklist.id, blocklist.name);
       crowdsecOp = databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DISABLE);
     }
 

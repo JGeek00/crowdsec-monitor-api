@@ -54,7 +54,7 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
     res.status(201).json({ data: blocklist });
 
     // Trigger immediate fetch & CrowdSec push in the background
-    const processId = statusBlocklistService.createBlocklistImportProcess();
+    const processId = statusBlocklistService.createBlocklistImportProcess(blocklist.id, blocklist.name);
     databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {

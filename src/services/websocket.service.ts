@@ -1,6 +1,7 @@
 import { IncomingMessage, Server } from 'http';
 import { WsChannel } from '@/utils/ws-channel';
 import { statusService } from '@/services/status.service';
+import { isAuthorized } from '@/middlewares/auth.middleware';
 
 class WebSocketService {
   private channels: Map<string, WsChannel> = new Map();
@@ -9,6 +10,12 @@ class WebSocketService {
     this.setupChannels();
 
     server.on('upgrade', (req: IncomingMessage, socket, head) => {
+      if (!isAuthorized(req)) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
       const url = req.url?.split('?')[0] ?? '';
       const channel = this.channels.get(url);
       if (!channel) {

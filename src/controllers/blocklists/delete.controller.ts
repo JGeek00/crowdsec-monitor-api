@@ -20,7 +20,7 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
     }
 
     const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
-    const processId = statusBlocklistService.createBlocklistDeleteProcess(totalIps);
+    const processId = statusBlocklistService.createBlocklistDeleteProcess(totalIps, blocklist.id, blocklist.name);
 
     await blocklist.destroy();
 

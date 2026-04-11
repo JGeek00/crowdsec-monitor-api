@@ -30,10 +30,23 @@ export interface ProcessBlocklistProgress {
   processedIps: number;
 }
 
-export interface ProcessBlocklistIps {
+interface BlocklistInfo {
+  blocklistId: number;
+  blocklistName: string;
+}
+
+export interface ProcessBlocklistIps extends BlocklistInfo {
   blocklistIps: number;
   ipsToDelete: number;
   processedIps: number;
+}
+
+export interface ProcessBlocklist extends BlocklistInfo {
+  step: ProcessBlocklistStep;
+  fetched: ProcessBlocklistFieldStatus;
+  parsed: ProcessBlocklistFieldStatus;
+  imported: ProcessBlocklistFieldStatus;
+  processIps: ProcessBlocklistProgress;
 }
 
 export interface ProcessBlocklistRefresh {
@@ -41,14 +54,6 @@ export interface ProcessBlocklistRefresh {
   processedBlocklists: number;
   successful: number;
   failed: number;
-}
-
-export interface ProcessBlocklist {
-  step: ProcessBlocklistStep;
-  fetched: ProcessBlocklistFieldStatus;
-  parsed: ProcessBlocklistFieldStatus;
-  imported: ProcessBlocklistFieldStatus;
-  processIps: ProcessBlocklistProgress;
 }
 
 export interface Process {
