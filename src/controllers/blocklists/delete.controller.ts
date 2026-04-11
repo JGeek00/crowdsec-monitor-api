@@ -19,6 +19,11 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
+    if (statusBlocklistService.isBlocklistBusy(blocklist.id)) {
+      res.status(409).json(errorResponse('Conflict', 'A process is already running for this blocklist. Wait for it to complete before performing another action.'));
+      return;
+    }
+
     const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
     const processId = statusBlocklistService.createBlocklistDeleteProcess(totalIps, blocklist.id, blocklist.name);
 

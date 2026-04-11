@@ -169,6 +169,20 @@ class StatusBlocklistService {
     timer.unref();
   }
 
+  // ─── Queries ─────────────────────────────────────────────────────────────────
+
+  isBlocklistBusy(blocklistId: number): boolean {
+    return this.state.processes.some(p => {
+      if (p.endDatetime !== null) return false;
+      return (
+        p.blocklistImport?.blocklistId === blocklistId ||
+        p.blocklistEnable?.blocklistId === blocklistId ||
+        p.blocklistDisable?.blocklistId === blocklistId ||
+        p.blocklistDelete?.blocklistId === blocklistId
+      );
+    });
+  }
+
   // ─── Internals ───────────────────────────────────────────────────────────────
 
   private initialProcessBlocklist(blocklistId: number, blocklistName: string): ProcessBlocklist {

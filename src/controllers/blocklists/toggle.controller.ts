@@ -23,6 +23,17 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
+    const blocklist = await Blocklist.findByPk(Number(blocklistId));
+    if (!blocklist) {
+      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+      return;
+    }
+
+    if (statusBlocklistService.isBlocklistBusy(blocklist.id)) {
+      res.status(409).json(errorResponse('Conflict', 'A process is already running for this blocklist. Wait for it to complete before performing another action.'));
+      return;
+    }
+
     if (enabled) {
       await crowdSecAPI.checkBouncerConnection();
       if (!crowdSecAPI.isBouncerConnected()) {
@@ -30,12 +41,6 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
         res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
         return;
       }
-    }
-
-    const blocklist = await Blocklist.findByPk(Number(blocklistId));
-    if (!blocklist) {
-      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
-      return;
     }
 
     await blocklist.update({ enabled });
