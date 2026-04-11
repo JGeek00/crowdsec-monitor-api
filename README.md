@@ -19,16 +19,7 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 CrowdSec Monitor API has an **integrated blocklists management system**, so you don't need to use extra tools. You can add a blocklist using an URL, and this service will automatically fetch the list and block that IP addresses on CrowdSec. It will also refresh the blocklists after a certain period of time.
 
 ## Deployment
-1. Choose if you want to use SQLite or PostgreSQL as your database. By default SQLite is used and recommended for most deployments.
-2. Get the [provided docker-compose file (SQLite)](https://github.com/JGeek00/crowdsec-monitor-api/blob/master/docker-compose.yml) or the [PostgreSQL one](https://github.com/JGeek00/crowdsec-monitor-api/blob/master/docker-compose-postgres.yml) I recommend adding the ``crowdsec-monitor-api`` block on the same docker-compose file where you have your existing CrowdSec instance.
-3. On the docker-compose file, replace the `<crowdsec container_name>` string with the value that you have given to the `container_name` parameter on the CrwodSec container.
-4. Generate a random key: ``openssl rand -hex 32``
-5. Create the machine on CrowdSec. Open a terminal inside the CrowdSec container and run: ``cscli machines add crowdsec-monitor --password <generated_key> -f /dev/null``.
-6. Paste the generated key on the `CROWDSEC_PASSWORD` variable of the docker compose file.
-7. Create a new bouncer on CrowdSec using ``cscli bouncers add cs-monitor-blocklist-import -o raw`` and copy the key that it generates.
-8. Paste the generated key on the `CROWDSEC_BOUNCER_KEY` variable of the docker compose file. Failing to complete this two steps will throw log ``✗ CrowdSec bouncer API key validation failed: HTTP 403 - {"message":"access forbidden"}`` on startup.
-9. Set the correct values on the environment variables.
-10. Run ``docker compose up -d``.
+Instructions on the [wiki page](https://github.com/JGeek00/crowdsec-monitor-api/wiki/Setup). 
 
 ### Environment Variables
 
@@ -68,6 +59,7 @@ CrowdSec Monitor API has an **integrated blocklists management system**, so you 
 | `BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists | `14400` | No |
 | `CROWDSEC_BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists managed by CrowdSec | `3600` | No |
 | `DOMAIN_CHECK_DNS_SERVER` | DNS server to be used on endpoint `/api/v1/blocklists/check-domain` to resolve IP. Options: `cloudflare`, `google`, `quad9` or `opendns` | `cloudflare` | No |
+| `FINISHED_PROCESSES_RETENTION_TIME` | Time in seconds to retain the finished tasks done by this service (ej: importing a blocklist) | 3600 | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |
 
