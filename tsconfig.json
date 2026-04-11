@@ -24,7 +24,6 @@
     "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
-      "@package.json": ["./package.json"]
     }
   },
   "include": ["src/**/*"],
