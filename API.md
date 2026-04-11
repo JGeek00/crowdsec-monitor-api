@@ -165,7 +165,7 @@ Get comprehensive status information including CrowdSec LAPI connection status, 
 
 ---
 
-### WebSocket `ws://<host>/api/v1/status/ws`
+### WebSocket `ws://<host>/api/v1/status`
 
 Connects to a live stream of status updates. The server pushes the full status object (same format as `GET /api/v1/status`) every time any field changes.
 
@@ -178,7 +178,7 @@ Connects to a live stream of status updates. The server pushes the full status o
 
 **Example (browser):**
 ```javascript
-const ws = new WebSocket('ws://localhost:3000/api/v1/status/ws');
+const ws = new WebSocket('ws://localhost:3000/api/v1/status');
 
 ws.onmessage = (event) => {
   const status = JSON.parse(event.data);
@@ -188,7 +188,7 @@ ws.onmessage = (event) => {
 
 **Example (wscat):**
 ```bash
-wscat -c ws://localhost:3000/api/v1/status/ws
+wscat -c ws://localhost:3000/api/v1/status
 ```
 
 ---

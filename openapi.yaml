@@ -87,7 +87,7 @@ paths:
         Returns CrowdSec LAPI connection status, bouncer availability, last successful data sync,
         API version, and active background processes. Requires authentication if API_PASSWORD is configured.
 
-        For real-time updates, connect to the WebSocket at `ws://<host>/api/v1/status/ws`.
+        For real-time updates, connect to the WebSocket at `ws://<host>/api/v1/status`.
         On connect the full snapshot is sent; subsequent messages are pushed whenever any field changes.
       responses:
         '200':

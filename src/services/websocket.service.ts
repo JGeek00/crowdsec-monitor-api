@@ -31,7 +31,7 @@ class WebSocketService {
     const statusChannel = new WsChannel((ws) => {
       ws.send(JSON.stringify(statusService.getStatusSnapshot()));
     });
-    this.channels.set('/api/v1/status/ws', statusChannel);
+    this.channels.set('/api/v1/status', statusChannel);
     statusService.registerStateChangeCallback(() => {
       statusChannel.broadcast(JSON.stringify(statusService.getStatusSnapshot()));
     });
