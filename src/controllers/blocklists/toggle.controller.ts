@@ -23,10 +23,13 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
-    if (enabled && !crowdSecAPI.isBouncerConnected()) {
-      console.error('[Blocklist] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
-      res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
-      return;
+    if (enabled) {
+      await crowdSecAPI.checkBouncerConnection();
+      if (!crowdSecAPI.isBouncerConnected()) {
+        console.error('[Blocklist] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
+        res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
+        return;
+      }
     }
 
     const blocklist = await Blocklist.findByPk(Number(blocklistId));

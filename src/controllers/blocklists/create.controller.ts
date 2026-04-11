@@ -12,6 +12,7 @@ import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
  */
 export async function createBlocklist(req: Request, res: Response): Promise<void> {
   try {
+    await crowdSecAPI.checkBouncerConnection();
     if (!crowdSecAPI.isBouncerConnected()) {
       console.error('[Blocklist] Cannot create blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
       res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
