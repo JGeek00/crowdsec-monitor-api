@@ -55,6 +55,7 @@ curl -H "Authorization: Bearer your_password_here" \
 - All `/alerts/*` endpoints (when `API_PASSWORD` is set)
 - All `/decisions/*` endpoints (when `API_PASSWORD` is set)
 - `/status` endpoint (when `API_PASSWORD` is set)
+- `/check-credentials` endpoint (when `API_PASSWORD` is set)
 
 **Public Endpoints:**
 - `/health` (always accessible without authentication)
@@ -162,6 +163,22 @@ Get comprehensive status information including CrowdSec LAPI connection status, 
 | `processedBlocklists` | number | Blocklists processed so far |
 | `successful` | number | Number of successfully refreshed blocklists |
 | `failed` | number | Number of failed blocklist refreshes |
+
+---
+
+### GET `/api/v1/check-credentials`
+
+Validate that the provided credentials are accepted by the API. Useful for clients to verify their API password is correct without performing any data operation.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Response:**
+```json
+{
+  "message": "Credentials are valid",
+  "timestamp": "2026-02-13T10:30:45.123Z"
+}
+```
 
 ---
 

@@ -139,6 +139,31 @@ paths:
         '500':
           description: Internal server error
 
+  /check-credentials:
+    get:
+      tags:
+        - Health
+      summary: Check credentials
+      operationId: checkCredentials
+      description: Validate that the provided credentials are accepted by the API. Requires authentication if API_PASSWORD is configured.
+      responses:
+        '200':
+          description: Credentials are valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Credentials are valid
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-02-14T10:30:45.123Z'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /alerts:
     get:
       tags:
