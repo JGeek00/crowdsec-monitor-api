@@ -5,13 +5,13 @@ A RESTful API to monitor and query data from CrowdSec LAPI (Local API) using Exp
 ## Mobile clients
 <table>
   <tr>
-    <td>
+    <td align="center">
       <a href="https://github.com/JGeek00/crowdsec-monitor-ios">
         <img src="./readmeAssets/apple.png" alt="iOS" width="100px" /><br>
         <b>iOS version</b>
       </a>
     </td>
-    <td>
+    <td align="center">
       <a href="https://github.com/JGeek00/crowdsec-monitor-android">
         <img src="./readmeAssets/android.png" alt="Android" width="100px" /><br>
         <b>Android version</b>
