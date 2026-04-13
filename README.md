@@ -1,8 +1,26 @@
 # CrowdSec Monitor API
 
-A RESTful API to monitor and query data from CrowdSec LAPI (Local API) using Express.js, SQLite3, and Sequelize with TypeScript.
+A RESTful API to monitor and query data from CrowdSec LAPI (Local API) using Express.js, SQLite3 (or PostgreSQL), and Sequelize with TypeScript.
 
-## 📖 Overview
+## Mobile clients
+<div style="display:flex; justify-content:space-around; align-items:center;">
+  <div align="center">
+    <a href="https://github.com/JGeek00/crowdsec-monitor-ios">
+      <img src="./readmeAssets/apple.png" alt="Android" width="100px" />
+      <br>
+      <span><b>iOS version</b></span>
+    </a>
+  </div>
+  <div align="center">
+    <a href="https://github.com/JGeek00/crowdsec-monitor-android">
+      <img src="./readmeAssets/android.png" alt="Android" width="100px" />
+      <br>
+      <span><b>Android version</b></span>
+    </a>
+  </div>
+</div>
+
+## Overview
 
 CrowdSec Monitor API provides a persistent storage layer and query interface for CrowdSec security alerts and decisions. It automatically syncs data from your CrowdSec LAPI instance and stores it in a local SQLite database, allowing you to query historical data, generate statistics, and monitor your security posture over time.
 
@@ -127,7 +145,7 @@ The generated decisions will expire after 24 hours, but if you want to remove th
 3. Run `cscli alerts delete -s <reason>` to remove all the alerts with that reason.
 
 
-## 🔄 How Synchronization for Alerts and decisions work
+## How Synchronization for Alerts and decisions work
 
 The API automatically syncs data from CrowdSec LAPI based on the configured `SYNC_INTERVAL_SECONDS` interval:
 
@@ -142,7 +160,7 @@ The API automatically syncs data from CrowdSec LAPI based on the configured `SYN
 The database is **not a cache** - it's a permanent incremental storage. Configure `DATA_RETENTION` to automatically remove old data and prevent the database from growing indefinitely.
 
 
-## 🔄 How Synchronization for blocklists work
+## How Synchronization for blocklists work
 
 This process is repeated for each blocklist added to the database.
 
@@ -153,7 +171,7 @@ This process is repeated for each blocklist added to the database.
 5. **Repeats** this process based on the `BLOCKLISTS_REFRESH_TIME` env variable
 
 
-## 🔒 Security
+## Security
 
 - **Optional Authentication**: Bearer token authentication with `API_PASSWORD` (optional)
 - **Rate Limiting**: Configurable rate limiting with `RATE_LIMIT` (optional)
@@ -170,15 +188,7 @@ See [API.md](./API.md) for complete response schemas and examples.
 ## Disclaimer
 This is a third party software that is not related in any way with the official CrowdSec software or with the CrowdSec team.
 
-## 📄 License
-
-MIT
-
-## 👤 Author
-
-JGeek00
-
-## 💶 Donations
+## Donations
 If you like the project and you want to contribute with the development, you can [become a sponsor on GitHub](https://github.com/sponsors/JGeek00), or you can donate using PayPal.
 
 <div align="center">
@@ -186,3 +196,10 @@ If you like the project and you want to contribute with the development, you can
     <img src="https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png" alt="Donate with PayPal" height="100" />
   </a>
 </div>
+
+<br>
+<br>
+<br>
+<br>
+
+<b>Created by JGeek00</b>
