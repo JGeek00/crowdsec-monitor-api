@@ -70,7 +70,7 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
   };
 };
 
-// Parse BLOCKLISTS_WRITE_CHUNK_SIZE which can be a positive integer or "none"
+// Parse BLOCKLISTS_WRITE_CHUNK_SIZE which can be a positive integer or "none". If its less than 100, log a warning and use the default value instead.
 const parseWriteChunkSize = (chunkSizeStr: string | undefined): number | null => {
   if (!chunkSizeStr) {
     return defaults.blocklists.writeChunkSize;
@@ -83,7 +83,13 @@ const parseWriteChunkSize = (chunkSizeStr: string | undefined): number | null =>
     console.warn(`ERROR: Invalid BLOCKLISTS_WRITE_CHUNK_SIZE value: "${chunkSizeStr}". Must be a positive integer. Using default value ${defaults.blocklists.writeChunkSize}.`);
     return defaults.blocklists.writeChunkSize;
   }
-  return chunkSize;
+  else if (chunkSize < 100) {
+    console.warn(`WARNING: BLOCKLISTS_WRITE_CHUNK_SIZE value "${chunkSize}" is very low, must be at least 100. Using default value ${defaults.blocklists.writeChunkSize} instead.`);
+    return defaults.blocklists.writeChunkSize;
+  }
+  else {
+    return chunkSize;
+  }
 }
 
 export const config = {
