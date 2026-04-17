@@ -814,6 +814,8 @@ curl -X DELETE "http://localhost:3000/api/v1/decisions/456"
 
 ### GET `/api/v1/allowlists`
 
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/allowlists` instead. The API will continue to serve it for compatibility, but responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
+
 List all allowlists from CrowdSec LAPI with their items.
 
 **Authentication:** Required if `API_PASSWORD` is set
@@ -848,6 +850,8 @@ List all allowlists from CrowdSec LAPI with their items.
 ---
 
 ### GET `/api/v1/allowlists/{allowlist_name}`
+
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/allowlists/{allowlist_name}` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
 
 Get a specific allowlist by name from CrowdSec LAPI.
 
@@ -888,6 +892,8 @@ Get a specific allowlist by name from CrowdSec LAPI.
 ---
 
 ### POST `/api/v1/allowlists/check`
+
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/allowlists/check` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
 
 Check if IP addresses are present in any allowlist.
 
@@ -961,6 +967,8 @@ Both types share the same endpoints. The `type` field in each response item indi
 ---
 
 ### GET `/api/v1/blocklists`
+
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/blocklists` instead. The API will continue to serve it for compatibility, but responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
 
 List all blocklists stored in the local database.
 
@@ -1092,6 +1100,8 @@ curl "http://localhost:3000/api/v1/blocklists?unpaged=true"
 
 ### POST `/api/v1/blocklists`
 
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/blocklists` (POST) instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
+
 Add a new API-managed blocklist by URL. The entry is created in the database immediately and the response is returned. The initial fetch of IPs and push to CrowdSec happens asynchronously in the background.
 
 **Authentication:** Required if `API_PASSWORD` is set
@@ -1149,6 +1159,8 @@ curl -X POST "http://localhost:3000/api/v1/blocklists" \
 ---
 
 ### GET `/api/v1/blocklists/{id}`
+
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/blocklists/{id}` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
 
 Get a specific blocklist by its numeric ID. Looks up API-managed blocklists first, then CrowdSec-managed blocklists. Returns the blocklist metadata with a `type` field indicating its origin. Use `include_ips=full` or `include_ips=ip_string` to include the `blocklistIps` array (use `/ips` endpoint instead for large blocklists with pagination).
 
@@ -1252,6 +1264,8 @@ curl "http://localhost:3000/api/v1/blocklists/1?include_ips=ip_string"
 
 ### DELETE `/api/v1/blocklists/{id}`
 
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/blocklists/{id}` (DELETE) instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
+
 Delete an API-managed blocklist by ID. The entry is removed from the database immediately and the response is returned. The removal of associated alerts from CrowdSec happens asynchronously in the background.
 
 **Authentication:** Required if `API_PASSWORD` is set
@@ -1288,6 +1302,8 @@ curl -X DELETE "http://localhost:3000/api/v1/blocklists/3"
 ---
 
 ### GET `/api/v1/blocklists/{blocklistId}/ips`
+
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/blocklists/{blocklistId}/ips` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
 
 Get paginated IPs for a specific blocklist. Recommended alternative to `expand_ips=true` for large blocklists.
 
@@ -1368,6 +1384,8 @@ curl "http://localhost:3000/api/v1/blocklists/8/ips?unpaged=true&ip_string=true"
 
 ### POST `/api/v1/blocklists/check`
 
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/check-ips` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
+
 Check if IP addresses are present in any blocklist.
 
 **Authentication:** Required if `API_PASSWORD` is set
@@ -1431,6 +1449,8 @@ Check if IP addresses are present in any blocklist.
 
 ### POST `/api/v1/blocklists/check-domain`
 
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/check-domain` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
+
 Resolve a domain name via DNS and check if any of the resolved IP addresses are present in any blocklist.
 
 **Authentication:** Required if `API_PASSWORD` is set
@@ -1493,6 +1513,67 @@ Resolve a domain name via DNS and check if any of the resolved IP addresses are 
 - Checks across all locally stored blocklists (both API-managed and CrowdSec-managed)
 
 ---
+
+## Lists Endpoints
+
+### POST `/api/v1/lists/check-ips`
+
+Check if IP addresses are present in any list (blocklist or allowlist).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Request Body:**
+```json
+{
+  "ips": [
+    "1.1.1.1",
+    "5.188.206.14",
+    "2.2.2.2"
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "results": [
+    { "ip": "1.1.1.1", "blocklists": [], "allowlists": [] },
+    { "ip": "5.188.206.14", "blocklists": ["firehol_cruzit_web_attacks"], "allowlists": [] },
+    { "ip": "2.2.2.2", "blocklists": [], "allowlists": ["known_ips"] }
+  ]
+}
+```
+
+**Notes:**
+- This endpoint replaces `/api/v1/blocklists/check` which is deprecated; responses include deprecation headers when clients call the old route.
+
+### POST `/api/v1/lists/check-domain`
+
+Resolve a domain name via DNS and check if any of the resolved IP addresses are present in any list (blocklist or allowlist).
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Request Body:**
+```json
+{
+  "domain": "github.com"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "domain": "github.com",
+  "ips": [
+    { "ip": "140.82.121.4", "blocklists": [], "allowlists": [] },
+    { "ip": "140.82.121.3", "blocklists": [], "allowlists": [] }
+  ]
+}
+```
+
+**Notes:**
+- This endpoint replaces `/api/v1/blocklists/check-domain` which is deprecated; responses include deprecation headers when clients call the old route.
+
 
 ## Statistics Endpoints
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import alertRoutes from '@/routes/alert.routes';
 import decisionRoutes from '@/routes/decision.routes';
+import listRoutes from '@/routes/list.routes';
 import allowlistRoutes from '@/routes/allowlist.routes';
 import blocklistRoutes from '@/routes/blocklist.routes';
 import statisticsRoutes from '@/routes/statistics.routes';
@@ -12,6 +13,7 @@ const router: Router = Router();
 // Mount routes with optional authentication
 router.use('/alerts', optionalAuth, alertRoutes);
 router.use('/decisions', optionalAuth, decisionRoutes);
+router.use('/lists', optionalAuth, listRoutes);
 router.use('/allowlists', optionalAuth, allowlistRoutes);
 router.use('/blocklists', optionalAuth, blocklistRoutes);
 router.use('/statistics', optionalAuth, statisticsRoutes);

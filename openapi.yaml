@@ -49,6 +49,8 @@ tags:
     description: CrowdSec allowlists operations
   - name: Blocklists
     description: Imported blocklists from CrowdSec LAPI (origins blocklist-import and lists)
+  - name: Lists
+    description: Combined operations for blocklists and allowlists (check IPs and domains)
   - name: Statistics
     description: Statistics and aggregated data operations
 
@@ -603,8 +605,9 @@ paths:
       tags:
         - Allowlists
       summary: List all allowlists
+      deprecated: true
       operationId: listAllowlists
-      description: Retrieve all allowlists from CrowdSec LAPI with their items
+      description: Retrieve all allowlists from CrowdSec LAPI with their items. Deprecated, use /lists/allowlists/* instead.
       responses:
         '200':
           description: List of allowlists
@@ -631,8 +634,9 @@ paths:
       tags:
         - Allowlists
       summary: Check if IPs are in any allowlist
+      deprecated: true
       operationId: checkAllowlistIps
-      description: Check if provided IP addresses are present in any allowlist and return their allowlist membership
+      description: Check if provided IP addresses are present in any allowlist and return their allowlist membership. Deprecated, use /lists/allowlists/check instead.
       requestBody:
         required: true
         content:
@@ -643,8 +647,11 @@ paths:
                 ips:
                   type: array
                   items:
-                    type: string
-                    format: ipv4 or ipv6
+                    oneOf:
+                      - type: string
+                        format: ipv4
+                      - type: string
+                        format: ipv6
                   description: Array of IP addresses to check
                   example:
                     - "1.1.1.1"
@@ -666,8 +673,11 @@ paths:
                       type: object
                       properties:
                         ip:
-                          type: string
-                          format: ipv4 or ipv6
+                          oneOf:
+                            - type: string
+                              format: ipv4
+                            - type: string
+                              format: ipv6
                           description: The IP address checked
                           example: "1.1.1.1"
                         allowlist:
@@ -696,8 +706,9 @@ paths:
       tags:
         - Allowlists
       summary: Get specific allowlist
+      deprecated: true
       operationId: getAllowlistByName
-      description: Retrieve a specific allowlist from CrowdSec LAPI by its name
+      description: Retrieve a specific allowlist from CrowdSec LAPI by its name. Deprecated, use /lists/allowlists/{allowlist_name} instead.
       parameters:
         - name: allowlist_name
           in: path
@@ -732,6 +743,7 @@ paths:
       tags:
         - Blocklists
       summary: List all blocklists
+      deprecated: true
       operationId: listBlocklists
       description: |
         Retrieve all blocklists (both API-managed and CrowdSec-managed) stored in the local database.
@@ -739,6 +751,7 @@ paths:
         Each item includes a `type` field: `api` for API-managed, `cs` for CrowdSec-managed.
         API-managed lists are synced at a configurable interval; CrowdSec-managed lists are synced
         from `GET /v1/alerts?has_active_decision=true&origin=lists` on startup and every hour.
+        Deprecated: Use /lists/blocklists/* instead.
       parameters:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
@@ -805,10 +818,12 @@ paths:
       tags:
         - Blocklists
       summary: Add a new blocklist
+      deprecated: true
       operationId: createBlocklist
       description: |
         Add a new API-managed blocklist by URL. The entry is created in the database immediately
         and the response is returned. The initial IP fetch and push to CrowdSec happen in the background.
+        Deprecated: Use /lists/blocklists (POST) instead.
       requestBody:
         required: true
         content:
@@ -853,12 +868,14 @@ paths:
       tags:
         - Blocklists
       summary: Get a specific blocklist
+      deprecated: true
       operationId: getBlocklistById
       description: |
         Retrieve a single blocklist by its ID. Looks up API-managed blocklists first, then
         CrowdSec-managed blocklists. Returns only metadata and `count_ips` by default.
         Pass `include_ips=full` to include the full `blocklistIps` array, or `include_ips=ip_string` to get plain IP strings.
         For large blocklists consider using `GET /blocklists/{blocklistId}/ips` instead, which supports pagination.
+        Deprecated: Use /lists/blocklists/{id} instead.
       parameters:
         - name: id
           in: path
@@ -905,11 +922,13 @@ paths:
       tags:
         - Blocklists
       summary: Delete a blocklist
+      deprecated: true
       operationId: deleteBlocklist
       description: |
         Delete an API-managed blocklist by ID. The entry and its IPs are removed from the local
         database immediately (IPs via CASCADE) and the response is returned.
         The removal of associated alerts from CrowdSec LAPI happens asynchronously in the background.
+        Deprecated: Use /lists/blocklists/{id} (DELETE) instead.
       parameters:
         - name: id
           in: path
@@ -945,11 +964,13 @@ paths:
       tags:
         - Blocklists
       summary: Get paginated IPs for a blocklist
+      deprecated: true
       operationId: getBlocklistIps
       description: |
         Retrieve blocked IPs/ranges for a specific blocklist with pagination support.
         This is the recommended endpoint for large blocklists instead of `expand_ips=true`.
         Returns results ordered by `id` ascending.
+        Deprecated: Use /lists/blocklists/{blocklistId}/ips instead.
       parameters:
         - name: blocklistId
           in: path
@@ -1042,8 +1063,9 @@ paths:
       tags:
         - Blocklists
       summary: Check if IPs are in any blocklist
+      deprecated: true
       operationId: checkBlocklistIps
-      description: Check if provided IP addresses are present in any locally stored blocklist (both API-managed and CrowdSec-managed) and return their blocklist membership. Each IP can match multiple blocklists.
+      description: Check if provided IP addresses are present in any locally stored blocklist (both API-managed and CrowdSec-managed) and return their blocklist membership. Each IP can match multiple blocklists. Deprecated, use /lists/check-ips instead.
       requestBody:
         required: true
         content:
@@ -1106,11 +1128,13 @@ paths:
       tags:
         - Blocklists
       summary: Resolve a domain and check its IPs against blocklists
+      deprecated: true
       operationId: checkDomainBlocklist
       description: |
         Resolves the given domain to its IPv4 and IPv6 addresses via DNS and checks
         whether any resolved IP is present in any locally stored blocklist.
         Uses the DNS server configured via the `DNS_SERVER` environment variable.
+        Deprecated: Use /lists/check-domain instead.
       requestBody:
         required: true
         content:
@@ -1160,6 +1184,150 @@ paths:
                     blocklists: []
                   - ip: "140.82.121.3"
                     blocklists: []
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          description: Domain could not be resolved to any IP address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+  /lists/check-ips:
+    post:
+      tags:
+        - Lists
+      summary: Check if IPs are in any list (blocklist or allowlist)
+      operationId: checkIpsInList
+      description: Check if provided IP addresses are present in any list (blocklist or allowlist) and return their membership. Replaces /blocklists/check.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ips
+              properties:
+                ips:
+                  type: array
+                  items:
+                    oneOf:
+                      - type: string
+                        format: ipv4
+                      - type: string
+                        format: ipv6
+                  description: Array of IP addresses to check
+                  example:
+                    - "1.1.1.1"
+                    - "5.188.206.14"
+                    - "2.2.2.2"
+      responses:
+        '200':
+          description: Lists check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          description: The IP address checked
+                          example: "5.188.206.14"
+                        blocklists:
+                          type: array
+                          items:
+                            type: string
+                          description: Array of blocklist names the IP is listed in. Empty array if not in any blocklist
+                          example: ["firehol_cruzit_web_attacks", "my_blocklist"]
+                        allowlists:
+                          type: array
+                          items:
+                            type: string
+                          description: Array of allowlist names the IP is listed in. Empty array if not in any allowlist
+                          example: ["known_ips"]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+
+  /lists/check-domain:
+    post:
+      tags:
+        - Lists
+      summary: Resolve a domain and check its IPs against lists
+      operationId: checkDomainInList
+      description: |
+        Resolves the given domain to its IPv4 and IPv6 addresses via DNS and checks
+        whether any resolved IP is present in any locally stored list (blocklist or allowlist).
+        Replaces /blocklists/check-domain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  maxLength: 253
+                  description: Domain name to resolve. Subdomains are allowed.
+                  example: github.com
+      responses:
+        '200':
+          description: DNS resolution and lists check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    type: string
+                    description: The domain that was checked
+                    example: github.com
+                  ips:
+                    type: array
+                    description: Resolved IP addresses with their list membership
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          description: Resolved IP address
+                          example: "140.82.121.4"
+                        blocklists:
+                          type: array
+                          items:
+                            type: string
+                          description: Array of blocklist names the IP is listed in. Empty array if not in any blocklist
+                          example: []
+                        allowlists:
+                          type: array
+                          items:
+                            type: string
+                          description: Array of allowlist names the IP is listed in. Empty array if not in any allowlist
+                          example: []
+              example:
+                domain: github.com
+                ips:
+                  - ip: "140.82.121.4"
+                    blocklists: []
+                    allowlists: []
+                  - ip: "140.82.121.3"
+                    blocklists: []
+                    allowlists: []
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':

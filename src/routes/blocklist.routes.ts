@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getBlocklists, getBlocklistById, getBlocklistIps, createBlocklist, deleteBlocklist, toggleBlocklist, checkBlocklist, checkDomainBlocklist } from '@/controllers';
 import { paginationValidators, checkBlocklistValidators, checkDomainBlocklistValidators, createBlocklistValidators } from '@/validators';
-import { handleValidationErrors } from '@/middlewares';
+import { handleValidationErrors, deprecate } from '@/middlewares';
 
 const router: Router = Router();
 
@@ -14,21 +14,23 @@ router.get('/', getBlocklists);
 /**
  * POST /api/v1/blocklists/check
  * Check if IPs are in any blocklist
+ * Deprecated: use /api/v1/lists/check-ips
  */
-router.post('/check', checkBlocklistValidators, handleValidationErrors, checkBlocklist);
+router.post('/check', deprecate('/api/v1/lists/check-ips'), checkBlocklistValidators, handleValidationErrors, checkBlocklist);
 
 /**
  * POST /api/v1/blocklists/check-domain
- * Run a traceroute to a domain and check if any hop IP is in any blocklist
+ * Checks if an IP assigned to a domain is in any blocklist
+ * Deprecated: use /api/v1/lists/check-domain
  */
-router.post('/check-domain', checkDomainBlocklistValidators, handleValidationErrors, checkDomainBlocklist);
+router.post('/check-domain', deprecate('/api/v1/lists/check-domain'), checkDomainBlocklistValidators, handleValidationErrors, checkDomainBlocklist);
 
 /**
  * POST /api/v1/blocklists
  * Add a new blocklist URL
  * Body: { url: string, name: string }
  */
-router.post('/', createBlocklistValidators, handleValidationErrors, createBlocklist);
+router.post('/', deprecate('/api/v1/lists/blocklists'), createBlocklistValidators, handleValidationErrors, createBlocklist);
 
 /**
  * GET /api/v1/blocklists/:blocklistId/ips
@@ -36,6 +38,7 @@ router.post('/', createBlocklistValidators, handleValidationErrors, createBlockl
  */
 router.get(
   '/:blocklistId/ips',
+  deprecate('/api/v1/lists/blocklists/ips'),
   paginationValidators,
   handleValidationErrors,
   getBlocklistIps
@@ -45,19 +48,19 @@ router.get(
  * GET /api/v1/blocklists/:id
  * Get a specific blocklist by ID
  */
-router.get('/:id', getBlocklistById);
+router.get('/:id', deprecate('/api/v1/lists/blocklists/:id'), getBlocklistById);
 
 /**
  * DELETE /api/v1/blocklists/:id
  * Delete a blocklist and all its associated IPs
  */
-router.delete('/:id', deleteBlocklist);
+router.delete('/:id', deprecate('/api/v1/lists/blocklists/:id'), deleteBlocklist);
 
 /**
  * POST /api/v1/blocklists/:blocklistId/enabled
  * Enable or disable a blocklist
  * Body: { enabled: boolean }
  */
-router.post('/:blocklistId/enabled', toggleBlocklist);
+router.post('/:blocklistId/enabled', deprecate('/api/v1/lists/blocklists/:blocklistId/enabled'), toggleBlocklist);
 
 export default router;
