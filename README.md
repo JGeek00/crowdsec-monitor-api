@@ -75,6 +75,7 @@ Instructions on the [wiki page](https://github.com/JGeek00/crowdsec-monitor-api/
 | `SYNC_INTERVAL_SECONDS` | Interval in seconds between to sync alerts and decisions | `30` | No |
 | `BLOCKLIST_IPS_BAN_DURATION` | Ban time for each IP that comes from a blocklist | `24h` | No |
 | `BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists | `14400` | No |
+| `BLOCKLISTS_WRITE_CHUNK_SIZE` | Number of IPs per alert to send to CrowdSec on each request transaction when syncing blocklists, set to 'none' to disable chunking and write all at once | `1000` | No |
 | `CROWDSEC_BLOCKLISTS_REFRESH_TIME` | Time in seconds to refresh the blocklists managed by CrowdSec | `3600` | No |
 | `DOMAIN_CHECK_DNS_SERVER` | DNS server to be used on endpoint `/api/v1/blocklists/check-domain` to resolve IP. Options: `cloudflare`, `google`, `quad9` or `opendns` | `cloudflare` | No |
 | `FINISHED_PROCESSES_RETENTION_TIME` | Time in seconds to retain the finished tasks done by this service (ej: importing a blocklist) | 3600 | No |

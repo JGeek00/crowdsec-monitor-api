@@ -32,4 +32,7 @@ export const defaults = {
   processes: {
     finishedRetentionTime: 3600, // 1 hour in seconds
   },
+  blocklists: {
+    writeChunkSize: 1000, // Number of IPs to write in a single database transaction when syncing blocklists
+  }
 };

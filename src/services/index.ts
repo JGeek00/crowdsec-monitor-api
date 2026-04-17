@@ -2,7 +2,7 @@ export { crowdSecAPI } from '@/services/crowdsec-api.service';
 export { databaseService } from '@/services/database.service';
 export { schedulerService } from '@/services/scheduler.service';
 export { versionCheckerService } from '@/services/version-checker.service';
-export { csBlocklistSyncService } from '@/services/cs-blocklist-sync.service';
+export { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
 export { blocklistReconcileService } from '@/services/blocklists/blocklist-reconcile.service';
 export { statusService } from '@/services/status.service';
 export { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';

@@ -70,6 +70,22 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
   };
 };
 
+// Parse BLOCKLISTS_WRITE_CHUNK_SIZE which can be a positive integer or "none"
+const parseWriteChunkSize = (chunkSizeStr: string | undefined): number | null => {
+  if (!chunkSizeStr) {
+    return defaults.blocklists.writeChunkSize;
+  }
+  if (chunkSizeStr == 'none') {
+    return null; // No chunking, write all at once
+  }
+  const chunkSize = parseInt(chunkSizeStr, 10);
+  if (isNaN(chunkSize) || chunkSize <= 0) {
+    console.warn(`ERROR: Invalid BLOCKLISTS_WRITE_CHUNK_SIZE value: "${chunkSizeStr}". Must be a positive integer. Using default value ${defaults.blocklists.writeChunkSize}.`);
+    return defaults.blocklists.writeChunkSize;
+  }
+  return chunkSize;
+}
+
 export const config = {
   server: {
     port: parseInt(process.env.PORT || String(defaults.server.port), 10),
@@ -105,6 +121,7 @@ export const config = {
     refreshTimeSeconds: process.env.BLOCKLISTS_REFRESH_TIME
       ? parseInt(process.env.BLOCKLISTS_REFRESH_TIME, 10)
       : defaults.intervals.apiBlocklistsRefreshTime,
+    writeChunkSize: parseWriteChunkSize(process.env.BLOCKLISTS_WRITE_CHUNK_SIZE),
   },
   crowdsecBlocklists: {
     refreshTimeSeconds: process.env.CROWDSEC_BLOCKLISTS_REFRESH_TIME

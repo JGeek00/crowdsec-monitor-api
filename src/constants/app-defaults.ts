@@ -4,8 +4,9 @@ export default {
   },
   blocklists: {
     scenarioRegex: /^external\/blocklist \((.+)\)$/,
-    writeChunkSize: 1000,
     importOrigin: 'cs-monitor-blocklist-import',
+    blocklistIpsDeleteChunkSize: 1000, // Number of IPs to delete in a single database transaction when disabling/deleting a blocklist managed by CrowdSec Monitor
+    csBlocklistDbWriteChunkSize: 1000, // Number of IPs to write on the local DB in a single database transaction when syncing CrowdSec blocklists, completely independent from blocklists managed by CrowdSec Monitor
   },
   scheduler: {
     versionCheck: 'version-check',

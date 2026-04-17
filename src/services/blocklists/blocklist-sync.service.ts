@@ -10,6 +10,7 @@ import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { countIpsInValue } from '@/utils/ip-count';
 import { buildAllowlistMatcher } from '@/utils/ip';
 import { config } from '@/config';
+import { defaults } from '@/config/env-defaults';
 import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
 import { DB_MODE } from '@/interfaces/database.interface';
 import appDefaults from '@/constants/app-defaults';
@@ -101,8 +102,8 @@ class BlocklistSyncService {
         await sequelize.transaction(async (t) => {
           await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id }, transaction: t });
 
-          for (let i = 0; i < ips.length; i += appDefaults.blocklists.writeChunkSize) {
-            const chunk = ips.slice(i, i + appDefaults.blocklists.writeChunkSize).map((value: string) => ({
+          for (let i = 0; i < ips.length; i += defaults.blocklists.writeChunkSize) {
+            const chunk = ips.slice(i, i + defaults.blocklists.writeChunkSize).map((value: string) => ({
               blocklist_id: blocklist.id,
               blocklist_name: blocklist.name,
               value,
@@ -118,15 +119,16 @@ class BlocklistSyncService {
 
     const scenario = `external/blocklist (${blocklist.name})`;
     const now = new Date().toISOString();
-    const batchCount = Math.ceil(uniqueNewIps.length / appDefaults.blocklists.writeChunkSize);
+    const pushChunkSize = config.blocklists.writeChunkSize ?? uniqueNewIps.length;
+    const batchCount = Math.ceil(uniqueNewIps.length / Math.max(pushChunkSize, 1));
 
     if (uniqueNewIps.length === 0) {
       console.log(`No new IPs to push for "${blocklist.name}" (all already blocked in CrowdSec)`);
     } else {
       console.log(`Pushing "${blocklist.name}" to CrowdSec (${uniqueNewIps.length} new entries, ${batchCount} batch(es))...`);
 
-      for (let i = 0; i < uniqueNewIps.length; i += appDefaults.blocklists.writeChunkSize) {
-        const chunk = uniqueNewIps.slice(i, i + appDefaults.blocklists.writeChunkSize);
+      for (let i = 0; i < uniqueNewIps.length; i += pushChunkSize) {
+        const chunk = uniqueNewIps.slice(i, i + pushChunkSize);
 
         const payload: CrowdSecCreateAlertPayload = [
           {
@@ -160,7 +162,7 @@ class BlocklistSyncService {
           statusBlocklistService.addImportedIps(processId, processField, chunk.length);
         }
 
-        const batchNum = Math.floor(i / appDefaults.blocklists.writeChunkSize) + 1;
+        const batchNum = Math.floor(i / pushChunkSize) + 1;
         console.log(`  Batch ${batchNum}/${batchCount} sent (${chunk.length} decisions)`);
       }
     }
@@ -222,11 +224,11 @@ class BlocklistSyncService {
           const chunk = await BlocklistIp.findAll({
             attributes: ['id'],
             where: { [BlocklistIp.col.blocklistId]: blocklist.id },
-            limit: appDefaults.blocklists.writeChunkSize,
+            limit: appDefaults.blocklists.blocklistIpsDeleteChunkSize,
           });
           if (chunk.length === 0) break;
           await BlocklistIp.destroy({ where: { [BlocklistIp.col.id]: chunk.map((ip) => ip.id) } });
-          if (chunk.length < appDefaults.blocklists.writeChunkSize) break;
+          if (chunk.length < appDefaults.blocklists.blocklistIpsDeleteChunkSize) break;
         }
       });
     } catch {

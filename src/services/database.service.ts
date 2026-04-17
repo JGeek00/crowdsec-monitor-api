@@ -1,7 +1,7 @@
 import { Blocklist } from '@/models';
 import { alertsSyncService } from '@/services/alerts-sync.service';
 import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
-import { csBlocklistSyncService } from '@/services/cs-blocklist-sync.service';
+import { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
 import { blocklistReconcileService } from '@/services/blocklists/blocklist-reconcile.service';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 

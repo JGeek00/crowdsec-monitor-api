@@ -54,8 +54,8 @@ class CsBlocklistSyncService {
             { transaction: t }
           );
 
-          for (let i = 0; i < decisions.length; i += appDefaults.blocklists.writeChunkSize) {
-            const chunk = decisions.slice(i, i + appDefaults.blocklists.writeChunkSize).map((decision) => ({
+          for (let i = 0; i < decisions.length; i += appDefaults.blocklists.csBlocklistDbWriteChunkSize) {
+            const chunk = decisions.slice(i, i + appDefaults.blocklists.csBlocklistDbWriteChunkSize).map((decision) => ({
               cs_blocklist_id: `crowdsec-${alert.id}`,
               blocklist_name: decision.scenario,
               value: decision.value,
