@@ -1,5 +1,6 @@
-import { Blocklist, BlocklistIp } from '@/models';
+import { Blocklist } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
 import appDefaults from '@/constants/app-defaults';
 
 class BlocklistReconcileService {
@@ -8,10 +9,10 @@ class BlocklistReconcileService {
    *
    * Fetches all alerts with has_active_decision=true and
    * origin=cs-monitor-blocklist-import, extracts the blocklist names from
-   * the scenario field, then disables any enabled blocklist that has no
-   * corresponding alert in CrowdSec (meaning it was intentionally removed).
+   * the scenario field, then re-syncs any enabled blocklist that has no
+   * corresponding alert in CrowdSec (meaning the alerts are missing or expired).
    */
-  async reconcile(): Promise<{ deactivated: number }> {
+  async reconcile(): Promise<{ resynced: number }> {
     console.log('Starting blocklist reconciliation with CrowdSec...');
 
     const alerts = await crowdSecAPI.alerts.getAlerts({
@@ -36,14 +37,13 @@ class BlocklistReconcileService {
 
     if (missing.length > 0) {
       for (const blocklist of missing) {
-        await blocklist.update({ enabled: false });
-        await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
-        console.log(`  Disabled blocklist "${blocklist.name}" and removed its IPs (no active alerts found in CrowdSec)`);
+        console.log(`  Re-syncing blocklist "${blocklist.name}" (no active alerts found in CrowdSec)`);
+        await blocklistSyncService.refreshBlocklist(blocklist);
       }
     }
 
-    console.log(`✓ Blocklist reconciliation complete: ${missing.length} blocklist(s) disabled`);
-    return { deactivated: missing.length };
+    console.log(`✓ Blocklist reconciliation complete: ${missing.length} blocklist(s) re-synced`);
+    return { resynced: missing.length };
   }
 }
 
