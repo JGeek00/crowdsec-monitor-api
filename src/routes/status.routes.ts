@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { healthCheck } from '@/controllers/status/health.controller';
 import { getStatus } from '@/controllers/status/status.controller';
 import { checkCredentials } from '@/controllers/status/check-credentials.controller';
-import { optionalAuth } from '@/middlewares';
+import { AuthMiddleware } from '@/middlewares/auth.middleware';
 
 const router: Router = Router();
 
@@ -18,13 +18,13 @@ router.get('/health', healthCheck);
  * @desc    Get comprehensive status information
  * @access  Optional authentication
  */
-router.get('/status', optionalAuth, getStatus);
+router.get('/status', AuthMiddleware.expressAuth, getStatus);
 
 /**
  * @route   GET /api/status/check-credentials
  * @desc    Check if the provided credentials are valid
  * @access  Optional authentication
  */
-router.get('/check-credentials', optionalAuth, checkCredentials);
+router.get('/check-credentials', AuthMiddleware.expressAuth, checkCredentials);
 
 export default router;

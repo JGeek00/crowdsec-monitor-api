@@ -6,17 +6,17 @@ import allowlistRoutes from '@/routes/allowlist.routes';
 import blocklistRoutes from '@/routes/blocklist.routes';
 import statisticsRoutes from '@/routes/statistics.routes';
 import statusRoutes from '@/routes/status.routes';
-import { optionalAuth } from '@/middlewares';
+import { AuthMiddleware } from '@/middlewares/auth.middleware';
 
 const router: Router = Router();
 
-// Mount routes with optional authentication
-router.use('/alerts', optionalAuth, alertRoutes);
-router.use('/decisions', optionalAuth, decisionRoutes);
-router.use('/lists', optionalAuth, listRoutes);
-router.use('/allowlists', optionalAuth, allowlistRoutes);
-router.use('/blocklists', optionalAuth, blocklistRoutes);
-router.use('/statistics', optionalAuth, statisticsRoutes);
+// Mount HTTP routes with authentication
+router.use('/alerts', AuthMiddleware.expressAuth, alertRoutes);
+router.use('/decisions', AuthMiddleware.expressAuth, decisionRoutes);
+router.use('/lists', AuthMiddleware.expressAuth, listRoutes);
+router.use('/allowlists', AuthMiddleware.expressAuth, allowlistRoutes);
+router.use('/blocklists', AuthMiddleware.expressAuth, blocklistRoutes);
+router.use('/statistics', AuthMiddleware.expressAuth, statisticsRoutes);
 
 // Mount status routes
 router.use('/', statusRoutes);

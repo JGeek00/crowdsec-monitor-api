@@ -6,4 +6,3 @@ export { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.
 export { blocklistReconcileService } from '@/services/blocklists/blocklist-reconcile.service';
 export { statusService } from '@/services/status.service';
 export { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
-export { webSocketService } from '@/services/websocket.service';

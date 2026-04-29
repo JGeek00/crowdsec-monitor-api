@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import blocklistRoutes from '@/routes/blocklist.routes';
 import allowlistRoutes from '@/routes/allowlist.routes';
-import { handleValidationErrors, optionalAuth } from '@/middlewares';
+import { handleValidationErrors, AuthMiddleware } from '@/middlewares';
 import { checkBlocklistValidators, checkDomainBlocklistValidators } from '@/validators/blocklist.validator';
 import { checkDomainInList, checkIpsInList } from '@/controllers';
 
 const router: Router = Router();
 
-router.use('/blocklists', optionalAuth, blocklistRoutes);
-router.use('/allowlists', optionalAuth, allowlistRoutes);
+router.use('/blocklists', AuthMiddleware.expressAuth, blocklistRoutes);
+router.use('/allowlists', AuthMiddleware.expressAuth, allowlistRoutes);
 
 /**
  * POST /api/v1/lists/check-ips

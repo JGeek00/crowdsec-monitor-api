@@ -1,10 +1,11 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
-import { databaseService, schedulerService, versionCheckerService, statusService, webSocketService } from '@/services';
+import { databaseService, schedulerService, versionCheckerService, statusService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { webSocketApp } from '@/sockets';
+import appDefaults from '@/constants/app-defaults';
 import packageJson from '../package.json';
-import appDefaults from './constants/app-defaults';
 
 /**
  * Validate required environment variables
@@ -158,7 +159,8 @@ const startServer = async (): Promise<void> => {
       console.log('');
     });
 
-    webSocketService.setup(server);
+    // Start websocket
+    webSocketApp.setup(server);
   } catch (error) {
     console.error('');
     console.error('  ✗ Failed to start server:', error);

@@ -4,48 +4,105 @@ import { timingSafeEqual } from 'crypto';
 import { config } from '@/config';
 import { errorResponse } from '@/utils/error-response';
 
-/**
- * Validates the Bearer token from an IncomingMessage's Authorization header.
- * Returns true if authentication is not required or the token is valid.
- */
-export const isAuthorized = (req: IncomingMessage): boolean => {
-  if (!config.auth.apiPassword) return true;
+export interface AuthResult {
+  isValid: boolean;
+  message?: string;
+  statusCode?: number;
+}
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return false;
+export class AuthMiddleware {
+  /**
+   * EXPRESS AUTH HANDLER
+   * 
+   * Express middleware that responds with JSON.
+   * Uses checkAuth() for authentication logic.
+   * 
+   * @param req - Express Request
+   * @param res - Express Response
+   * @param next - Express NextFunction
+   */
+  static expressAuth = (req: Request, res: Response, next: NextFunction): void => {
+    const authHeader = req.headers.authorization;
+    const result = this.checkAuth(authHeader);
 
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') return false;
+    if (result.isValid) {
+      return next();
+    }
 
-  const tokenBuf = Buffer.from(parts[1]);
-  const secretBuf = Buffer.from(config.auth.apiPassword);
-  return tokenBuf.length === secretBuf.length && timingSafeEqual(tokenBuf, secretBuf);
-};
+    res.status(result.statusCode || 401).json(errorResponse('Unauthorized', result.message || 'Invalid credentials'));
+  };
 
-/**
- * Optional Bearer token authentication middleware
- * Only enforces authentication if API_PASSWORD is configured
- * 
- * Usage:
- * - If API_PASSWORD is not set: allows all requests
- * - If API_PASSWORD is set: requires "Authorization: Bearer <password>" header
- */
-export const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (isAuthorized(req)) {
-    return next();
-  }
+  /**
+   * WEBSOCKET AUTH HANDLER
+   * 
+   * WebSocket handler that sends HTTP 401 response.
+   * Uses checkAuth() for authentication logic.
+   * 
+   * @param req - IncomingMessage from WebSocket request
+   * @param socket - WebSocket socket (Duplex type from Express 5)
+   * @param head - Header buffer
+   */
+  static wsAuth = (req: IncomingMessage, socket: any, head: Buffer): void => {
+    const authHeader = req.headers.authorization;
+    const result = this.checkAuth(authHeader);
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    res.status(401).json(errorResponse('Unauthorized', 'Authorization header is required'));
-    return;
-  }
+    if (result.isValid) {
+      return;
+    }
 
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    res.status(401).json(errorResponse('Unauthorized', 'Authorization header must be in format: Bearer <token>'));
-    return;
-  }
+    socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+  };
 
-  res.status(401).json(errorResponse('Unauthorized', 'Invalid credentials'));
-};
+
+  /**
+   * AUTHENTICATION LOGIC
+   * 
+   * This function contains all the token validation logic.
+   * It is called by both Express and WebSocket handlers.
+   * 
+   * @param authHeader - The Authorization header from the request
+   * @returns AuthResult with the authentication result
+   */
+  private static checkAuth = (authHeader: string | undefined): AuthResult => {
+    if (!config.auth.apiPassword) {
+      return { isValid: true };
+    }
+
+    if (!authHeader) {
+      return {
+        isValid: false,
+        message: 'Authorization header is required',
+        statusCode: 401
+      };
+    }
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      return {
+        isValid: false,
+        message: 'Authorization header must be in format: Bearer <token>',
+        statusCode: 401
+      };
+    }
+
+    const tokenBuf = Buffer.from(parts[1]);
+    const secretBuf = Buffer.from(config.auth.apiPassword);
+
+    if (tokenBuf.length !== secretBuf.length) {
+      return {
+        isValid: false,
+        message: 'Invalid credentials',
+        statusCode: 401
+      };
+    }
+
+    const isValid = timingSafeEqual(tokenBuf, secretBuf);
+
+    return {
+      isValid,
+      message: !isValid ? 'Invalid credentials' : undefined,
+      statusCode: !isValid ? 401 : undefined
+    };
+  };
+}
