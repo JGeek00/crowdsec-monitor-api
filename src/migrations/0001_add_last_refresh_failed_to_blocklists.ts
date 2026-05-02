@@ -11,14 +11,37 @@ export default {
   name: '0001_add_last_refresh_failed_to_blocklists',
   up: async () => {
     await sequelize.query(`
-      ALTER TABLE blocklists 
-      ADD COLUMN last_refresh_failed BOOLEAN DEFAULT 0
-    `);
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `).catch(() => {});
+
+    try {
+      await sequelize.query(`
+        ALTER TABLE blocklists 
+        ADD COLUMN last_refresh_failed BOOLEAN DEFAULT 0
+      `);
+    } catch (error: any) {
+      if (
+        error?.parent?.errno === 1 &&
+        error?.parent?.message?.includes('duplicate column name') ||
+        error?.message?.includes('duplicate column name') ||
+        error?.code === 'SQLITE_ERROR'
+      ) {
+        console.log('Columna last_refresh_failed ya existe - saltando migración');
+        return;
+      }
+      throw error;
+    }
   },
   down: async () => {
     await sequelize.query(`
       ALTER TABLE blocklists 
       DROP COLUMN last_refresh_failed
-    `);
+    `).catch(() => {});
+
+    await sequelize.query('DROP TABLE IF EXISTS migrations').catch(() => {});
   },
 };

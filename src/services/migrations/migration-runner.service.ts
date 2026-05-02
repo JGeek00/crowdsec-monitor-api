@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { MigrationService } from '@/services/migrations/migration.service';
 import type { Migration } from '@/types/migration.types';
-import { sequelize } from '@/config/database';
+import { Sequelize } from 'sequelize';
 
 /**
  * Load and execute a migration file as a TypeScript module
@@ -22,14 +22,14 @@ function loadMigration(filePath: string): Migration {
  * from the src/migrations/ directory in numeric order.
  */
 export class MigrationRunner {
-  private migrationService: MigrationService;
   private migrationsCache: Map<string, Migration> = new Map();
   private migrationsDir: string;
 
-  constructor(migrationService: MigrationService) {
-    this.migrationService = migrationService;
+  constructor(
+    private migrationService: MigrationService,
+    private sequelize: Sequelize
+  ) {
     const projectRoot = path.resolve(__dirname, '../../..');
-    // Load compiled JS files from dist, not TS from src
     this.migrationsDir = path.join(projectRoot, 'dist/migrations');
   }
 
@@ -64,7 +64,6 @@ export class MigrationRunner {
 
       console.log(`⏳ ${pendingNames.length} migration(s) pending execution`);
 
-      // Execute migrations in order
       for (const migrationName of pendingNames) {
         await this.executeMigration(migrationName);
       }
@@ -76,17 +75,16 @@ export class MigrationRunner {
     }
   }
 
- /**
-    * Load all migrations from src/migrations/ directory
-    */
-   private loadMigrations(): string[] {
+  /**
+     * Load all migrations from src/migrations/ directory
+     */
+  private loadMigrations(): string[] {
     if (!fs.existsSync(this.migrationsDir)) {
       console.warn(`⚠️ Migrations directory not found: ${this.migrationsDir}`);
       return [];
     }
 
     const files = fs.readdirSync(this.migrationsDir);
-    // Only load .js files, skip .d.ts type definition files
     const migrationFiles = files.filter((file) => /.*\.js$/.test(file));
 
     const migrationNames = migrationFiles
@@ -104,17 +102,14 @@ export class MigrationRunner {
         const migrationPath = path.join(this.migrationsDir, name);
         const migrationName = this.getMigrationName(name);
 
-        // Load the migration as a JavaScript module
         const migration = loadMigration(migrationPath);
 
-        // Cache the migration
         this.migrationsCache.set(migrationName, migration);
       } catch (error) {
         console.error(`⚠️ Failed to load migration ${name}:`, error);
       }
     }
 
-    // Return migration names WITHOUT extension (e.g., "0001_add_last_refresh_failed_to_blocklists")
     return migrationNames.map((m) => this.getMigrationName(m.name));
   }
 
@@ -138,27 +133,13 @@ export class MigrationRunner {
         throw new Error(`Migration not found: ${migrationName}`);
       }
 
-      // Execute up() function with empty queryInterface
       await migration.up({});
 
-      // Register as applied
       await this.migrationService.registerMigration(migrationName);
 
       console.log(`✅ Migration ${migrationName} applied successfully`);
     } catch (error) {
       console.error(`❌ Migration ${migrationName} failed:`, error);
-
-      // Optional: rollback with down() before rethrowing
-      // const migration = this.migrationsCache.get(migrationName);
-      // if (migration) {
-      //   try {
-      //     await migration.down();
-      //     console.log(`⚠️ Rollback attempted for ${migrationName}`);
-      //   } catch (rollbackError) {
-      //     console.error(`❌ Rollback failed for ${migrationName}:`, rollbackError);
-      //   }
-      // }
-
       throw error;
     }
   }

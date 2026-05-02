@@ -83,9 +83,19 @@ async function initSQLite(): Promise<void> {
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
 
+  // Create migrations table if it doesn't exist (for existing databases)
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).catch(() => {});
+  console.log('✓ Migrations table ensured.');
+
   // Run database migrations
   const migrationService = new MigrationService();
-  const migrationRunner = new MigrationRunner(migrationService);
+  const migrationRunner = new MigrationRunner(migrationService, sequelize);
   await migrationRunner.run();
 
   // Add 'enabled' column to blocklists if it was created before this field existed.
@@ -131,9 +141,19 @@ async function initPostgres(): Promise<void> {
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
 
+  // Create migrations table if it doesn't exist (for existing databases)
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS migrations (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).catch(() => {});
+  console.log('✓ Migrations table ensured.');
+
   // Run database migrations
   const migrationService = new MigrationService();
-  const migrationRunner = new MigrationRunner(migrationService);
+  const migrationRunner = new MigrationRunner(migrationService, sequelize);
   await migrationRunner.run();
 
   // Add 'enabled' column to blocklists if it was created before this field existed.

@@ -1,47 +1,52 @@
-export class MigrationService {
-  private appliedMigrations = new Set<string>();
-  private failedMigrations = new Set<string>();
+import { sequelize } from '@/config/database';
+import { QueryTypes } from 'sequelize';
 
+export class MigrationService {
   /**
    * Check if a migration has already been applied
    */
   async isMigrationApplied(migrationName: string): Promise<boolean> {
-    return this.appliedMigrations.has(migrationName);
+    const result = await sequelize.query<{ id: number }>(
+      'SELECT COUNT(*) as id FROM migrations WHERE name = ?',
+      { replacements: [migrationName], type: QueryTypes.SELECT }
+    );
+    return result[0]?.id > 0;
   }
 
   /**
    * Register a migration as applied
    */
   async registerMigration(migrationName: string): Promise<void> {
-    this.appliedMigrations.add(migrationName);
+    await sequelize.query(
+      'INSERT INTO migrations (name, applied_at) VALUES (?, ?)',
+      { replacements: [migrationName, new Date()], type: QueryTypes.INSERT }
+    );
   }
 
   /**
    * Get list of all applied migrations
    */
   async getAppliedMigrations(): Promise<string[]> {
-    return Array.from(this.appliedMigrations);
+    const rows = await sequelize.query<{ name: string }>(
+      'SELECT name FROM migrations ORDER BY id',
+      { type: QueryTypes.SELECT }
+    );
+    return rows.map((row): string => row.name);
   }
 
   /**
    * Get list of pending migrations (not yet applied)
    */
   async getPendingMigrations(migrationNames: string[]): Promise<string[]> {
-    return migrationNames.filter((name) => !this.appliedMigrations.has(name));
+    const applied = await this.getAppliedMigrations();
+    return migrationNames.filter((name) => !applied.includes(name));
   }
 
   /**
    * Get list of failed migrations
    */
   async getFailedMigrations(): Promise<string[]> {
-    return Array.from(this.failedMigrations);
-  }
-
-  /**
-   * Clear migration state (useful for testing)
-   */
-  clear(): void {
-    this.appliedMigrations.clear();
-    this.failedMigrations.clear();
+    // Failed migrations are not persisted, return empty array
+    return [];
   }
 }
