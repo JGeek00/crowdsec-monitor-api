@@ -1,6 +1,8 @@
 import { Sequelize } from 'sequelize';
 import { config } from '@/config/index';
 import { DB_MODE } from '@/interfaces/database.interface';
+import { MigrationService } from '@/services/migrations/migration.service';
+import { MigrationRunner } from '@/services/migrations/migration-runner.service';
 
 function createSequelize(): Sequelize {
   if (config.database.mode === DB_MODE.POSTGRES) {
@@ -81,6 +83,11 @@ async function initSQLite(): Promise<void> {
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
 
+  // Run database migrations
+  const migrationService = new MigrationService();
+  const migrationRunner = new MigrationRunner(migrationService);
+  await migrationRunner.run();
+
   // Add 'enabled' column to blocklists if it was created before this field existed.
   await sequelize.query(
     'ALTER TABLE blocklists ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1;'
@@ -124,14 +131,14 @@ async function initPostgres(): Promise<void> {
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
 
+  // Run database migrations
+  const migrationService = new MigrationService();
+  const migrationRunner = new MigrationRunner(migrationService);
+  await migrationRunner.run();
+
   // Add 'enabled' column to blocklists if it was created before this field existed.
   await sequelize.query(
     'ALTER TABLE blocklists ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE;'
-  ).catch(() => { /* ignore if already exists */ });
-
-  // Add 'active' column to blocklist_ips if it was created before this field existed.
-  await sequelize.query(
-    'ALTER TABLE blocklist_ips ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE;'
   ).catch(() => { /* ignore if already exists */ });
 }
 

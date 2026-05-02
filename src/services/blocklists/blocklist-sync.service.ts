@@ -46,7 +46,7 @@ class BlocklistSyncService {
   ): Promise<{ allowlistSkipped: number }> {
 
     await this.acquireWriteLock(() =>
-      blocklist.update({ last_refresh_attempt: new Date() })
+      blocklist.update({ last_refresh_attempt: new Date(), last_refresh_failed: false })
     );
 
     const response = await axios.get<string>(blocklist.url, {
@@ -172,7 +172,7 @@ class BlocklistSyncService {
     }
 
     await this.acquireWriteLock(() =>
-      blocklist.update({ last_successful_refresh: new Date() })
+      blocklist.update({ last_successful_refresh: new Date(), last_refresh_failed: false })
     );
 
     const parts = [
@@ -259,18 +259,24 @@ class BlocklistSyncService {
     const allowlistEntries = await this.fetchAllowlistEntries();
 
     for (const blocklist of blocklists) {
-      try {
-        const { allowlistSkipped } = await this.refreshBlocklist(blocklist, allowlistEntries);
-        totalAllowlistSkipped += allowlistSkipped;
-        ipsCount += await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
-        refreshed++;
-        statusBlocklistService.incrementRefreshBlocklist(processId, true);
-      } catch (error) {
-        console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}): ${error instanceof Error ? error.message : error}`);
-        errors++;
-        statusBlocklistService.incrementRefreshBlocklist(processId, false);
-      }
-    }
+       try {
+         const { allowlistSkipped } = await this.refreshBlocklist(blocklist, allowlistEntries);
+         totalAllowlistSkipped += allowlistSkipped;
+         ipsCount += await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+         refreshed++;
+         await this.acquireWriteLock(() =>
+           blocklist.update({ last_refresh_failed: false })
+         );
+         statusBlocklistService.incrementRefreshBlocklist(processId, true);
+       } catch (error) {
+         console.error(`❌ Error refreshing blocklist "${blocklist.name}" (${blocklist.url}): ${error instanceof Error ? error.message : error}`);
+         errors++;
+         await this.acquireWriteLock(() =>
+           blocklist.update({ last_refresh_failed: true })
+         );
+         statusBlocklistService.incrementRefreshBlocklist(processId, false);
+       }
+     }
 
     statusBlocklistService.completeProcess(processId, errors === 0, errors > 0 ? PROCESS_ERRORS.blocklistRefresh.partialFailure : null);
 

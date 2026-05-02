@@ -14,6 +14,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon",
+    "dev:no-nodemon": "ts-node -r tsconfig-paths/register src/server.ts",
     "build:dev": "tsc && tsc-alias",
     "bump-version:major": "node scripts/bump-version.js major",
     "bump-version:major:beta": "node scripts/bump-version.js major beta",
@@ -53,15 +54,5 @@
     "tsc-alias": "1.8.16",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3"
-  },
-  "devEngines": {
-    "runtime": {
-      "name": "node",
-      "onFail": "error"
-    },
-    "packageManager": {
-      "name": "pnpm",
-      "onFail": "error"
-    }
   }
 }

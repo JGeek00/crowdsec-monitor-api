@@ -10,6 +10,7 @@ export interface BlocklistItem {
   added_date?: Date;
   last_refresh_attempt?: Date | null;
   last_successful_refresh?: Date | null;
+  last_refresh_failed?: boolean | null;
   count_ips?: number | string;
   blocklistIps?: BlocklistIpAttributes[] | string[];
 }

@@ -10,9 +10,10 @@ export interface BlocklistAttributes {
   added_date: Date;
   last_refresh_attempt: Date | null;
   last_successful_refresh: Date | null;
+  last_refresh_failed: boolean | null;
 }
 
-export interface BlocklistCreationAttributes extends Optional<BlocklistAttributes, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh'> {}
+export interface BlocklistCreationAttributes extends Optional<BlocklistAttributes, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh' | 'last_refresh_failed'> {}
 
 export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttributes> implements BlocklistAttributes {
   public id!: number;
@@ -22,6 +23,7 @@ export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttri
   public added_date!: Date;
   public last_refresh_attempt!: Date | null;
   public last_successful_refresh!: Date | null;
+  public last_refresh_failed!: boolean | null;
 
   // Associations set in models/index.ts
   public readonly blocklistIps?: BlocklistIp[];
@@ -35,6 +37,7 @@ export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttri
     addedDate: 'added_date',
     lastRefreshAttempt: 'last_refresh_attempt',
     lastSuccessfulRefresh: 'last_successful_refresh',
+    lastRefreshFailed: 'last_refresh_failed',
   } as const;
 }
 
@@ -72,6 +75,11 @@ Blocklist.init(
     last_successful_refresh: {
       type: DataTypes.DATE,
       allowNull: true,
+    },
+    last_refresh_failed: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
     },
   },
   {
