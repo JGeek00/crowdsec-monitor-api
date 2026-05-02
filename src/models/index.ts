@@ -3,6 +3,7 @@ import { Decision } from '@/models/Decision';
 import { Blocklist } from '@/models/Blocklist';
 import { BlocklistIp } from '@/models/BlocklistIp';
 import { CsBlocklist } from '@/models/CsBlocklist';
+import { Migration } from '@/models/Migration';
 
 // Define associations
 Alert.hasMany(Decision, {
@@ -38,4 +39,4 @@ BlocklistIp.belongsTo(CsBlocklist, {
   as: 'csBlocklist',
 });
 
-export { Alert, Decision, Blocklist, BlocklistIp, CsBlocklist };
+export { Alert, Decision, Blocklist, BlocklistIp, CsBlocklist, Migration };

@@ -1,37 +1,30 @@
-import { sequelize } from '@/config/database';
-import { QueryTypes } from 'sequelize';
+import { Migration } from '@/models/Migration';
 
 export class MigrationService {
   /**
    * Check if a migration has already been applied
    */
   async isMigrationApplied(migrationName: string): Promise<boolean> {
-    const result = await sequelize.query<{ id: number }>(
-      'SELECT COUNT(*) as id FROM migrations WHERE name = ?',
-      { replacements: [migrationName], type: QueryTypes.SELECT }
-    );
-    return result[0]?.id > 0;
+    await Migration.ensureInitialized();
+    const migration = await Migration.findOne({ where: { name: migrationName } });
+    return !!migration;
   }
 
   /**
    * Register a migration as applied
    */
   async registerMigration(migrationName: string): Promise<void> {
-    await sequelize.query(
-      'INSERT INTO migrations (name, applied_at) VALUES (?, ?)',
-      { replacements: [migrationName, new Date()], type: QueryTypes.INSERT }
-    );
+    await Migration.ensureInitialized();
+    await Migration.create({ name: migrationName });
   }
 
   /**
    * Get list of all applied migrations
    */
   async getAppliedMigrations(): Promise<string[]> {
-    const rows = await sequelize.query<{ name: string }>(
-      'SELECT name FROM migrations ORDER BY id',
-      { type: QueryTypes.SELECT }
-    );
-    return rows.map((row): string => row.name);
+    await Migration.ensureInitialized();
+    const migrations = await Migration.findAll();
+    return migrations.map((m) => m.name);
   }
 
   /**
@@ -40,13 +33,5 @@ export class MigrationService {
   async getPendingMigrations(migrationNames: string[]): Promise<string[]> {
     const applied = await this.getAppliedMigrations();
     return migrationNames.filter((name) => !applied.includes(name));
-  }
-
-  /**
-   * Get list of failed migrations
-   */
-  async getFailedMigrations(): Promise<string[]> {
-    // Failed migrations are not persisted, return empty array
-    return [];
   }
 }

@@ -83,16 +83,6 @@ async function initSQLite(): Promise<void> {
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
 
-  // Create migrations table if it doesn't exist (for existing databases)
-  await sequelize.query(`
-    CREATE TABLE IF NOT EXISTS migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `).catch(() => {});
-  console.log('✓ Migrations table ensured.');
-
   // Run database migrations
   const migrationService = new MigrationService();
   const migrationRunner = new MigrationRunner(migrationService, sequelize);
@@ -140,16 +130,6 @@ async function initPostgres(): Promise<void> {
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
-
-  // Create migrations table if it doesn't exist (for existing databases)
-  await sequelize.query(`
-    CREATE TABLE IF NOT EXISTS migrations (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
-      applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `).catch(() => {});
-  console.log('✓ Migrations table ensured.');
 
   // Run database migrations
   const migrationService = new MigrationService();
