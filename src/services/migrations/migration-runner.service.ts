@@ -27,7 +27,6 @@ export class MigrationRunner {
 
   constructor(
     private migrationService: MigrationService,
-    private sequelize: Sequelize
   ) {
     const projectRoot = path.resolve(__dirname, '../../..');
     this.migrationsDir = path.join(projectRoot, 'dist/migrations');
@@ -40,7 +39,7 @@ export class MigrationRunner {
     console.log('🔍 Starting database migrations...');
 
     try {
-      const migrationNames = await this.loadMigrations();
+      const migrationNames = this.loadMigrations();
 
       if (migrationNames.length === 0) {
         console.log('ℹ️ No migrations found in src/migrations/');

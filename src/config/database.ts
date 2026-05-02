@@ -85,7 +85,7 @@ async function initSQLite(): Promise<void> {
 
   // Run database migrations
   const migrationService = new MigrationService();
-  const migrationRunner = new MigrationRunner(migrationService, sequelize);
+  const migrationRunner = new MigrationRunner(migrationService);
   await migrationRunner.run();
 
   // Add 'enabled' column to blocklists if it was created before this field existed.
@@ -133,7 +133,7 @@ async function initPostgres(): Promise<void> {
 
   // Run database migrations
   const migrationService = new MigrationService();
-  const migrationRunner = new MigrationRunner(migrationService, sequelize);
+  const migrationRunner = new MigrationRunner(migrationService);
   await migrationRunner.run();
 
   // Add 'enabled' column to blocklists if it was created before this field existed.
