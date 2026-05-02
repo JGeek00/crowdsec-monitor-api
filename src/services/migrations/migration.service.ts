@@ -15,7 +15,10 @@ export class MigrationService {
    */
   async registerMigration(migrationName: string): Promise<void> {
     await Migration.ensureInitialized();
-    await Migration.create({ name: migrationName });
+    await Migration.create({
+      name: migrationName,
+      applied_at: new Date(),
+    });
   }
 
   /**

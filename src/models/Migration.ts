@@ -7,7 +7,7 @@ export interface MigrationAttributes {
   applied_at: Date;
 }
 
-export interface MigrationCreationAttributes extends Optional<MigrationAttributes, 'id' | 'applied_at'> {}
+export interface MigrationCreationAttributes extends Optional<MigrationAttributes, 'id' | 'applied_at'> { }
 
 export class Migration extends Model<MigrationAttributes, MigrationCreationAttributes> implements MigrationAttributes {
   public id!: number;

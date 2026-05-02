@@ -1,4 +1,4 @@
-import type { Migration } from '@/types/migration.types';
+import type { Migration } from '@/types/migration-task.types';
 import migration0001 from './0001_add_last_refresh_failed_to_blocklists';
 
 export const migrations: Migration[] = [

@@ -1,13 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import { Migration } from '@/models/Migration';
 import { MigrationService } from '@/services/migrations/migration.service';
-import type { Migration } from '@/types/migration.types';
-import { Sequelize } from 'sequelize';
 
 /**
  * Load and execute a migration file as a TypeScript module
  */
-function loadMigration(filePath: string): Migration {
+function loadMigration(filePath: string): any {
   try {
     const module = require(filePath);
     return module.default || module;
@@ -22,7 +21,7 @@ function loadMigration(filePath: string): Migration {
  * from the src/migrations/ directory in numeric order.
  */
 export class MigrationRunner {
-  private migrationsCache: Map<string, Migration> = new Map();
+  private migrationsCache: Map<string, any> = new Map();
   private migrationsDir: string;
 
   constructor(
@@ -33,9 +32,19 @@ export class MigrationRunner {
   }
 
   /**
+   * Ensure the migrations table exists before running migrations
+   */
+  private async ensureMigrationsTable(): Promise<void> {
+    await Migration.ensureInitialized();
+    await Migration.sync({ force: false });
+    console.log('✓ Migrations table created/ensured.');
+  }
+
+  /**
    * Main function to run all pending migrations
    */
   async run(): Promise<void> {
+    await this.ensureMigrationsTable();
     console.log('🔍 Starting database migrations...');
 
     try {
@@ -75,8 +84,8 @@ export class MigrationRunner {
   }
 
   /**
-     * Load all migrations from src/migrations/ directory
-     */
+   * Load all migrations from src/migrations/ directory
+   */
   private loadMigrations(): string[] {
     if (!fs.existsSync(this.migrationsDir)) {
       console.warn(`⚠️ Migrations directory not found: ${this.migrationsDir}`);
@@ -113,8 +122,8 @@ export class MigrationRunner {
   }
 
   /**
-    * Get the migration name without extension
-    */
+   * Get the migration name without extension
+   */
   private getMigrationName(filename: string): string {
     return filename.replace(/\.js$/, '');
   }

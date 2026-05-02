@@ -1,4 +1,4 @@
-export interface Migration {
+export interface MigrationTask {
   name: string;
   up: (queryInterface: any) => Promise<void>;
   down: (queryInterface: any) => Promise<void>;
@@ -6,13 +6,13 @@ export interface Migration {
   checksum?: string;
 }
 
-export interface MigrationMetadata {
+export interface MigrationTaskMetadata {
   migrationName: string;
   appliedAt: Date;
   checksum: string;
 }
 
-export enum MigrationStatus {
+export enum MigrationTaskStatus {
   PENDING = 'pending',
   APPLIED = 'applied',
   FAILED = 'failed',
