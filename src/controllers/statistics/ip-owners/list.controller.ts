@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
-import { Alert_SourceInfo, AlertsTable } from '@/models';
+import { Alert_SourceInfo, AlertsTable, GetTopIpOwnersResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get top IP owners statistics
  */
-export async function getTopIpOwners(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetTopIpOwnersResponse[]>;
+export async function getTopIpOwners(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const alertsWithSource = await AlertsTable.findAll({

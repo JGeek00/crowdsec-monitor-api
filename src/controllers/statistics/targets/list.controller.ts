@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
-import { Alert_EventData, AlertsTable, UnparsedMetaData } from '@/models';
+import { Alert_EventData, AlertsTable, UnparsedMetaData, GetTopTargetsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get top targets statistics
  */
-export async function getTopTargets(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetTopTargetsResponse[]>;
+export async function getTopTargets(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const alerts = await AlertsTable.findAll({

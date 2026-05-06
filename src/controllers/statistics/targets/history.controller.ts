@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
-import { AlertsTable } from '@/models/db';
+import { Alert_EventData, UnparsedMetaData, GetTargetHistoryParams, TargetHistory, ResponseWithError, AlertsTable } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { Alert_EventData, UnparsedMetaData } from '@/models';
 
 /**
  * Get target history (alerts grouped by date for a specific target)
  */
-export async function getTargetHistory(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<TargetHistory[]>;
+export async function getTargetHistory(req: Request<GetTargetHistoryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;

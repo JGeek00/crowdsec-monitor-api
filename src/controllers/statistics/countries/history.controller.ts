@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
-import { AlertsTable, Alert_SourceInfo } from '@/models';
+import { AlertsTable, Alert_SourceInfo, GetCountryHistoryParams, ResponseWithError, CountryHistory } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get country history (alerts grouped by date for a specific country)
  */
-export async function getCountryHistory(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<CountryHistory[]>;
+export async function getCountryHistory(req: Request<GetCountryHistoryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;

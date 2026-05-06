@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
-import { Alert_SourceInfo, AlertsTable } from '@/models';
+import { Alert_SourceInfo, AlertsTable, GetIpOwnerHistoryParams, IpOwnerHistory, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
 /**
  * Get IP owner history (alerts grouped by date for a specific IP owner)
  */
-export async function getIpOwnerHistory(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<IpOwnerHistory[]>;
+export async function getIpOwnerHistory(req: Request<GetIpOwnerHistoryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;

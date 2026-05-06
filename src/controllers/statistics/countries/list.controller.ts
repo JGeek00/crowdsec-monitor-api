@@ -2,12 +2,13 @@ import { Request, Response } from 'express';
 import { AlertsTable } from '@/models/db';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { Alert_SourceInfo } from '@/models';
+import { Alert_SourceInfo, GetTopCountriesResponse, ResponseWithError } from '@/models';
 
 /**
  * Get top countries statistics
  */
-export async function getTopCountries(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetTopCountriesResponse[]>;
+export async function getTopCountries(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const alertsWithSource = await AlertsTable.findAll({
