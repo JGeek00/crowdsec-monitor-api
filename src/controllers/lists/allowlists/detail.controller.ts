@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
+import { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/models';
 import { crowdSecAPI } from '@/services';
 import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
 import { errorResponse } from '@/utils/error-response';
-import { GetAllowlistParams } from '@/models/in/GetAllowlistParams.model';
-import { GetAllowlistResponse, ResponseWithError } from '@/models';
 
 /**
  * Sanitize allowlist items by converting invalid expiration dates to null

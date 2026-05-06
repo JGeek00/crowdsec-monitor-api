@@ -4,9 +4,8 @@ import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { Alert_EventData, Alert_SourceInfo, Alert, GetAlertsResponse, UnparsedMetaData, ErrorResponse, ResponseWithError } from '@/models';
+import { Alert_EventData, Alert_SourceInfo, Alert, GetAlertsResponse, UnparsedMetaData, ResponseWithError, GetAlertsQueryParams } from '@/models';
 import { DB_SORTING } from '@/types/database.types';
-import { GetAlertsQueryParams } from '@/models/in/GetAlertsQueryParams.model';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 
 /**
