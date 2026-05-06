@@ -4,15 +4,16 @@ import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { config } from '@/config';
 import { MANUAL_DECISION } from '@/constants/scenarios';
 import { errorResponse } from '@/utils/error-response';
-import type { CreateDecisionRequest } from '@/interfaces/decision.interface';
+import { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/models';
 
 /**
  * Create a decision in CrowdSec LAPI
  * Simplified endpoint that creates an alert with a decision
  */
-export async function createDecision(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<PostDecisionResponse>;
+export async function createDecision(req: Request<{}, Res, PostDecisionBody>, res: Response<Res>): Promise<void> {
   try {
-    const { ip, duration, reason, type }: CreateDecisionRequest = req.body;
+    const { ip, duration, reason, type } = req.body;
 
     // Get current timestamp in ISO format
     const now = new Date().toISOString();

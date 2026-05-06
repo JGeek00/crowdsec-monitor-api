@@ -1,32 +1,34 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertsTable, ErrorResponse, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get alerts statistics
  */
-export async function getAlertStats(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetAlertsStatsResponse>;
+export async function getAlertStats(req: Request<{}, Res>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const total = await Alert.count() as number;
-    const simulated = await Alert.count({ where: { simulated: true } }) as number;
+    const total = await AlertsTable.count() as number;
+    const simulated = await AlertsTable.count({ where: { simulated: true } }) as number;
     const real = total - simulated;
 
-    const topScenarios = await Alert.findAll({
+    const topScenarios = await AlertsTable.findAll({
       attributes: [
-        Alert.col.scenario,
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
+        AlertsTable.col.scenario,
+        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
       ],
-      group: [Alert.col.scenario],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), DB_SORTING.DESC]],
+      group: [AlertsTable.col.scenario],
+      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
       limit: 10,
-    });
+      raw: true,
+    }) as unknown as GetAlertsStatsResponse_TopScenario[];  // Sequelize cannot detect correct type when using "group" and "attributes" params
 
     // Get all alerts with source information for grouping
-    const allAlerts = await Alert.findAll({
-      attributes: [Alert.col.source],
+    const allAlerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.source],
     });
 
     // Group by country

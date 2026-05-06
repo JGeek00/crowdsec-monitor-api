@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Migration } from '@/models/Migration';
+import { Migration } from '@/models/db/Migration';
 import { MigrationService } from '@/services/migrations/migration.service';
 
 /**

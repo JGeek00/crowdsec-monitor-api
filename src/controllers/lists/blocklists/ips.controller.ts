@@ -1,12 +1,9 @@
 import { Request, Response } from 'express';
-import { BlocklistIp } from '@/models';
-import { Blocklist, CsBlocklist } from '@/models';
 import { FindAndCountOptions } from 'sequelize';
+import { BlocklistIp, BlocklistIpsTable, BlocklistsTable, CsBlocklistsTable, GetBlocklistIpsParams, GetBlocklistIpsQueryParams, GetBlocklistIpsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { BlocklistIpAttributes } from '@/models/BlocklistIp';
-import { BlocklistIpsResponse } from '@/interfaces/blocklist.interface';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get IPs for a specific blocklist with pagination.
@@ -17,54 +14,55 @@ import { DB_SORTING } from '@/interfaces/database.interface';
  *   - offset         → pagination offset (default 0)
  *   - unpaged        → return all results without pagination
  */
-export async function getBlocklistIps(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetBlocklistIpsResponse>;
+export async function getBlocklistIps(req: Request<GetBlocklistIpsParams, Res, {}, GetBlocklistIpsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const { blocklistId } = req.params;
+    const { id } = req.params;
     const { limit = 50, offset = 0, unpaged, ip_string } = req.query;
     const onlyStrings = ip_string === 'true';
-    const isCsId = (blocklistId as string).startsWith('crowdsec-');
+    const isCsId = id.startsWith('crowdsec-');
     let whereClause: Record<string, number | string>;
 
     if (isCsId) {
-      const csBlocklist = await CsBlocklist.findByPk(blocklistId as string);
+      const csBlocklist = await CsBlocklistsTable.findByPk(id);
       if (!csBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+        res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
         return;
       }
-      whereClause = { [BlocklistIp.col.csBlocklistId]: blocklistId as string };
+      whereClause = { [BlocklistIpsTable.col.csBlocklistId]: id };
     } else {
-      const numId = Number(blocklistId);
-      const apiBlocklist = await Blocklist.findByPk(numId);
+      const numId = Number(id);
+      const apiBlocklist = await BlocklistsTable.findByPk(numId);
       if (!apiBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+        res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
         return;
       }
-      whereClause = { [BlocklistIp.col.blocklistId]: numId };
+      whereClause = { [BlocklistIpsTable.col.blocklistId]: numId };
     }
 
-    const queryOptions: FindAndCountOptions<BlocklistIpAttributes> = {
+    const queryOptions: FindAndCountOptions<BlocklistIp> = {
       where: whereClause,
       order: [['id', DB_SORTING.ASC]],
       attributes: onlyStrings ? ['value'] : { exclude: ['created_at', 'updated_at'] },
     };
 
-    if (unpaged !== 'true') {
+    if (unpaged !== true) {
       queryOptions.limit = Number(limit);
       queryOptions.offset = Number(offset);
     }
 
-    const { rows: ips, count: total } = await BlocklistIp.findAndCountAll({
+    const { rows: ips, count: total } = await BlocklistIpsTable.findAndCountAll({
       ...queryOptions,
       raw: true,
     });
 
-    const items: BlocklistIpAttributes[] | string[] = onlyStrings
-      ? (ips as BlocklistIpAttributes[]).map((ip) => ip.value)
-      : (ips as BlocklistIpAttributes[]);
-    const response: BlocklistIpsResponse = { items };
+    const items: BlocklistIp[] | string[] = onlyStrings
+      ? (ips as BlocklistIp[]).map((ip) => ip.value)
+      : (ips as BlocklistIp[]);
+    const response: GetBlocklistIpsResponse = { items };
 
-    if (unpaged !== 'true') {
+    if (unpaged !== true) {
       const page = Math.floor(Number(offset) / Number(limit)) + 1;
       response.pagination = {
         page,

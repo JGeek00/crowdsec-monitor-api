@@ -1,4 +1,4 @@
-import { Migration } from '@/models/Migration';
+import { Migration } from '@/models/db/Migration';
 
 export class MigrationService {
   /**

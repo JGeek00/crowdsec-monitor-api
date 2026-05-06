@@ -1,23 +1,23 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertsTable, ResponseWithError, GetTopScenariosResponse, ScenarioCountRow } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { ScenarioCountRow } from '@/interfaces/statistics.interface';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get top scenarios statistics
  */
-export async function getTopScenarios(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetTopScenariosResponse[]>;
+export async function getTopScenarios(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const scenariosData = await Alert.findAll({
+    const scenariosData = await AlertsTable.findAll({
       attributes: [
         'scenario',
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
+        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
       ],
       group: ['scenario'],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), DB_SORTING.DESC]],
+      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
       raw: true,
     });
 

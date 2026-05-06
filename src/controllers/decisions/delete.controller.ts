@@ -1,32 +1,33 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '@/services';
 import { errorResponse } from '@/utils/error-response';
-import { Decision } from '@/models';
+import { DecisionsTable, DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/models';
 
 /**
  * Delete a decision by ID from CrowdSec LAPI
  * Sets the expiration date to current time in local database
  * DELETE /api/v1/decisions/:id
  */
-export const deleteDecision = async (req: Request, res: Response): Promise<void> => {
+type Res = ResponseWithError<DeleteDecisionResponse>;
+export const deleteDecision = async (req: Request<DeleteDecisionParams, Res, {}>, res: Response<Res>): Promise<void> => {
   try {
     const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const id = parseInt(idParam, 10);
 
     if (isNaN(id)) {
-      res.status(400).json(errorResponse('Invalid decision ID', 'Decision ID must be a valid number'));
+      res.status(400).json(errorResponse('Invalid decision ID', 'DecisionsTable ID must be a valid number'));
       return;
     }
 
     const nbDeleted = await crowdSecAPI.decisions.deleteDecision(id);
 
     if (nbDeleted === 0) {
-      res.status(404).json(errorResponse('Decision not found', `Decision with ID ${id} was not found`));
+      res.status(404).json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${id} was not found`));
       return;
     }
 
     // Set expiration to current time in local database instead of deleting
-    await Decision.update(
+    await DecisionsTable.update(
       { expiration: new Date(), updated_at: new Date() },
       { where: { id } }
     );
@@ -35,7 +36,7 @@ export const deleteDecision = async (req: Request, res: Response): Promise<void>
     await databaseService.syncAlerts();
 
     res.json({
-      message: 'Decision deleted successfully',
+      message: 'DecisionsTable deleted successfully',
       nbDeleted: nbDeleted.toString()
     });
   } catch (error: unknown) {
@@ -43,7 +44,7 @@ export const deleteDecision = async (req: Request, res: Response): Promise<void>
     console.error('Error deleting decision:', err.message);
     
     if (err.response?.status === 404) {
-      res.status(404).json(errorResponse('Decision not found', `Decision with ID ${req.params.id} was not found`));
+      res.status(404).json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${req.params.id} was not found`));
       return;
     }
 

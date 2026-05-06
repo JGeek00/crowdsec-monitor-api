@@ -1,29 +1,29 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { Alert_EventData, UnparsedMetaData, GetTargetHistoryParams, TargetHistory, ResponseWithError, AlertsTable } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { AlertRaw, EventData } from '@/interfaces/alert.interface';
 
 /**
  * Get target history (alerts grouped by date for a specific target)
  */
-export async function getTargetHistory(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<TargetHistory[]>;
+export async function getTargetHistory(req: Request<GetTargetHistoryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;
 
     // Get all alerts with their dates and events
-    const alerts = await Alert.findAll({
-      attributes: [Alert.col.crowdsecCreatedAt, Alert.col.events],
+    const alerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.events],
       raw: true,
     });
 
     // Filter by target and group by date in JavaScript
     const dateMap = new Map<string, number>();
 
-    (alerts as unknown as AlertRaw[]).forEach((alert) => {
+    (alerts).forEach((alert) => {
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[] : alert.events;
         
         // Check if this alert contains the target_fqdn we're looking for
         let hasTarget = false;

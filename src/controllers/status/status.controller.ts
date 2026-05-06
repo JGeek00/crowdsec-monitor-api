@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { statusService } from '@/services';
+import { StatusSnapshot } from '@/models';
 
-export const getStatus = async (_: Request, res: Response) => {
+export const getStatus = async (_: Request, res: Response<StatusSnapshot>) => {
   try {
     res.json(statusService.getStatusSnapshot());
   } catch (error) {

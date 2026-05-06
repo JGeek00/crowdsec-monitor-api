@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '@/services';
 import { errorResponse } from '@/utils/error-response';
-import { Alert } from '@/models';
+import { DeleteAlertParams, DeleteAlertResponse, AlertsTable, ResponseWithError } from '@/models';
 
 /**
  * Delete an alert by ID from CrowdSec LAPI
  * DELETE /api/v1/alerts/:id
  */
-export const deleteAlert = async (req: Request, res: Response): Promise<void> => {
+type Res = ResponseWithError<DeleteAlertResponse>;
+export const deleteAlert = async (req: Request<DeleteAlertParams, Res>, res: Response<Res>): Promise<void> => {
   try {
     const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const id = parseInt(idParam, 10);
@@ -25,7 +26,7 @@ export const deleteAlert = async (req: Request, res: Response): Promise<void> =>
     }
 
     // Delete from local database immediately after successful deletion from LAPI
-    await Alert.destroy({ where: { id } });
+    await AlertsTable.destroy({ where: { id } });
 
     // Sync alerts from LAPI after successful deletion
     await databaseService.syncAlerts();

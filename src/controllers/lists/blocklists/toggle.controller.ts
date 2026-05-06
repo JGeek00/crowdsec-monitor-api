@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Blocklist, BlocklistIp } from '@/models';
+import { BlocklistsTable, ResponseWithError, PostToggleBlocklistParams, PostToggleBlocklistResponse, BlocklistIpsTable } from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
@@ -13,9 +13,10 @@ import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/pr
  * - enabled: true  → update DB, fetch list and push alerts to CrowdSec.
  * - enabled: false → update DB, delete the alerts from CrowdSec and wipe local IPs.
  */
-export async function toggleBlocklist(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<PostToggleBlocklistResponse>;
+export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
-    const { blocklistId } = req.params;
+    const { id } = req.params;
     const { enabled } = req.body;
 
     if (typeof enabled !== 'boolean') {
@@ -23,9 +24,9 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
-    const blocklist = await Blocklist.findByPk(Number(blocklistId));
+    const blocklist = await BlocklistsTable.findByPk(Number(id));
     if (!blocklist) {
-      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+      res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
       return;
     }
 
@@ -37,8 +38,8 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
     if (enabled) {
       await crowdSecAPI.checkBouncerConnection();
       if (!crowdSecAPI.isBouncerConnected()) {
-        console.error('[Blocklist] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
-        res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
+        console.error('[Blocklists] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
+        res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. BlocklistsTable operations are unavailable.'));
         return;
       }
     }
@@ -54,7 +55,7 @@ export async function toggleBlocklist(req: Request, res: Response): Promise<void
       processId = statusBlocklistService.createBlocklistEnableProcess(blocklist.id, blocklist.name);
       crowdsecOp = databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
     } else {
-      const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+      const totalIps = await BlocklistIpsTable.count({ where: { [BlocklistIpsTable.col.blocklistId]: blocklist.id } });
       processId = statusBlocklistService.createBlocklistDisableProcess(totalIps, blocklist.id, blocklist.name);
       crowdsecOp = databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DISABLE);
     }

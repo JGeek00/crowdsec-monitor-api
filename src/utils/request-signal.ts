@@ -21,7 +21,7 @@ import { Request } from 'express';
  *     cleanup();
  *   }
  */
-export function createRequestSignal(req: Request): { signal: AbortSignal; cleanup: () => void } {
+export function createRequestSignal<RequestParams, ResponseBody, RequestBody, RequestQuery>(req: Request<RequestParams, ResponseBody, RequestBody, RequestQuery>): { signal: AbortSignal; cleanup: () => void } {
   const controller = new AbortController();
   const onClose = () => controller.abort();
   req.on('close', onClose);

@@ -6,12 +6,12 @@ import { errorResponse } from '@/utils/error-response';
  * Middleware to handle validation errors from express-validator
  * Returns 400 Bad Request with validation error details if validation fails
  */
-export const handleValidationErrors = (
-  req: Request,
+export const handleValidationErrors = <RequestParams, ResponseBody, RequestBody, RequestQuery>(
+  req: Request<RequestParams, ResponseBody, RequestBody, RequestQuery>,
   res: Response,
   next: NextFunction
 ): void => {
-  const errors = validationResult(req);
+  const errors = validationResult(req as Request);
   
   if (!errors.isEmpty()) {
     res.status(400).json(errorResponse('Validation error', errors.array().map(err => err.msg).join(', ')));

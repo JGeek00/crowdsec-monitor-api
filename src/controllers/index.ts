@@ -1,7 +1,7 @@
 // Alert controllers
 export * from '@/controllers/alerts';
 
-// Decision controllers
+// DecisionsTable controllers
 export * from '@/controllers/decisions';
 
 // Lists controllers

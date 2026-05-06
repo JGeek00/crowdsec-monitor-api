@@ -1,23 +1,25 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertsTable } from '@/models/db';
 import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { AlertAttributes, EventData, SourceInfo } from '@/models/Alert';
-import { AlertRaw, AlertListResponse } from '@/interfaces/alert.interface';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { Alert_EventData, Alert_SourceInfo, Alert, GetAlertsResponse, UnparsedMetaData, ResponseWithError, GetAlertsQueryParams } from '@/models';
+import { DB_SORTING } from '@/types/database.types';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 
 /**
  * Get all alerts with filtering and pagination
  */
-export async function getAllAlerts(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetAlertsResponse>;
+export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner, target } = req.query;
 
-    const where: WhereOptions<AlertAttributes> = {};
+    // From the database some JSON objects come as a string, therefore we use UnparsedMetaData
+    // On this controller they get parsed, and when the data is returned we use ParsedMetaData
+    const where: WhereOptions<Alert<UnparsedMetaData>> = {};
     
     // Filter by scenario (single or multiple)
     if (scenario) {
@@ -32,8 +34,8 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     }
 
     // Fetch all alerts for filtering options (from entire database)
-    const allAlerts = await Alert.findAll({
-      attributes: [Alert.col.scenario, Alert.col.source, Alert.col.events],
+    const allAlerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.scenario, AlertsTable.col.source, AlertsTable.col.events],
       raw: true,
     });
 
@@ -43,7 +45,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     const ipOwnersSet = new Set<string>();
     const targetsSet = new Set<string>();
 
-    (allAlerts as unknown as AlertRaw[]).forEach((alert) => {
+    (allAlerts).forEach((alert) => {
       // Extract scenarios
       if (alert.scenario) {
         scenariosSet.add(alert.scenario);
@@ -51,7 +53,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
       // Extract countries, ipOwners from source
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
         
         if (source.cn) {
           countriesSet.add(source.cn);
@@ -64,7 +66,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
 
       // Extract targets from events
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[] : alert.events;
         
         if (Array.isArray(events)) {
           events.forEach((event) => {
@@ -81,12 +83,12 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
     });
 
     // Fetch all alerts matching basic filters
-    let alerts = await Alert.findAll({
+    let alerts = await AlertsTable.findAll({
       where,
       attributes: {
-        exclude: [Alert.col.createdAt, Alert.col.updatedAt]
+        exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt]
       },
-      order: [[Alert.col.crowdsecCreatedAt, DB_SORTING.DESC]],
+      order: [[AlertsTable.col.crowdsecCreatedAt, DB_SORTING.DESC]],
     });
 
     // Filter by IP address in JavaScript (since source is JSON)
@@ -149,7 +151,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
       paginatedAlerts = alerts.slice(offset as number, (offset as number) + (limit as number));
     }
 
-    const response: AlertListResponse = {
+    const response: GetAlertsResponse = {
       filtering: {
         countries: Array.from(countriesSet).sort(),
         scenarios: Array.from(scenariosSet).sort(),
@@ -157,7 +159,7 @@ export async function getAllAlerts(req: Request, res: Response): Promise<void> {
         targets: Array.from(targetsSet).sort(),
       },
       items: paginatedAlerts.map(alert =>
-        parseAlertMeta(alert.toJSON() as AlertAttributes)
+        parseAlertMeta(alert.toJSON() as Alert<UnparsedMetaData>)
       ),
     };
 

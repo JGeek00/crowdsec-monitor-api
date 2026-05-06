@@ -1,10 +1,8 @@
 import { Op } from 'sequelize';
-import { Alert, Decision } from '@/models';
+import { Alert, AlertsTable, Decision, DecisionsTable, UnparsedMetaData } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { config } from '@/config';
-import { AlertAttributes } from '@/models/Alert';
-import { DecisionAttributes } from '@/models/Decision';
 import appDefaults from '@/constants/app-defaults';
 
 class AlertsSyncService {
@@ -43,9 +41,9 @@ class AlertsSyncService {
 
         for (const alert of alerts) {
           try {
-            const existingAlert = await Alert.findByPk(alert.id);
+            const existingAlert = await AlertsTable.findByPk(alert.id);
 
-            const alertData: Omit<AlertAttributes, 'created_at'> = {
+            const alertData: Omit<Alert<UnparsedMetaData>, 'created_at'> = {
               id: alert.id,
               uuid: alert.uuid,
               scenario: alert.scenario,
@@ -74,22 +72,22 @@ class AlertsSyncService {
               alertInstance = existingAlert;
               updated++;
             } else {
-              alertInstance = await Alert.create({ ...alertData, created_at: new Date() });
+              alertInstance = await AlertsTable.create({ ...alertData, created_at: new Date() });
               synced++;
             }
 
             if (alert.decisions && alert.decisions.length > 0) {
               const lapiDecisionIds = alert.decisions.map(d => d.id);
 
-              await Decision.destroy({
-                where: { [Decision.col.alertId]: alertInstance.id, [Decision.col.id]: { [Op.notIn]: lapiDecisionIds } },
+              await DecisionsTable.destroy({
+                where: { [DecisionsTable.col.alertId]: alertInstance.id, [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds } },
               });
 
               for (const decision of alert.decisions) {
                 try {
-                  const existingDecision = await Decision.findByPk(decision.id);
+                  const existingDecision = await DecisionsTable.findByPk(decision.id);
 
-                  const decisionData: Omit<DecisionAttributes, 'created_at'> = {
+                  const decisionData: Omit<Decision, 'created_at'> = {
                     id: decision.id,
                     alert_id: alertInstance.id,
                     origin: decision.origin,
@@ -107,7 +105,7 @@ class AlertsSyncService {
                   if (existingDecision) {
                     await existingDecision.update(decisionData);
                   } else {
-                    await Decision.create({ ...decisionData, created_at: new Date() });
+                    await DecisionsTable.create({ ...decisionData, created_at: new Date() });
                   }
                   decisionsCount++;
                 } catch (decisionError) {
@@ -115,7 +113,7 @@ class AlertsSyncService {
                 }
               }
             } else {
-              await Decision.destroy({ where: { [Decision.col.alertId]: alertInstance.id } });
+              await DecisionsTable.destroy({ where: { [DecisionsTable.col.alertId]: alertInstance.id } });
             }
           } catch (error) {
             console.error(`Error syncing alert ${alert.id}:`, error);
@@ -144,11 +142,11 @@ class AlertsSyncService {
     try {
       console.log(`Starting data cleanup for records older than ${cutoffDate.toISOString()}...`);
 
-      const deletedDecisions = await Decision.destroy({
+      const deletedDecisions = await DecisionsTable.destroy({
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 
-      const deletedAlerts = await Alert.destroy({
+      const deletedAlerts = await AlertsTable.destroy({
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 

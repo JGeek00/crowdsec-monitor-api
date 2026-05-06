@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/models';
 import { crowdSecAPI } from '@/services';
 import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
@@ -20,9 +21,10 @@ function sanitizeAllowlist(allowlist: CrowdSecAllowlist): CrowdSecAllowlist {
 /**
  * Get a specific allowlist by name from CrowdSec LAPI
  */
-export async function getAllowlistByName(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetAllowlistResponse>;
+export async function getAllowlistByName(req: Request<GetAllowlistParams, Res>, res: Response<Res>): Promise<void> {
   try {
-    const allowlist_name = req.params.allowlist_name as string;
+    const allowlist_name = req.params.allowlist_name;
 
     const allowlist = await crowdSecAPI.allowlists.getAllowlistByName(allowlist_name);
 

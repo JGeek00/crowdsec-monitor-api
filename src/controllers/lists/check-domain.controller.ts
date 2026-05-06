@@ -4,14 +4,16 @@ import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
 import { resolveIps } from '@/utils/dns-resolve';
 import { config } from '@/config';
 import { errorResponse } from '@/utils/error-response';
+import { PostCheckDomainBody, PostCheckDomainResponse, PostCheckDomainResponse_IP, ResponseWithError } from '@/models';
 
 /**
  * Resolve DNS for a domain using the configured DNS server and check if any
  * resolved IP is in any list (blocklist or allowlist).
  */
-export async function checkDomainInList(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<PostCheckDomainResponse>;
+export async function checkDomainInList(req: Request<{}, Res, PostCheckDomainBody>, res: Response<Res>): Promise<void> {
   try {
-    const { domain } = req.body as { domain: string };
+    const { domain } = req.body;
 
     const ips = await resolveIps(domain, config.dns.server);
 
@@ -25,7 +27,7 @@ export async function checkDomainInList(req: Request, res: Response): Promise<vo
       lookupIpsInAllowlists(ips),
     ]);
 
-    const results = ips.map(ip => ({
+    const results: PostCheckDomainResponse_IP[] = ips.map(ip => ({
       ip,
       blocklists: blocklistMap.get(ip) ?? [],
       allowlists: allowlistMap.get(ip) ?? [],

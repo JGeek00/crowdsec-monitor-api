@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Blocklist, BlocklistIp } from '@/models';
+import { BlocklistIpsTable, BlocklistsTable, DeleteBlocklistParams, DeleteBlocklistResponse, ResponseWithError } from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { errorResponse } from '@/utils/error-response';
 import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
@@ -9,13 +9,14 @@ import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
  * Removes the CrowdSec alerts first, then deletes the DB entry
  * (IPs are removed via CASCADE on delete).
  */
-export async function deleteBlocklist(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<DeleteBlocklistResponse>;
+export async function deleteBlocklist(req: Request<DeleteBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
     const { id } = req.params;
 
-    const blocklist = await Blocklist.findByPk(Number(id));
+    const blocklist = await BlocklistsTable.findByPk(Number(id));
     if (!blocklist) {
-      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
+      res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
       return;
     }
 
@@ -24,12 +25,12 @@ export async function deleteBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
-    const totalIps = await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+    const totalIps = await BlocklistIpsTable.count({ where: { [BlocklistIpsTable.col.blocklistId]: blocklist.id } });
     const processId = statusBlocklistService.createBlocklistDeleteProcess(totalIps, blocklist.id, blocklist.name);
 
     await blocklist.destroy();
 
-    res.status(202).json({ message: 'Blocklist deletion requested' });
+    res.status(202).json({ message: 'BlocklistsTable deletion requested' });
 
     databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DELETE)
       .then(() => statusBlocklistService.completeProcess(processId, true))

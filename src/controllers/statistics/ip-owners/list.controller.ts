@@ -1,25 +1,25 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { Alert_SourceInfo, AlertsTable, GetTopIpOwnersResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { AlertRaw, SourceInfo } from '@/interfaces/alert.interface';
 
 /**
  * Get top IP owners statistics
  */
-export async function getTopIpOwners(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetTopIpOwnersResponse[]>;
+export async function getTopIpOwners(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const alertsWithSource = await Alert.findAll({
+    const alertsWithSource = await AlertsTable.findAll({
       attributes: ['source'],
       raw: true,
     });
 
     const ipOwnerMap = new Map<string, number>();
 
-    (alertsWithSource as unknown as AlertRaw[]).forEach((alert) => {
+    (alertsWithSource).forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
         if (source.as_name) {
           ipOwnerMap.set(source.as_name, (ipOwnerMap.get(source.as_name) || 0) + 1);
         }
