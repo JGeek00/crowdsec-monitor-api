@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Alert_SourceInfo, AlertDb } from '@/models';
+import { Alert_SourceInfo, AlertsTable } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
@@ -12,8 +12,8 @@ export async function getIpOwnerHistory(req: Request, res: Response): Promise<vo
     const { item } = req.params;
 
     // Get all alerts with their dates and sources
-    const alerts = await AlertDb.findAll({
-      attributes: [AlertDb.col.crowdsecCreatedAt, AlertDb.col.source],
+    const alerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.source],
       raw: true,
     });
 

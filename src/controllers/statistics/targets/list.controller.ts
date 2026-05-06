@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Alert_EventData, AlertDb, UnparsedMetaData } from '@/models';
+import { Alert_EventData, AlertsTable, UnparsedMetaData } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
@@ -9,7 +9,7 @@ import { errorResponse } from '@/utils/error-response';
 export async function getTopTargets(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const alerts = await AlertDb.findAll({
+    const alerts = await AlertsTable.findAll({
       attributes: ['events'],
       raw: true,
     });

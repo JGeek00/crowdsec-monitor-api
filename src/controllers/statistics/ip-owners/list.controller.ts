@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Alert_SourceInfo, AlertDb } from '@/models';
+import { Alert_SourceInfo, AlertsTable } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
@@ -9,7 +9,7 @@ import { errorResponse } from '@/utils/error-response';
 export async function getTopIpOwners(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const alertsWithSource = await AlertDb.findAll({
+    const alertsWithSource = await AlertsTable.findAll({
       attributes: ['source'],
       raw: true,
     });

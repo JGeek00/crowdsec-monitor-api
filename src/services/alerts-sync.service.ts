@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Alert, AlertDb, Decision, UnparsedMetaData } from '@/models';
+import { Alert, AlertsTable, Decision, UnparsedMetaData } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { config } from '@/config';
@@ -42,7 +42,7 @@ class AlertsSyncService {
 
         for (const alert of alerts) {
           try {
-            const existingAlert = await AlertDb.findByPk(alert.id);
+            const existingAlert = await AlertsTable.findByPk(alert.id);
 
             const alertData: Omit<Alert<UnparsedMetaData>, 'created_at'> = {
               id: alert.id,
@@ -73,7 +73,7 @@ class AlertsSyncService {
               alertInstance = existingAlert;
               updated++;
             } else {
-              alertInstance = await AlertDb.create({ ...alertData, created_at: new Date() });
+              alertInstance = await AlertsTable.create({ ...alertData, created_at: new Date() });
               synced++;
             }
 
@@ -147,7 +147,7 @@ class AlertsSyncService {
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 
-      const deletedAlerts = await AlertDb.destroy({
+      const deletedAlerts = await AlertsTable.destroy({
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 

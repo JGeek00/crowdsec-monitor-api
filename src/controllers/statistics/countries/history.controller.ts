@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AlertDb, Alert_SourceInfo } from '@/models';
+import { AlertsTable, Alert_SourceInfo } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
@@ -13,8 +13,8 @@ export async function getCountryHistory(req: Request, res: Response): Promise<vo
     const countryCode = String(item).toUpperCase();
 
     // Get all alerts with their dates and sources
-    const alerts = await AlertDb.findAll({
-      attributes: [AlertDb.col.crowdsecCreatedAt, AlertDb.col.source],
+    const alerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.source],
       raw: true,
     });
 

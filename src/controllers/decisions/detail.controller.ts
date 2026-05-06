@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Decision, AlertDb, DecisionAttributes, Alert, UnparsedMetaData } from '@/models';
+import { Decision, AlertsTable, DecisionAttributes, Alert, UnparsedMetaData } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DecisionResponse } from '@/interfaces/decision.interface';
@@ -17,10 +17,10 @@ export async function getDecisionById(req: Request, res: Response): Promise<void
         exclude: [Decision.col.createdAt, Decision.col.updatedAt]
       },
       include: [{
-        model: AlertDb,
+        model: AlertsTable,
         as: 'alert',
         attributes: {
-          exclude: [AlertDb.col.createdAt, AlertDb.col.updatedAt]
+          exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt]
         },
       }],
     });

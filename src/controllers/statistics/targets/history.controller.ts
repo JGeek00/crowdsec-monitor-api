@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AlertDb } from '@/models/db';
+import { AlertsTable } from '@/models/db';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { Alert_EventData, UnparsedMetaData } from '@/models';
@@ -13,8 +13,8 @@ export async function getTargetHistory(req: Request, res: Response): Promise<voi
     const { item } = req.params;
 
     // Get all alerts with their dates and events
-    const alerts = await AlertDb.findAll({
-      attributes: [AlertDb.col.crowdsecCreatedAt, AlertDb.col.events],
+    const alerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.events],
       raw: true,
     });
 

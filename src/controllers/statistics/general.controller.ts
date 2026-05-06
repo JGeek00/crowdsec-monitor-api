@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { AlertDb, Decision } from '@/models/db';
+import { AlertsTable, Decision } from '@/models/db';
 import { defaults } from '@/config/env-defaults';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
@@ -28,7 +28,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
     // Build where clause for filtering by date
     const whereClauseAlerts = sinceDate
-      ? { [AlertDb.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } }
+      ? { [AlertsTable.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } }
       : {};
     
     const whereClauseDecisions = sinceDate
@@ -38,9 +38,9 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     // 1. Alerts in last 24 hours
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-    const alertsLast24Hours = await AlertDb.count({
+    const alertsLast24Hours = await AlertsTable.count({
       where: {
-        [AlertDb.col.crowdsecCreatedAt]: { [Op.gte]: twentyFourHoursAgo },
+        [AlertsTable.col.crowdsecCreatedAt]: { [Op.gte]: twentyFourHoursAgo },
       },
     });
 
@@ -54,14 +54,14 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
     });
 
     // 3. Activity history - Get all alerts and decisions grouped by date
-    const alertsByDate = await AlertDb.findAll({
+    const alertsByDate = await AlertsTable.findAll({
       attributes: [
-        [AlertDb.sequelize!.fn('DATE', AlertDb.sequelize!.col(AlertDb.col.crowdsecCreatedAt)), 'date'],
-        [AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col(AlertDb.col.id)), 'count'],
+        [AlertsTable.sequelize!.fn('DATE', AlertsTable.sequelize!.col(AlertsTable.col.crowdsecCreatedAt)), 'date'],
+        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
       ],
       where: whereClauseAlerts,
-      group: [AlertDb.sequelize!.fn('DATE', AlertDb.sequelize!.col(AlertDb.col.crowdsecCreatedAt))],
-      order: [[AlertDb.sequelize!.fn('DATE', AlertDb.sequelize!.col(AlertDb.col.crowdsecCreatedAt)), DB_SORTING.ASC]],
+      group: [AlertsTable.sequelize!.fn('DATE', AlertsTable.sequelize!.col(AlertsTable.col.crowdsecCreatedAt))],
+      order: [[AlertsTable.sequelize!.fn('DATE', AlertsTable.sequelize!.col(AlertsTable.col.crowdsecCreatedAt)), DB_SORTING.ASC]],
       raw: true,
     }) as unknown as DateCountRow[];
 
@@ -102,7 +102,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       .sort((a, b) => a.date.localeCompare(b.date));
 
     // 4. Top countries - Get all alerts with source and events information
-    const alertsWithSource = await AlertDb.findAll({
+    const alertsWithSource = await AlertsTable.findAll({
       attributes: ['source', 'events'],
       where: whereClauseAlerts,
       raw: true,
@@ -170,14 +170,14 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       .slice(0, limit);
 
     // 5. Top scenarios
-    const scenariosData = await AlertDb.findAll({
+    const scenariosData = await AlertsTable.findAll({
       attributes: [
         'scenario',
-        [AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col('id')), 'count'],
+        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col('id')), 'count'],
       ],
       where: whereClauseAlerts,
       group: ['scenario'],
-      order: [[AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col('id')), DB_SORTING.DESC]],
+      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col('id')), DB_SORTING.DESC]],
       limit: limit,
       raw: true,
     });

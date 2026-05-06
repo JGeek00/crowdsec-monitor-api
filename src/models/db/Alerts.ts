@@ -7,7 +7,7 @@ import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, Decision } 
 
 export interface AlertCreationAttributes extends Optional<Alert<UnparsedMetaData>, 'id' | 'created_at' | 'updated_at'> {}
 
-export class AlertDb extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes> implements Alert<UnparsedMetaData> {
+export class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes> implements Alert<UnparsedMetaData> {
   public id!: number;
   public uuid!: string;
   public scenario!: string;
@@ -59,7 +59,7 @@ export class AlertDb extends Model<Alert<UnparsedMetaData>, AlertCreationAttribu
   } as const;
 }
 
-AlertDb.init(
+AlertsTable.init(
   {
     id: {
       type: DataTypes.INTEGER,

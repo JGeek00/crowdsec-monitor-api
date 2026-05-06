@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AlertDb } from '@/models/db';
+import { AlertsTable } from '@/models/db';
 import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
@@ -34,8 +34,8 @@ export async function getAllAlerts(req: Request<{}, {}, GetAlertsResponse, GetAl
     }
 
     // Fetch all alerts for filtering options (from entire database)
-    const allAlerts = await AlertDb.findAll({
-      attributes: [AlertDb.col.scenario, AlertDb.col.source, AlertDb.col.events],
+    const allAlerts = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.scenario, AlertsTable.col.source, AlertsTable.col.events],
       raw: true,
     });
 
@@ -83,12 +83,12 @@ export async function getAllAlerts(req: Request<{}, {}, GetAlertsResponse, GetAl
     });
 
     // Fetch all alerts matching basic filters
-    let alerts = await AlertDb.findAll({
+    let alerts = await AlertsTable.findAll({
       where,
       attributes: {
-        exclude: [AlertDb.col.createdAt, AlertDb.col.updatedAt]
+        exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt]
       },
-      order: [[AlertDb.col.crowdsecCreatedAt, DB_SORTING.DESC]],
+      order: [[AlertsTable.col.crowdsecCreatedAt, DB_SORTING.DESC]],
     });
 
     // Filter by IP address in JavaScript (since source is JSON)
