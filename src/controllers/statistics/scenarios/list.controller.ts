@@ -3,7 +3,7 @@ import { AlertsTable } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { ScenarioCountRow } from '@/interfaces/statistics.interface';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get top scenarios statistics

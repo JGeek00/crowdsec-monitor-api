@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { AlertsTable, ErrorResponse, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get alerts statistics

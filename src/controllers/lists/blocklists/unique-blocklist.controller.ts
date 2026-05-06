@@ -3,7 +3,7 @@ import { Blocklist, BlocklistIp, BlocklistIpsTable, BlocklistsTable, BlocklistTy
 import { errorResponse } from "@/utils/error-response";
 import { createRequestSignal } from "@/utils/request-signal";
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE } from '@/helpers/blocklists.helper';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get a specific blocklist by ID.
@@ -12,7 +12,8 @@ import { DB_SORTING } from '@/interfaces/database.interface';
  *   - include_ips=full       → include blocklistIps as full objects
  *   - include_ips=ip_string  → include blocklistIps as plain IP strings
  */
-export async function getBlocklistById(req: Request<GetBlocklistParams, GetBlocklistResponse, {}, GetBlocklistQueryParams>, res: Response<GetBlocklistResponse>): Promise<void> {
+type Res = ResponseWithError<GetBlocklistResponse>
+export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {}, GetBlocklistQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;

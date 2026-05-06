@@ -1,9 +1,7 @@
-import { BlocklistIp, Pagination, ResponseWithError } from "@/models";
+import { BlocklistIp, Pagination } from "@/models";
 
-interface GetBlocklistIpsResponseBody {
+export interface GetBlocklistIpsResponse {
   items: BlocklistIp[] | string[];
   pagination?: Pagination;
   total?: number;
 }
-
-export type GetBlocklistIpsResponse = ResponseWithError<GetBlocklistIpsResponseBody>;

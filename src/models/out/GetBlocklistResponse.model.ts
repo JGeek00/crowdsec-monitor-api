@@ -1,7 +1,5 @@
-import { Blocklist, CsBlocklist, ResponseWithError } from "@/models";
+import { Blocklist, CsBlocklist } from "@/models";
 
-interface GetBlocklistResponseBody {
+export interface GetBlocklistResponse {
   data: Blocklist | CsBlocklist;
 }
-
-export type GetBlocklistResponse = ResponseWithError<GetBlocklistResponseBody>;

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { defaults } from '@/config/env-defaults';
 import { dnsServers } from '@/constants/dns-servers';
-import { DB_MODE, DbMode } from '@/interfaces/database.interface';
+import { DB_MODE, DbMode } from '@/types/database.types';
 
 dotenv.config();
 

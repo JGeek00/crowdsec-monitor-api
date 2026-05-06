@@ -3,6 +3,7 @@ import { crowdSecAPI } from '@/services';
 import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
 import { errorResponse } from '@/utils/error-response';
+import { GetAllowlistsResponse, ResponseWithError } from '@/models';
 
 /**
  * Sanitize allowlist items by converting invalid expiration dates to null
@@ -20,7 +21,8 @@ function sanitizeAllowlists(allowlists: CrowdSecAllowlist[]): CrowdSecAllowlist[
 /**
  * Get all allowlists from CrowdSec LAPI
  */
-export async function getAllowlists(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetAllowlistsResponse>;
+export async function getAllowlists(_: Request<{}, Res>, res: Response<Res>): Promise<void> {
   try {
     const allowlists = await crowdSecAPI.allowlists.getAllowlists();
     const sanitizedAllowlists = sanitizeAllowlists(allowlists);

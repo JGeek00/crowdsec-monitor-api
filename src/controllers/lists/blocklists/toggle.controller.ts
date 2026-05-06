@@ -13,7 +13,8 @@ import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/pr
  * - enabled: true  → update DB, fetch list and push alerts to CrowdSec.
  * - enabled: false → update DB, delete the alerts from CrowdSec and wipe local IPs.
  */
-export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, PostToggleBlocklistResponse>, res: Response<PostToggleBlocklistResponse>): Promise<void> {
+type Res = ResponseWithError<PostToggleBlocklistResponse>;
+export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
     const { id } = req.params;
     const { enabled } = req.body;

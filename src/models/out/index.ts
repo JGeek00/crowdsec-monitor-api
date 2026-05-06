@@ -15,3 +15,5 @@ export * from '@/models/out/PostToggleBlocklistResponse.model';
 export * from '@/models/out/PostCheckDomainResponse.model';
 export * from '@/models/out/PostCheckIpsInListResponse.model';
 export * from '@/models/out/GetBlocklistIpsResponse.model';
+export * from '@/models/out/GetAllowlistsResponse.model';
+export * from '@/models/out/GetAllowlistResponse.model';

@@ -3,7 +3,7 @@ import { BLOCKLIST_TYPE, BlocklistIp, BlocklistsTable, BlocklistType, CsBlocklis
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE, BLOCKLISTS_IPS_INCLUDE_OPTION } from '@/helpers/blocklists.helper';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get all blocklists (api-managed first, then cs-managed).

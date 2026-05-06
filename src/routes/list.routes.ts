@@ -7,8 +7,8 @@ import { checkDomainInList, checkIpsInList } from '@/controllers';
 
 const router: Router = Router();
 
-router.use('/blocklists', AuthMiddleware.expressAuth, blocklistRoutes);
-router.use('/allowlists', AuthMiddleware.expressAuth, allowlistRoutes);
+router.use('/blocklists', blocklistRoutes);
+router.use('/allowlists', allowlistRoutes);
 
 /**
  * POST /api/v1/lists/check-ips

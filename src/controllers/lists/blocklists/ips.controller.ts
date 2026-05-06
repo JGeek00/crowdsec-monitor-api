@@ -3,7 +3,7 @@ import { FindAndCountOptions } from 'sequelize';
 import { BlocklistIp, BlocklistIpsTable, BlocklistsTable, CsBlocklistsTable, GetBlocklistIpsParams, GetBlocklistIpsQueryParams, GetBlocklistIpsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get IPs for a specific blocklist with pagination.
@@ -14,8 +14,8 @@ import { DB_SORTING } from '@/interfaces/database.interface';
  *   - offset         → pagination offset (default 0)
  *   - unpaged        → return all results without pagination
  */
-
-export async function getBlocklistIps(req: Request<GetBlocklistIpsParams, GetBlocklistIpsResponse, {}, GetBlocklistIpsQueryParams>, res: Response<GetBlocklistIpsResponse>): Promise<void> {
+type Res = ResponseWithError<GetBlocklistIpsResponse>;
+export async function getBlocklistIps(req: Request<GetBlocklistIpsParams, Res, {}, GetBlocklistIpsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;

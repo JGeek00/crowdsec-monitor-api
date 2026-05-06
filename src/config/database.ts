@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
 import { config } from '@/config/index';
-import { DB_MODE } from '@/interfaces/database.interface';
+import { DB_MODE } from '@/types/database.types';
 import { MigrationService } from '@/services/migrations/migration.service';
 import { MigrationRunner } from '@/services/migrations/migration-runner.service';
 

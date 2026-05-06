@@ -11,7 +11,7 @@ import { buildAllowlistMatcher } from '@/utils/ip';
 import { config } from '@/config';
 import { defaults } from '@/config/env-defaults';
 import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
-import { DB_MODE } from '@/interfaces/database.interface';
+import { DB_MODE } from '@/types/database.types';
 import appDefaults from '@/constants/app-defaults';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 

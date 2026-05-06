@@ -4,7 +4,7 @@ import { Alert_SourceInfo, Decision, DecisionsTable, GetDecisionsQueryParams, Ge
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 
 /**
  * Get all decisions with filtering and pagination

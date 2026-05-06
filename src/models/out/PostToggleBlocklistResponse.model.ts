@@ -1,7 +1,5 @@
-import { Blocklist, ResponseWithError } from "@/models";
+import { Blocklist } from "@/models";
 
-interface PostToggleBlocklistResponseBody {
+export interface PostToggleBlocklistResponse {
   data: Blocklist;
 }
-
-export type PostToggleBlocklistResponse = ResponseWithError<PostToggleBlocklistResponseBody>;

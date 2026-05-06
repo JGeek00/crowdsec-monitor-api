@@ -5,7 +5,7 @@ import { defaults } from '@/config/env-defaults';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DateCountRow, ScenarioCountRow } from '@/interfaces/statistics.interface';
-import { DB_SORTING } from '@/interfaces/database.interface';
+import { DB_SORTING } from '@/types/database.types';
 import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData } from '@/models';
 
 /**
