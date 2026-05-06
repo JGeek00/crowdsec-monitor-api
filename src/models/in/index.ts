@@ -15,3 +15,4 @@ export * from '@/models/in/PostCheckDomainBody.model';
 export * from '@/models/in/PostCheckIpsInListBody.model';
 export * from '@/models/in/GetBlocklistIpsParams.model';
 export * from '@/models/in/GetBlocklistIpsQueryParams.model';
+export * from '@/models/in/GetStatisticsQueryParams.model';

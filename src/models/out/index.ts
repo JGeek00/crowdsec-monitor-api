@@ -17,3 +17,4 @@ export * from '@/models/out/PostCheckIpsInListResponse.model';
 export * from '@/models/out/GetBlocklistIpsResponse.model';
 export * from '@/models/out/GetAllowlistsResponse.model';
 export * from '@/models/out/GetAllowlistResponse.model';
+export * from '@/models/out/GetStatisticsResponse.model';

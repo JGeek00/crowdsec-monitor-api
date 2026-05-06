@@ -1,6 +1,6 @@
-import packageJson from '../../package.json';
-import { StatusSnapshot } from '@/interfaces/status.interface';
+import { StatusSnapshot } from '@/models';
 import { makeReactive } from '@/utils/make-reactive';
+import packageJson from '../../package.json';
 
 export class StatusService {
   private onStateChange: (() => void) | null = null;

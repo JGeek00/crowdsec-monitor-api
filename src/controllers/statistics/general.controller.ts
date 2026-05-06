@@ -1,23 +1,23 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { AlertsTable, DecisionsTable } from '@/models/db';
+import { AlertsTable, DecisionsTable, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, ResponseWithError, GetStatisticsResponse, GetStatisticsResponse_ActivityHistory, GetStatisticsQueryParams } from '@/models';
 import { defaults } from '@/config/env-defaults';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DateCountRow, ScenarioCountRow } from '@/interfaces/statistics.interface';
 import { DB_SORTING } from '@/types/database.types';
-import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData } from '@/models';
 
 /**
  * Get comprehensive statistics
  */
-export async function getStatistics(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetStatisticsResponse>;
+export async function getStatistics(req: Request<{}, Res, {}, GetStatisticsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { since, amount } = req.query;
 
     // Parse amount with default value
-    const limit = amount ? parseInt(amount as string, 10) : defaults.statistics.topItemsLimit;
+    const limit = amount ?? defaults.statistics.topItemsLimit;
 
     // Parse since date if provided
     let sinceDate: Date | undefined;
