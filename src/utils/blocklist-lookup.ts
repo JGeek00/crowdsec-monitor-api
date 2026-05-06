@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
-import { BlocklistIp } from '@/models/db';
 import { isIpv4, isIpv4InCidr } from '@/utils/ip';
+import { BlocklistIpsTable } from '@/models';
 
 /**
  * Look up which blocklist each IP belongs to (if any).
@@ -9,7 +9,7 @@ import { isIpv4, isIpv4InCidr } from '@/utils/ip';
 export async function lookupIpsInBlocklists(ips: string[]): Promise<Map<string, string[]>> {
   if (ips.length === 0) return new Map();
 
-  const entries = await BlocklistIp.findAll({
+  const entries = await BlocklistIpsTable.findAll({
     where: {
       [Op.or]: [
         { value: ips },

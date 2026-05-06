@@ -1,25 +1,10 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { CsBlocklist, Blocklist } from '@/models';
+import type { CsBlocklist, BlocklistsTable, BlocklistIp, BlocklistIpOrigin } from '@/models';
 
-export const BLOCKLIST_IP_ORIGIN = {
-  BLOCKLIST: 'blocklist',
-  CS_BLOCKLIST: 'cs_blocklist',
-} as const;
-export type BlocklistIpOrigin = typeof BLOCKLIST_IP_ORIGIN[keyof typeof BLOCKLIST_IP_ORIGIN];
+export interface BlocklistIpCreationAttributes extends Optional<BlocklistIp, 'id' | 'blocklist_id' | 'cs_blocklist_id'> {}
 
-export interface BlocklistIpAttributes {
-  id: number;
-  blocklist_id: number | null;
-  cs_blocklist_id: string | null;
-  blocklist_name: string;
-  value: string;
-  origin: BlocklistIpOrigin;
-}
-
-export interface BlocklistIpCreationAttributes extends Optional<BlocklistIpAttributes, 'id' | 'blocklist_id' | 'cs_blocklist_id'> {}
-
-export class BlocklistIp extends Model<BlocklistIpAttributes, BlocklistIpCreationAttributes> implements BlocklistIpAttributes {
+export class BlocklistIpsTable extends Model<BlocklistIp, BlocklistIpCreationAttributes> implements BlocklistIp {
   public id!: number;
   public blocklist_id!: number | null;
   public cs_blocklist_id!: string | null;
@@ -28,7 +13,7 @@ export class BlocklistIp extends Model<BlocklistIpAttributes, BlocklistIpCreatio
   public origin!: BlocklistIpOrigin;
 
   // Associations set in models/index.ts
-  public readonly blocklist?: Blocklist;
+  public readonly blocklist?: BlocklistsTable;
   public readonly csBlocklist?: CsBlocklist;
 
   // Column name references for use in Sequelize queries instead of string literals
@@ -42,7 +27,7 @@ export class BlocklistIp extends Model<BlocklistIpAttributes, BlocklistIpCreatio
   } as const;
 }
 
-BlocklistIp.init(
+BlocklistIpsTable.init(
   {
     id: {
       type: DataTypes.INTEGER,

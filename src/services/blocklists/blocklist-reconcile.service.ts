@@ -1,4 +1,4 @@
-import { Blocklist } from '@/models/db';
+import { BlocklistsTable } from '@/models/db';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
 import appDefaults from '@/constants/app-defaults';
@@ -31,7 +31,7 @@ class BlocklistReconcileService {
 
     console.log(`  Found ${activeBlocklistNames.size} blocklist(s) with active alerts in CrowdSec`);
 
-    const enabledBlocklists = await Blocklist.findAll({ where: { enabled: true } });
+    const enabledBlocklists = await BlocklistsTable.findAll({ where: { enabled: true } });
 
     const missing = enabledBlocklists.filter((b) => !activeBlocklistNames.has(b.name));
 
@@ -42,7 +42,7 @@ class BlocklistReconcileService {
       }
     }
 
-    console.log(`✓ Blocklist reconciliation complete: ${missing.length} blocklist(s) re-synced`);
+    console.log(`✓ BlocklistsTable reconciliation complete: ${missing.length} blocklist(s) re-synced`);
     return { resynced: missing.length };
   }
 }

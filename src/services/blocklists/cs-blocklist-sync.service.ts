@@ -1,5 +1,4 @@
-import { CsBlocklist, BlocklistIp } from '@/models/db';
-import { BLOCKLIST_IP_ORIGIN } from '@/models/db/BlocklistIp';
+import { CsBlocklistsTable, BLOCKLIST_IP_ORIGIN, BlocklistIpsTable } from '@/models';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import appDefaults from '@/constants/app-defaults';
@@ -44,12 +43,12 @@ class CsBlocklistSyncService {
         await sequelize.transaction(async (t) => {
           // Destroy any existing entry for this name (IPs cascade-delete via FK).
           // This handles stale rows with different alert IDs from previous syncs.
-          await CsBlocklist.destroy({
+          await CsBlocklistsTable.destroy({
             where: { name },
             transaction: t,
           });
 
-          await CsBlocklist.create(
+          await CsBlocklistsTable.create(
             { id: `crowdsec-${alert.id}`, name },
             { transaction: t }
           );
@@ -61,7 +60,7 @@ class CsBlocklistSyncService {
               value: decision.value,
               origin: BLOCKLIST_IP_ORIGIN.CS_BLOCKLIST,
             }));
-            await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
+            await BlocklistIpsTable.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
           }
         });
 

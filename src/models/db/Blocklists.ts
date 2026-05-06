@@ -1,21 +1,10 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { BlocklistIp } from './BlocklistIp';
+import { Blocklist, BlocklistIpsTable } from '@/models';
 
-export interface BlocklistAttributes {
-  id: number;
-  url: string;
-  name: string;
-  enabled: boolean;
-  added_date: Date;
-  last_refresh_attempt: Date | null;
-  last_successful_refresh: Date | null;
-  last_refresh_failed: boolean | null;
-}
+export interface BlocklistCreationAttributes extends Optional<Blocklist, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh' | 'last_refresh_failed'> {}
 
-export interface BlocklistCreationAttributes extends Optional<BlocklistAttributes, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh' | 'last_refresh_failed'> {}
-
-export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttributes> implements BlocklistAttributes {
+export class BlocklistsTable extends Model<Blocklist, BlocklistCreationAttributes> implements Blocklist {
   public id!: number;
   public url!: string;
   public name!: string;
@@ -26,7 +15,7 @@ export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttri
   public last_refresh_failed!: boolean | null;
 
   // Associations set in models/index.ts
-  public readonly blocklistIps?: BlocklistIp[];
+  public readonly blocklistIps?: BlocklistIpsTable[];
 
   // Column name references for use in Sequelize queries instead of string literals
   static readonly col = {
@@ -41,7 +30,7 @@ export class Blocklist extends Model<BlocklistAttributes, BlocklistCreationAttri
   } as const;
 }
 
-Blocklist.init(
+BlocklistsTable.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -89,4 +78,4 @@ Blocklist.init(
   }
 );
 
-export default Blocklist;
+export default BlocklistsTable;

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Blocklist } from '@/models/db';
+import { BlocklistsTable, PostBlocklistBody, PostBlocklistResponse, ResponseWithError } from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';
@@ -10,7 +10,8 @@ import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
  * Add a new blocklist URL.
  * Body: { url: string, name: string }
  */
-export async function createBlocklist(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<PostBlocklistResponse>;
+export async function createBlocklist(req: Request<{}, Res, PostBlocklistBody>, res: Response<Res>): Promise<void> {
   try {
     await crowdSecAPI.checkBouncerConnection();
     if (!crowdSecAPI.isBouncerConnected()) {
@@ -36,13 +37,13 @@ export async function createBlocklist(req: Request, res: Response): Promise<void
       return;
     }
 
-    const existing = await Blocklist.findOne({ where: { url: url.trim() } });
+    const existing = await BlocklistsTable.findOne({ where: { url: url.trim() } });
     if (existing) {
       res.status(409).json(errorResponse('Conflict', 'A blocklist with this URL already exists'));
       return;
     }
 
-    const blocklist = await Blocklist.create({
+    const blocklist = await BlocklistsTable.create({
       url: url.trim(),
       name: name.trim(),
       enabled: true,

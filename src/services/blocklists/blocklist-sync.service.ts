@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { Blocklist, BlocklistIp } from '@/models/db';
-import { BLOCKLIST_IP_ORIGIN } from '@/models/db/BlocklistIp';
+import { BLOCKLIST_IP_ORIGIN, BlocklistIpsTable, BlocklistsTable } from '@/models';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
@@ -39,17 +38,17 @@ class BlocklistSyncService {
    * Fetch a blocklist URL, store IPs in the local DB, and push to CrowdSec.
    */
   async refreshBlocklist(
-    blocklist: Blocklist,
+    blocklistsTableEntry: BlocklistsTable,
     allowlistEntries?: string[],
     processId?: string,
     processField?: ProcessFieldBlocklist,
   ): Promise<{ allowlistSkipped: number }> {
 
     await this.acquireWriteLock(() =>
-      blocklist.update({ last_refresh_attempt: new Date(), last_refresh_failed: false })
+      blocklistsTableEntry.update({ last_refresh_attempt: new Date(), last_refresh_failed: false })
     );
 
-    const response = await axios.get<string>(blocklist.url, {
+    const response = await axios.get<string>(blocklistsTableEntry.url, {
       responseType: 'text',
       timeout: 30000,
     }).catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.fetchFailed); });
@@ -81,7 +80,7 @@ class BlocklistSyncService {
       crowdSecAPI.setBouncerConnected(true);
       statusService.updateBouncerStatus(true);
     } catch {
-      console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklist.name}".`);
+      console.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${blocklistsTableEntry.name}".`);
       crowdSecAPI.setBouncerConnected(false);
       statusService.updateBouncerStatus(false);
       throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecDecisionsFailed);
@@ -89,7 +88,7 @@ class BlocklistSyncService {
     const uniqueNewIps = [...new Set(allowlistFiltered.filter((ip) => !activeDecisions.has(ip)))];
     const alreadyBlocked = allowlistFiltered.length - uniqueNewIps.length;
     if (alreadyBlocked > 0) {
-      console.log(`  Skipping ${alreadyBlocked} IPs already blocked in CrowdSec for "${blocklist.name}"`);
+      console.log(`  Skipping ${alreadyBlocked} IPs already blocked in CrowdSec for "${blocklistsTableEntry.name}"`);
     }
 
     if (processId && processField) {
@@ -100,16 +99,16 @@ class BlocklistSyncService {
     try {
       await this.acquireWriteLock(async () => {
         await sequelize.transaction(async (t) => {
-          await BlocklistIp.destroy({ where: { [BlocklistIp.col.blocklistId]: blocklist.id }, transaction: t });
+          await BlocklistIpsTable.destroy({ where: { [BlocklistIpsTable.col.blocklistId]: blocklistsTableEntry.id }, transaction: t });
 
           for (let i = 0; i < ips.length; i += defaults.blocklists.writeChunkSize) {
             const chunk = ips.slice(i, i + defaults.blocklists.writeChunkSize).map((value: string) => ({
-              blocklist_id: blocklist.id,
-              blocklist_name: blocklist.name,
+              blocklist_id: blocklistsTableEntry.id,
+              blocklist_name: blocklistsTableEntry.name,
               value,
               origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
             }));
-            await BlocklistIp.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
+            await BlocklistIpsTable.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
           }
         });
       });
@@ -117,15 +116,15 @@ class BlocklistSyncService {
       throw new Error(PROCESS_ERRORS.blocklistImport.dbWriteFailed);
     }
 
-    const scenario = `external/blocklist (${blocklist.name})`;
+    const scenario = `external/blocklist (${blocklistsTableEntry.name})`;
     const now = new Date().toISOString();
     const pushChunkSize = config.blocklists.writeChunkSize ?? uniqueNewIps.length;
     const batchCount = Math.ceil(uniqueNewIps.length / Math.max(pushChunkSize, 1));
 
     if (uniqueNewIps.length === 0) {
-      console.log(`No new IPs to push for "${blocklist.name}" (all already blocked in CrowdSec)`);
+      console.log(`No new IPs to push for "${blocklistsTableEntry.name}" (all already blocked in CrowdSec)`);
     } else {
-      console.log(`Pushing "${blocklist.name}" to CrowdSec (${uniqueNewIps.length} new entries, ${batchCount} batch(es))...`);
+      console.log(`Pushing "${blocklistsTableEntry.name}" to CrowdSec (${uniqueNewIps.length} new entries, ${batchCount} batch(es))...`);
 
       for (let i = 0; i < uniqueNewIps.length; i += pushChunkSize) {
         const chunk = uniqueNewIps.slice(i, i + pushChunkSize);
@@ -136,7 +135,7 @@ class BlocklistSyncService {
             events: [],
             events_count: 1,
             leakspeed: '0',
-            message: `Blocking ${totalIpCount} IPs from list ${blocklist.name}`,
+            message: `Blocking ${totalIpCount} IPs from list ${blocklistsTableEntry.name}`,
             scenario,
             scenario_hash: '',
             scenario_version: '',
@@ -172,7 +171,7 @@ class BlocklistSyncService {
     }
 
     await this.acquireWriteLock(() =>
-      blocklist.update({ last_successful_refresh: new Date(), last_refresh_failed: false })
+      blocklistsTableEntry.update({ last_successful_refresh: new Date(), last_refresh_failed: false })
     );
 
     const parts = [
@@ -180,7 +179,7 @@ class BlocklistSyncService {
       alreadyBlocked > 0 ? `${alreadyBlocked} already blocked` : null,
       allowlistSkipped > 0 ? `${allowlistSkipped} in allowlist` : null,
     ].filter(Boolean).join(', ');
-    console.log(`✓ Refreshed "${blocklist.name}": ${ips.length} IPs in list — ${parts}`);
+    console.log(`✓ Refreshed "${blocklistsTableEntry.name}": ${ips.length} IPs in list — ${parts}`);
 
     return { allowlistSkipped };
   }
@@ -189,7 +188,7 @@ class BlocklistSyncService {
    * Delete all CrowdSec alerts for a blocklist and wipe its local IPs.
    */
   async deleteBlocklistAlerts(
-    blocklist: Blocklist,
+    blocklist: BlocklistsTable,
     processId?: string,
     processField?: ProcessFieldBlocklistOps,
   ): Promise<void> {
@@ -221,13 +220,13 @@ class BlocklistSyncService {
     try {
       await this.acquireWriteLock(async () => {
         while (true) {
-          const chunk = await BlocklistIp.findAll({
+          const chunk = await BlocklistIpsTable.findAll({
             attributes: ['id'],
-            where: { [BlocklistIp.col.blocklistId]: blocklist.id },
+            where: { [BlocklistIpsTable.col.blocklistId]: blocklist.id },
             limit: appDefaults.blocklists.blocklistIpsDeleteChunkSize,
           });
           if (chunk.length === 0) break;
-          await BlocklistIp.destroy({ where: { [BlocklistIp.col.id]: chunk.map((ip) => ip.id) } });
+          await BlocklistIpsTable.destroy({ where: { [BlocklistIpsTable.col.id]: chunk.map((ip) => ip.id) } });
           if (chunk.length < appDefaults.blocklists.blocklistIpsDeleteChunkSize) break;
         }
       });
@@ -247,7 +246,7 @@ class BlocklistSyncService {
     let errors = 0;
     let totalAllowlistSkipped = 0;
 
-    const blocklists = await Blocklist.findAll({ where: { enabled: true } });
+    const blocklists = await BlocklistsTable.findAll({ where: { enabled: true } });
 
     if (blocklists.length === 0) {
       return { refreshed: 0, ips: 0, errors: 0, allowlistSkipped: 0 };
@@ -262,7 +261,7 @@ class BlocklistSyncService {
        try {
          const { allowlistSkipped } = await this.refreshBlocklist(blocklist, allowlistEntries);
          totalAllowlistSkipped += allowlistSkipped;
-         ipsCount += await BlocklistIp.count({ where: { [BlocklistIp.col.blocklistId]: blocklist.id } });
+         ipsCount += await BlocklistIpsTable.count({ where: { [BlocklistIpsTable.col.blocklistId]: blocklist.id } });
          refreshed++;
          await this.acquireWriteLock(() =>
            blocklist.update({ last_refresh_failed: false })

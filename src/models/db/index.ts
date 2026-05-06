@@ -1,8 +1,8 @@
 import { AlertsTable } from '@/models/db/Alerts';
 import { DecisionsTable } from '@/models/db/Decisions';
-import { Blocklist } from '@/models/db/Blocklist';
-import { BlocklistIp } from '@/models/db/BlocklistIp';
-import { CsBlocklist } from '@/models/db/CsBlocklist';
+import { BlocklistsTable } from '@/models/db/Blocklists';
+import { BlocklistIpsTable } from '@/models/db/BlocklistIps';
+import { CsBlocklistsTable } from '@/models/db/CsBlocklist';
 import { Migration } from '@/models/db/Migration';
 
 // Define associations
@@ -17,33 +17,26 @@ DecisionsTable.belongsTo(AlertsTable, {
   as: 'alert',
 });
 
-Blocklist.hasMany(BlocklistIp, {
+BlocklistsTable.hasMany(BlocklistIpsTable, {
   sourceKey: 'id',
   foreignKey: 'blocklist_id',
   as: 'blocklistIps',
 });
 
-BlocklistIp.belongsTo(Blocklist, {
+BlocklistIpsTable.belongsTo(BlocklistsTable, {
   foreignKey: 'blocklist_id',
   as: 'blocklist',
 });
 
-CsBlocklist.hasMany(BlocklistIp, {
+CsBlocklistsTable.hasMany(BlocklistIpsTable, {
   sourceKey: 'id',
   foreignKey: 'cs_blocklist_id',
   as: 'blocklistIps',
 });
 
-BlocklistIp.belongsTo(CsBlocklist, {
+BlocklistIpsTable.belongsTo(CsBlocklistsTable, {
   foreignKey: 'cs_blocklist_id',
   as: 'csBlocklist',
 });
 
-export { AlertsTable, DecisionsTable, Blocklist, BlocklistIp, CsBlocklist, Migration };
-
-export * from '@/models/db/Alerts';
-export * from '@/models/db/Blocklist';
-export * from '@/models/db/BlocklistIp';
-export * from '@/models/db/CsBlocklist';
-export * from '@/models/db/Decisions';
-export * from '@/models/db/Migration';
+export { AlertsTable, DecisionsTable, BlocklistsTable, BlocklistIpsTable, CsBlocklistsTable, Migration };

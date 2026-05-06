@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
-import { literal } from 'sequelize';
-import { Blocklist, BlocklistIp, CsBlocklist } from '@/models/db';
+import { BLOCKLIST_TYPE, BlocklistIp, BlocklistsTable, BlocklistType, CsBlocklistsTable, GetBlocklistIpsParams, GetBlocklistsQueryParams, GetBlocklistsResponse, GetBlocklistsResponse_Item, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { BlocklistIpAttributes } from '@/models/db/BlocklistIp';
-import { BLOCKLIST_TYPE, BlocklistItem, BlocklistListResponse, BlocklistType } from '@/interfaces/blocklist.interface';
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE, BLOCKLISTS_IPS_INCLUDE_OPTION } from '@/helpers/blocklists.helper';
 import { DB_SORTING } from '@/interfaces/database.interface';
 
@@ -18,7 +15,8 @@ import { DB_SORTING } from '@/interfaces/database.interface';
  *   - get_only=blocklists   → return only api-managed blocklists
  *   - get_only=cs_blocklists → return only cs-managed blocklists
  */
-export async function getBlocklists(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetBlocklistsResponse>;
+export async function getBlocklists(req: Request<GetBlocklistIpsParams, Res, {}, GetBlocklistsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged, include_ips, get_only } = req.query;
@@ -32,24 +30,24 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
     const includeOption = includeIps ? [BLOCKLISTS_IPS_INCLUDE_OPTION] : [];
 
     const [totalApi, totalCs] = await Promise.all([
-      onlyCs ? Promise.resolve(0) : Blocklist.count(),
-      onlyApi ? Promise.resolve(0) : CsBlocklist.count(),
+      onlyCs ? Promise.resolve(0) : BlocklistsTable.count(),
+      onlyApi ? Promise.resolve(0) : CsBlocklistsTable.count(),
     ]);
     const total = totalApi + totalCs;
 
-    let apiRows: Blocklist[] = [];
-    let csRows: CsBlocklist[] = [];
+    let apiRows: BlocklistsTable[] = [];
+    let csRows: CsBlocklistsTable[] = [];
 
-    if (unpaged === 'true') {
+    if (unpaged === true) {
       [apiRows, csRows] = await Promise.all([
-        onlyCs ? Promise.resolve([]) : Blocklist.findAll({
+        onlyCs ? Promise.resolve([]) : BlocklistsTable.findAll({
           attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
-          order: [[Blocklist.col.name, DB_SORTING.ASC]],
+          order: [[BlocklistsTable.col.name, DB_SORTING.ASC]],
           include: includeOption,
         }),
-        onlyApi ? Promise.resolve([]) : CsBlocklist.findAll({
+        onlyApi ? Promise.resolve([]) : CsBlocklistsTable.findAll({
           attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
-          order: [[CsBlocklist.col.name, DB_SORTING.ASC]],
+          order: [[CsBlocklistsTable.col.name, DB_SORTING.ASC]],
           include: includeOption,
         }),
       ]);
@@ -62,18 +60,18 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
 
       await Promise.all([
         apiLimit > 0
-          ? Blocklist.findAll({
+          ? BlocklistsTable.findAll({
               attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
-              order: [[Blocklist.col.name, DB_SORTING.ASC]],
+              order: [[BlocklistsTable.col.name, DB_SORTING.ASC]],
               include: includeOption,
               limit: apiLimit,
               offset: apiOffset,
             }).then((rows) => { apiRows = rows; })
           : Promise.resolve(),
         csLimit > 0
-          ? CsBlocklist.findAll({
+          ? CsBlocklistsTable.findAll({
               attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
-              order: [[CsBlocklist.col.name, DB_SORTING.ASC]],
+              order: [[CsBlocklistsTable.col.name, DB_SORTING.ASC]],
               include: includeOption,
               limit: csLimit,
               offset: csOffset,
@@ -82,12 +80,12 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       ]);
     }
 
-    const mapItem = (item: Blocklist | CsBlocklist, type: BlocklistType): BlocklistItem => {
-      const obj = item.toJSON() as BlocklistItem;
+    const mapItem = (item: BlocklistsTable | CsBlocklistsTable, type: BlocklistType): GetBlocklistsResponse_Item => {
+      const obj = item.toJSON() as GetBlocklistsResponse_Item;
       obj.id = String(obj.id);
       obj.type = type;
       if (onlyIps && Array.isArray(obj.blocklistIps)) {
-        obj.blocklistIps = (obj.blocklistIps as BlocklistIpAttributes[]).map((ip) => ip.value);
+        obj.blocklistIps = (obj.blocklistIps as BlocklistIp[]).map((ip) => ip.value);
       }
       return obj;
     };
@@ -97,9 +95,9 @@ export async function getBlocklists(req: Request, res: Response): Promise<void> 
       ...csRows.map((row) => mapItem(row, BLOCKLIST_TYPE.CROWDSEC)),
     ];
 
-    const response: BlocklistListResponse = { items };
+    const response: GetBlocklistsResponse = { items };
 
-    if (unpaged !== 'true') {
+    if (unpaged !== true) {
       const page = Math.floor(off / lim) + 1;
       response.pagination = { page, amount: items.length, total };
     } else {

@@ -1,15 +1,10 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { BlocklistIp } from '@/models';
+import type { BlocklistIp, CsBlocklist } from '@/models';
 
-export interface CsBlocklistAttributes {
-  id: string;
-  name: string;
-}
+export interface CsBlocklistCreationAttributes extends Optional<CsBlocklist, never> {}
 
-export interface CsBlocklistCreationAttributes extends Optional<CsBlocklistAttributes, never> {}
-
-export class CsBlocklist extends Model<CsBlocklistAttributes, CsBlocklistCreationAttributes> implements CsBlocklistAttributes {
+export class CsBlocklistsTable extends Model<CsBlocklist, CsBlocklistCreationAttributes> implements CsBlocklist {
   public id!: string;
   public name!: string;
 
@@ -23,7 +18,7 @@ export class CsBlocklist extends Model<CsBlocklistAttributes, CsBlocklistCreatio
   } as const;
 }
 
-CsBlocklist.init(
+CsBlocklistsTable.init(
   {
     id: {
       type: DataTypes.STRING(50),

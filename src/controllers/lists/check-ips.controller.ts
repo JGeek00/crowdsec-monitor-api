@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } from '@/models';
 import { isIpv4 } from '@/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
 import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
@@ -8,9 +9,10 @@ import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
 /**
  * Check if IPs are in any list (blocklist or allowlist)
  */
-export async function checkIpsInList(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<PostCheckIpsInListResult>;
+export async function checkIpsInList(req: Request<{}, Res, PostCheckIpsInListBody>, res: Response<Res>): Promise<void> {
   try {
-    const { ips } = req.body as { ips: string[] };
+    const { ips } = req.body;
     
     if (!Array.isArray(ips) || ips.some(ip => typeof ip !== 'string')) {
       res.status(400).json(errorResponse('Invalid input', 'Field "ips" must be an array of strings'));
