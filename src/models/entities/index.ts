@@ -1,0 +1,1 @@
+export * from '@/models/entities/Alert.model';

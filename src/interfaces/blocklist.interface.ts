@@ -1,4 +1,4 @@
-import type { BlocklistIpAttributes } from '@/models/BlocklistIp';
+import type { BlocklistIpAttributes } from '@/models/db/BlocklistIp';
 import type { PaginationInfo } from './pagination.interface';
 
 export interface BlocklistItem {

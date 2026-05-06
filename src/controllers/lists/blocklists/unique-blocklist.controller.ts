@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import { BlocklistType } from "@/interfaces/blocklist.interface";
-import { CsBlocklist, BlocklistIp, Blocklist } from "@/models";
-import { BlocklistAttributes } from "@/models/Blocklist";
-import { BlocklistIpAttributes } from "@/models/BlocklistIp";
-import { CsBlocklistAttributes } from "@/models/CsBlocklist";
+import { CsBlocklist, BlocklistIp, Blocklist } from "@/models/db";
+import { BlocklistAttributes, BlocklistIpAttributes, CsBlocklistAttributes } from "@/models";
 import { errorResponse } from "@/utils/error-response";
 import { createRequestSignal } from "@/utils/request-signal";
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE } from '@/helpers/blocklists.helper';

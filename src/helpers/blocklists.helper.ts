@@ -1,5 +1,5 @@
 import { literal } from "sequelize";
-import { BlocklistIp } from "@/models";
+import { BlocklistIp } from "@/models/db";
 
 export const BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [
   literal('(SELECT COUNT(*) FROM blocklist_ips WHERE blocklist_ips.blocklist_id = "Blocklist"."id")'),

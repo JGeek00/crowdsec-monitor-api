@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { SourceInfo, Alert } from '@/models/Alert';
+import type { Alert_SourceInfo, Alert, UnparsedMetaData } from '@/models';
 
 export interface DecisionAttributes {
   id: number;
@@ -12,7 +12,7 @@ export interface DecisionAttributes {
   expiration: Date;
   scenario: string;
   simulated: boolean;
-  source: SourceInfo;
+  source: Alert_SourceInfo;
   crowdsec_created_at: Date;
   created_at: Date;
   updated_at: Date;
@@ -30,13 +30,13 @@ export class Decision extends Model<DecisionAttributes, DecisionCreationAttribut
   public expiration!: Date;
   public scenario!: string;
   public simulated!: boolean;
-  public source!: SourceInfo;
+  public source!: Alert_SourceInfo;
   public crowdsec_created_at!: Date;
   public created_at!: Date;
   public updated_at!: Date;
 
   // Associations will be set in models/index.ts
-  public readonly alert?: Alert;
+  public readonly alert?: Alert<UnparsedMetaData>;
 
   // Column name references for use in Sequelize queries instead of string literals
   static readonly col = {

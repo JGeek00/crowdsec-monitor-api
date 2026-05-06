@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { BlocklistIp } from '@/models';
-import { Blocklist, CsBlocklist } from '@/models';
+import { BlocklistIp } from '@/models/db';
+import { Blocklist, CsBlocklist } from '@/models/db';
 import { FindAndCountOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { BlocklistIpAttributes } from '@/models/BlocklistIp';
+import { BlocklistIpAttributes } from '@/models/db/BlocklistIp';
 import { BlocklistIpsResponse } from '@/interfaces/blocklist.interface';
 import { DB_SORTING } from '@/interfaces/database.interface';
 

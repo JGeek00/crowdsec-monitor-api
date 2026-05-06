@@ -1,16 +1,15 @@
-import type { SourceInfo } from '@/models/Alert';
-import type { DecisionAttributes } from '@/models/Decision';
-import type { Decision } from '@/models/Decision';
-import type { AlertWithParsedMeta } from './alert.interface';
+import type { DecisionAttributes } from '@/models/db/Decision';
+import type { Decision } from '@/models/db/Decision';
 import type { PaginationInfo } from './pagination.interface';
+import { Alert, Alert_SourceInfo, ParsedMetaData } from '@/models';
 
 // Type for raw query results where JSON source field may be an unparsed string (raw: true in SQLite)
 export type DecisionRaw = {
-  source?: SourceInfo | string;
+  source?: Alert_SourceInfo | string;
 };
 
 export type DecisionResponse = DecisionAttributes & {
-  alert?: AlertWithParsedMeta;
+  alert?: Alert<ParsedMetaData>;
 };
 
 export interface DecisionListResponse {

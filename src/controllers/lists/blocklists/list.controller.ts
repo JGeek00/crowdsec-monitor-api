@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { literal } from 'sequelize';
-import { Blocklist, BlocklistIp, CsBlocklist } from '@/models';
+import { Blocklist, BlocklistIp, CsBlocklist } from '@/models/db';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { BlocklistIpAttributes } from '@/models/BlocklistIp';
+import { BlocklistIpAttributes } from '@/models/db/BlocklistIp';
 import { BLOCKLIST_TYPE, BlocklistItem, BlocklistListResponse, BlocklistType } from '@/interfaces/blocklist.interface';
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE, BLOCKLISTS_IPS_INCLUDE_OPTION } from '@/helpers/blocklists.helper';
 import { DB_SORTING } from '@/interfaces/database.interface';

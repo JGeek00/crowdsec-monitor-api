@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertDb } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { ScenarioCountRow } from '@/interfaces/statistics.interface';
@@ -11,13 +11,13 @@ import { DB_SORTING } from '@/interfaces/database.interface';
 export async function getTopScenarios(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const scenariosData = await Alert.findAll({
+    const scenariosData = await AlertDb.findAll({
       attributes: [
         'scenario',
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
+        [AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col(AlertDb.col.id)), 'count'],
       ],
       group: ['scenario'],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), DB_SORTING.DESC]],
+      order: [[AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col(AlertDb.col.id)), DB_SORTING.DESC]],
       raw: true,
     });
 

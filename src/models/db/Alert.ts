@@ -1,59 +1,13 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { Decision } from './Decision';
+import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, Decision } from '@/models';
 
-// Source information interface
-export interface SourceInfo {
-  as_name?: string;
-  as_number?: string;
-  cn?: string;
-  ip: string;
-  latitude?: number;
-  longitude?: number;
-  range?: string;
-  scope: string;
-  value: string;
-}
+// On database model we use UnparsedMetaData because the JSON object is stored as a string on the table column
+// It gets parsed and converted to ParsedMetaData on the endpoint controller
 
-// Meta key-value pair
-export interface MetaData {
-  key: string;
-  value: string;
-}
+export interface AlertCreationAttributes extends Optional<Alert<UnparsedMetaData>, 'id' | 'created_at' | 'updated_at'> {}
 
-// Event structure
-export interface EventData {
-  timestamp: string;
-  meta: MetaData[];
-}
-
-export interface AlertAttributes {
-  id: number;
-  uuid: string;
-  scenario: string;
-  scenario_version: string;
-  scenario_hash: string;
-  message: string;
-  capacity: number;
-  leakspeed: string;
-  simulated: boolean;
-  remediation: boolean;
-  events_count: number;
-  machine_id: string;
-  source: SourceInfo;
-  labels: string[] | null;
-  meta: MetaData[];
-  events: EventData[];
-  crowdsec_created_at: Date;
-  start_at: Date;
-  stop_at: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface AlertCreationAttributes extends Optional<AlertAttributes, 'id' | 'created_at' | 'updated_at'> {}
-
-export class Alert extends Model<AlertAttributes, AlertCreationAttributes> implements AlertAttributes {
+export class AlertDb extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes> implements Alert<UnparsedMetaData> {
   public id!: number;
   public uuid!: string;
   public scenario!: string;
@@ -66,10 +20,10 @@ export class Alert extends Model<AlertAttributes, AlertCreationAttributes> imple
   public remediation!: boolean;
   public events_count!: number;
   public machine_id!: string;
-  public source!: SourceInfo;
+  public source!: Alert_SourceInfo;
   public labels!: string[] | null;
-  public meta!: MetaData[];
-  public events!: EventData[];
+  public meta!: UnparsedMetaData[];
+  public events!: Alert_EventData<UnparsedMetaData>[];
   public crowdsec_created_at!: Date;
   public start_at!: Date;
   public stop_at!: Date;
@@ -105,7 +59,7 @@ export class Alert extends Model<AlertAttributes, AlertCreationAttributes> imple
   } as const;
 }
 
-Alert.init(
+AlertDb.init(
   {
     id: {
       type: DataTypes.INTEGER,

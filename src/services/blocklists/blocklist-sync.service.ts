@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { Blocklist, BlocklistIp } from '@/models';
-import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
+import { Blocklist, BlocklistIp } from '@/models/db';
+import { BLOCKLIST_IP_ORIGIN } from '@/models/db/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';

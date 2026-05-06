@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '@/services';
 import { errorResponse } from '@/utils/error-response';
-import { Decision } from '@/models';
+import { Decision } from '@/models/db';
 
 /**
  * Delete a decision by ID from CrowdSec LAPI

@@ -1,10 +1,9 @@
 import { Op } from 'sequelize';
-import { Alert, Decision } from '@/models';
+import { Alert, AlertDb, Decision, UnparsedMetaData } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { config } from '@/config';
-import { AlertAttributes } from '@/models/Alert';
-import { DecisionAttributes } from '@/models/Decision';
+import { DecisionAttributes } from '@/models/db/Decision';
 import appDefaults from '@/constants/app-defaults';
 
 class AlertsSyncService {
@@ -43,9 +42,9 @@ class AlertsSyncService {
 
         for (const alert of alerts) {
           try {
-            const existingAlert = await Alert.findByPk(alert.id);
+            const existingAlert = await AlertDb.findByPk(alert.id);
 
-            const alertData: Omit<AlertAttributes, 'created_at'> = {
+            const alertData: Omit<Alert<UnparsedMetaData>, 'created_at'> = {
               id: alert.id,
               uuid: alert.uuid,
               scenario: alert.scenario,
@@ -74,7 +73,7 @@ class AlertsSyncService {
               alertInstance = existingAlert;
               updated++;
             } else {
-              alertInstance = await Alert.create({ ...alertData, created_at: new Date() });
+              alertInstance = await AlertDb.create({ ...alertData, created_at: new Date() });
               synced++;
             }
 
@@ -148,7 +147,7 @@ class AlertsSyncService {
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 
-      const deletedAlerts = await Alert.destroy({
+      const deletedAlerts = await AlertDb.destroy({
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 

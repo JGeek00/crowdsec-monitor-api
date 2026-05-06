@@ -1,4 +1,4 @@
-import { Blocklist } from '@/models';
+import { Blocklist } from '@/models/db';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
 import appDefaults from '@/constants/app-defaults';

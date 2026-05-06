@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { BlocklistIp } from '@/models';
+import { BlocklistIp } from '@/models/db';
 import { isIpv4, isIpv4InCidr } from '@/utils/ip';
 
 /**

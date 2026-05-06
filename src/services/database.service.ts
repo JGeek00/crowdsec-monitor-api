@@ -1,4 +1,4 @@
-import { Blocklist } from '@/models';
+import { Blocklist } from '@/models/db';
 import { alertsSyncService } from '@/services/alerts-sync.service';
 import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
 import { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';

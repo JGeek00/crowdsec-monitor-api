@@ -1,5 +1,5 @@
-import { CsBlocklist, BlocklistIp } from '@/models';
-import { BLOCKLIST_IP_ORIGIN } from '@/models/BlocklistIp';
+import { CsBlocklist, BlocklistIp } from '@/models/db';
+import { BLOCKLIST_IP_ORIGIN } from '@/models/db/BlocklistIp';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import appDefaults from '@/constants/app-defaults';

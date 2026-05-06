@@ -1,11 +1,10 @@
-import type { AlertWithParsedMeta, ParsedMetaData } from "@/interfaces/alert.interface";
-import type { AlertAttributes, MetaData } from "@/models/Alert";
+import { Alert, ParsedMetaData, UnparsedMetaData } from "@/models";
 
 /**
  * Parse meta array values that might be JSON strings
  * Always returns value as an array of strings
  */
-function parseMetaValues(meta: MetaData[]): ParsedMetaData[] {
+function parseMetaValues(meta: UnparsedMetaData[]): ParsedMetaData[] {
   if (!Array.isArray(meta)) return meta;
   
   return meta.map(item => {
@@ -39,7 +38,7 @@ function parseMetaValues(meta: MetaData[]): ParsedMetaData[] {
   });
 }
 
-export function parseAlertMeta(raw: AlertAttributes): AlertWithParsedMeta {
+export function parseAlertMeta(raw: Alert<UnparsedMetaData>): Alert<ParsedMetaData> {
   return {
     ...raw,
     meta: Array.isArray(raw.meta) ? parseMetaValues(raw.meta) : [],

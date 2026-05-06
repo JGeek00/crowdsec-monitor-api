@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { Decision } from '@/models';
+import { Decision } from '@/models/db';
 import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { DecisionAttributes } from '@/models/Decision';
-import { SourceInfo } from '@/models/Alert';
+import { DecisionAttributes } from '@/models/db/Decision';
+import { Alert_SourceInfo } from '@/models';
 import { DecisionListResponse } from '@/interfaces/decision.interface';
 import { DB_SORTING } from '@/interfaces/database.interface';
 
@@ -74,7 +74,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
 
     allDecisions.forEach((decision) => {
       if (decision.source) {
-        const source = typeof decision.source === 'string' ? JSON.parse(decision.source) as SourceInfo : decision.source;
+        const source = typeof decision.source === 'string' ? JSON.parse(decision.source) as Alert_SourceInfo : decision.source;
         
         if (source.cn) {
           countriesSet.add(source.cn);

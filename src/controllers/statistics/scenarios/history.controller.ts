@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertDb } from '@/models/db';
 import { QueryTypes } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
@@ -13,7 +13,7 @@ export async function getScenarioHistory(req: Request, res: Response): Promise<v
     const { item } = req.params;
 
     // Use raw SQL query to group by date — DATE() works on both SQLite and PostgreSQL
-    const history = await Alert.sequelize!.query(
+    const history = await AlertDb.sequelize!.query(
       `SELECT 
         DATE(crowdsec_created_at) as date,
         COUNT(*) as amount

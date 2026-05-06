@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { Alert_EventData, AlertDb, UnparsedMetaData } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { AlertRaw, EventData } from '@/interfaces/alert.interface';
 
 /**
  * Get top targets statistics
@@ -10,16 +9,16 @@ import { AlertRaw, EventData } from '@/interfaces/alert.interface';
 export async function getTopTargets(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const alerts = await Alert.findAll({
+    const alerts = await AlertDb.findAll({
       attributes: ['events'],
       raw: true,
     });
 
     const targetMap = new Map<string, number>();
 
-    (alerts as unknown as AlertRaw[]).forEach((alert) => {
+    (alerts).forEach((alert) => {
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as EventData[] : alert.events;
+        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[] : alert.events;
         
         // Collect unique target_fqdn values from this alert's events
         const targetsInAlert = new Set<string>();

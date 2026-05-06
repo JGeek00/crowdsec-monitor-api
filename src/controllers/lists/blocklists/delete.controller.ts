@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Blocklist, BlocklistIp } from '@/models';
+import { Blocklist, BlocklistIp } from '@/models/db';
 import { databaseService, statusBlocklistService } from '@/services';
 import { errorResponse } from '@/utils/error-response';
 import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';

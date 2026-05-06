@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { Decision, Alert } from '@/models';
+import { Decision, AlertDb, DecisionAttributes, Alert, UnparsedMetaData } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { AlertAttributes } from '@/models/Alert';
-import { DecisionAttributes } from '@/models/Decision';
 import { DecisionResponse } from '@/interfaces/decision.interface';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 
@@ -19,10 +17,10 @@ export async function getDecisionById(req: Request, res: Response): Promise<void
         exclude: [Decision.col.createdAt, Decision.col.updatedAt]
       },
       include: [{
-        model: Alert,
+        model: AlertDb,
         as: 'alert',
         attributes: {
-          exclude: [Alert.col.createdAt, Alert.col.updatedAt]
+          exclude: [AlertDb.col.createdAt, AlertDb.col.updatedAt]
         },
       }],
     });
@@ -32,7 +30,7 @@ export async function getDecisionById(req: Request, res: Response): Promise<void
       return;
     }
 
-    const rawDecision = decision.toJSON() as DecisionAttributes & { alert?: AlertAttributes };
+    const rawDecision = decision.toJSON() as DecisionAttributes & { alert?: Alert<UnparsedMetaData> };
     const plainDecision: DecisionResponse = {
       ...rawDecision,
       alert: rawDecision.alert ? parseAlertMeta(rawDecision.alert) : undefined,

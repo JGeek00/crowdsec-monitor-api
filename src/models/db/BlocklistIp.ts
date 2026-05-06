@@ -1,7 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { Blocklist } from './Blocklist';
-import type { CsBlocklist } from './CsBlocklist';
+import type { CsBlocklist, Blocklist } from '@/models';
 
 export const BLOCKLIST_IP_ORIGIN = {
   BLOCKLIST: 'blocklist',

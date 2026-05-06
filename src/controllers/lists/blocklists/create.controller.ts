@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Blocklist } from '@/models';
+import { Blocklist } from '@/models/db';
 import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { errorResponse } from '@/utils/error-response';

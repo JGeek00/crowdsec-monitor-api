@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { BlocklistIp } from './BlocklistIp';
+import type { BlocklistIp } from '@/models';
 
 export interface CsBlocklistAttributes {
   id: string;

@@ -1,0 +1,1 @@
+export * from '@/models/in/GetAlertsQueryParams.model';

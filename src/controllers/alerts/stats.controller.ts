@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertDb } from '@/models/db';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DB_SORTING } from '@/interfaces/database.interface';
@@ -10,23 +10,23 @@ import { DB_SORTING } from '@/interfaces/database.interface';
 export async function getAlertStats(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const total = await Alert.count() as number;
-    const simulated = await Alert.count({ where: { simulated: true } }) as number;
+    const total = await AlertDb.count() as number;
+    const simulated = await AlertDb.count({ where: { simulated: true } }) as number;
     const real = total - simulated;
 
-    const topScenarios = await Alert.findAll({
+    const topScenarios = await AlertDb.findAll({
       attributes: [
-        Alert.col.scenario,
-        [Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), 'count'],
+        AlertDb.col.scenario,
+        [AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col(AlertDb.col.id)), 'count'],
       ],
-      group: [Alert.col.scenario],
-      order: [[Alert.sequelize!.fn('COUNT', Alert.sequelize!.col(Alert.col.id)), DB_SORTING.DESC]],
+      group: [AlertDb.col.scenario],
+      order: [[AlertDb.sequelize!.fn('COUNT', AlertDb.sequelize!.col(AlertDb.col.id)), DB_SORTING.DESC]],
       limit: 10,
     });
 
     // Get all alerts with source information for grouping
-    const allAlerts = await Alert.findAll({
-      attributes: [Alert.col.source],
+    const allAlerts = await AlertDb.findAll({
+      attributes: [AlertDb.col.source],
     });
 
     // Group by country

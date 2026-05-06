@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { Alert } from '@/models';
+import { AlertDb } from '@/models/db';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { AlertRaw, SourceInfo } from '@/interfaces/alert.interface';
+import { Alert_SourceInfo } from '@/models';
 
 /**
  * Get top countries statistics
@@ -10,16 +10,16 @@ import { AlertRaw, SourceInfo } from '@/interfaces/alert.interface';
 export async function getTopCountries(req: Request, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const alertsWithSource = await Alert.findAll({
+    const alertsWithSource = await AlertDb.findAll({
       attributes: ['source'],
       raw: true,
     });
 
     const countryMap = new Map<string, number>();
 
-    (alertsWithSource as unknown as AlertRaw[]).forEach((alert) => {
+    (alertsWithSource).forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
         if (source.cn) {
           countryMap.set(source.cn, (countryMap.get(source.cn) || 0) + 1);
         }

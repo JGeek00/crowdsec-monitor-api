@@ -1,22 +1,21 @@
 import { Request, Response } from 'express';
-import { Alert, Decision } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { AlertAttributes } from '@/models/Alert';
-import { DecisionAttributes } from '@/models/Decision';
-import { AlertResponse } from '@/interfaces/alert.interface';
+import { DecisionAttributes } from '@/models/db/Decision';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { Alert, AlertDb, Decision, GetAlertResponse, UnparsedMetaData } from '@/models';
+import { GetAlertParams } from '@/models/in/GetAlertParams.model';
 
 /**
  * Get alert by ID with associated decisions
  */
-export async function getAlertById(req: Request, res: Response): Promise<void> {
+export async function getAlertById(req: Request<GetAlertParams, GetAlertResponse>, res: Response): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const alert = await Alert.findByPk(id, {
+    const alert = await AlertDb.findByPk(id, {
       attributes: {
-        exclude: [Alert.col.createdAt, Alert.col.updatedAt]
+        exclude: [AlertDb.col.createdAt, AlertDb.col.updatedAt]
       },
       include: [{
         model: Decision,
@@ -32,8 +31,8 @@ export async function getAlertById(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const rawAlert = alert.toJSON() as AlertAttributes & { decisions?: DecisionAttributes[] };
-    const plainAlert: AlertResponse = { ...parseAlertMeta(rawAlert), decisions: rawAlert.decisions };
+    const rawAlert = alert.toJSON() as Alert<UnparsedMetaData> & { decisions?: DecisionAttributes[] };
+    const plainAlert: GetAlertResponse = { ...parseAlertMeta(rawAlert), decisions: rawAlert.decisions };
 
     res.json(plainAlert);
   } catch (error) {
