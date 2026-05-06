@@ -4,7 +4,7 @@ import type { Alert_SourceInfo, Alert, UnparsedMetaData, Decision } from '@/mode
 
 export interface DecisionCreationAttributes extends Optional<Decision, 'id' | 'created_at' | 'updated_at'> {}
 
-export class DecisionsTable extends Model<Decision, DecisionCreationAttributes> implements Decision {
+class DecisionsTable extends Model<Decision, DecisionCreationAttributes> implements Decision {
   public id!: number;
   public alert_id!: number;
   public origin!: string;
@@ -142,3 +142,5 @@ DecisionsTable.init(
     ],
   }
 );
+
+export default DecisionsTable;

@@ -1,8 +1,8 @@
-import { AlertsTable } from '@/models/db/Alerts';
-import { DecisionsTable } from '@/models/db/Decisions';
-import { BlocklistsTable } from '@/models/db/Blocklists';
-import { BlocklistIpsTable } from '@/models/db/BlocklistIps';
-import { CsBlocklistsTable } from '@/models/db/CsBlocklist';
+import AlertsTable from '@/models/db/Alerts';
+import DecisionsTable from '@/models/db/Decisions';
+import BlocklistsTable from '@/models/db/Blocklists';
+import BlocklistIpsTable from '@/models/db/BlocklistIps';
+import CsBlocklistsTable from '@/models/db/CsBlocklists';
 import { Migration } from '@/models/db/Migration';
 
 // Define associations

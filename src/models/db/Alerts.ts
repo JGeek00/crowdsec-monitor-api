@@ -7,7 +7,7 @@ import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, Decision, D
 
 export interface AlertCreationAttributes extends Optional<Alert<UnparsedMetaData>, 'id' | 'created_at' | 'updated_at'> {}
 
-export class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes> implements Alert<UnparsedMetaData> {
+class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes> implements Alert<UnparsedMetaData> {
   public id!: number;
   public uuid!: string;
   public scenario!: string;
@@ -177,3 +177,5 @@ AlertsTable.init(
     ],
   }
 );
+
+export default AlertsTable;

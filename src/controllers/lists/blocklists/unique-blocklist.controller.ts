@@ -28,7 +28,7 @@ export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {},
       });
 
       if (!csBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
+        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
         return;
       }
 
@@ -56,7 +56,7 @@ export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {},
     });
 
     if (!apiBlocklist) {
-      res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
+      res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
       return;
     }
 

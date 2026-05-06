@@ -4,7 +4,7 @@ import type { CsBlocklist, BlocklistsTable, BlocklistIp, BlocklistIpOrigin } fro
 
 export interface BlocklistIpCreationAttributes extends Optional<BlocklistIp, 'id' | 'blocklist_id' | 'cs_blocklist_id'> {}
 
-export class BlocklistIpsTable extends Model<BlocklistIp, BlocklistIpCreationAttributes> implements BlocklistIp {
+class BlocklistIpsTable extends Model<BlocklistIp, BlocklistIpCreationAttributes> implements BlocklistIp {
   public id!: number;
   public blocklist_id!: number | null;
   public cs_blocklist_id!: string | null;
@@ -85,4 +85,4 @@ BlocklistIpsTable.init(
   }
 );
 
-export default BlocklistIp;
+export default BlocklistIpsTable;

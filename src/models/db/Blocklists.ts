@@ -4,7 +4,7 @@ import { Blocklist, BlocklistIpsTable } from '@/models';
 
 export interface BlocklistCreationAttributes extends Optional<Blocklist, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh' | 'last_refresh_failed'> {}
 
-export class BlocklistsTable extends Model<Blocklist, BlocklistCreationAttributes> implements Blocklist {
+class BlocklistsTable extends Model<Blocklist, BlocklistCreationAttributes> implements Blocklist {
   public id!: number;
   public url!: string;
   public name!: string;
