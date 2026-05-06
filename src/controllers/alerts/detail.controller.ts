@@ -3,13 +3,13 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DecisionAttributes } from '@/models/db/Decision';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
-import { Alert, AlertsTable, Decision, GetAlertResponse, UnparsedMetaData } from '@/models';
+import { Alert, AlertsTable, Decision, ErrorResponse, GetAlertResponse, UnparsedMetaData } from '@/models';
 import { GetAlertParams } from '@/models/in/GetAlertParams.model';
 
 /**
  * Get alert by ID with associated decisions
  */
-export async function getAlertById(req: Request<GetAlertParams, GetAlertResponse>, res: Response): Promise<void> {
+export async function getAlertById(req: Request<GetAlertParams, GetAlertResponse>, res: Response<GetAlertResponse | ErrorResponse>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;

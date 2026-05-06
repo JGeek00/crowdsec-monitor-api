@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AlertsTable } from '@/models/db';
+import { AlertsTable, ErrorResponse, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DB_SORTING } from '@/interfaces/database.interface';
@@ -7,7 +7,7 @@ import { DB_SORTING } from '@/interfaces/database.interface';
 /**
  * Get alerts statistics
  */
-export async function getAlertStats(req: Request, res: Response): Promise<void> {
+export async function getAlertStats(req: Request, res: Response<GetAlertsStatsResponse | ErrorResponse>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const total = await AlertsTable.count() as number;
@@ -22,7 +22,8 @@ export async function getAlertStats(req: Request, res: Response): Promise<void> 
       group: [AlertsTable.col.scenario],
       order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
       limit: 10,
-    });
+      raw: true,
+    }) as unknown as GetAlertsStatsResponse_TopScenario[];  // Sequelize cannot detect correct type when using "group" and "attributes" params
 
     // Get all alerts with source information for grouping
     const allAlerts = await AlertsTable.findAll({
