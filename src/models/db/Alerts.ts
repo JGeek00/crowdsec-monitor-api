@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, Decision } from '@/models';
+import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, Decision, DecisionsTable } from '@/models';
 
 // On database model we use UnparsedMetaData because the JSON object is stored as a string on the table column
 // It gets parsed and converted to ParsedMetaData on the endpoint controller
@@ -31,7 +31,7 @@ export class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAtt
   public updated_at!: Date;
 
   // Associations will be set in models/index.ts
-  public readonly decisions?: Decision[];
+  public readonly decisions?: DecisionsTable[];
 
   // Column name references for use in Sequelize queries instead of string literals
   static readonly col = {

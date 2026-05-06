@@ -1,26 +1,10 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import type { Alert_SourceInfo, Alert, UnparsedMetaData } from '@/models';
+import type { Alert_SourceInfo, Alert, UnparsedMetaData, Decision } from '@/models';
 
-export interface DecisionAttributes {
-  id: number;
-  alert_id: number;
-  origin: string;
-  type: string;
-  scope: string;
-  value: string;
-  expiration: Date;
-  scenario: string;
-  simulated: boolean;
-  source: Alert_SourceInfo;
-  crowdsec_created_at: Date;
-  created_at: Date;
-  updated_at: Date;
-}
+export interface DecisionCreationAttributes extends Optional<Decision, 'id' | 'created_at' | 'updated_at'> {}
 
-export interface DecisionCreationAttributes extends Optional<DecisionAttributes, 'id' | 'created_at' | 'updated_at'> {}
-
-export class Decision extends Model<DecisionAttributes, DecisionCreationAttributes> implements DecisionAttributes {
+export class DecisionsTable extends Model<Decision, DecisionCreationAttributes> implements Decision {
   public id!: number;
   public alert_id!: number;
   public origin!: string;
@@ -56,7 +40,7 @@ export class Decision extends Model<DecisionAttributes, DecisionCreationAttribut
   } as const;
 }
 
-Decision.init(
+DecisionsTable.init(
   {
     id: {
       type: DataTypes.INTEGER,

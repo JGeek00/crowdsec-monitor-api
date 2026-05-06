@@ -1,5 +1,5 @@
 import { body, ValidationChain } from 'express-validator';
-import { DECISION_TYPE } from '@/interfaces/decision.interface';
+import { DECISION_TYPE } from '@/models';
 
 /**
  * Validation rules for creating a decision (POST /v1/decisions)

@@ -1,18 +1,18 @@
 import { AlertsTable } from '@/models/db/Alerts';
-import { Decision } from '@/models/db/Decision';
+import { DecisionsTable } from '@/models/db/Decisions';
 import { Blocklist } from '@/models/db/Blocklist';
 import { BlocklistIp } from '@/models/db/BlocklistIp';
 import { CsBlocklist } from '@/models/db/CsBlocklist';
 import { Migration } from '@/models/db/Migration';
 
 // Define associations
-AlertsTable.hasMany(Decision, {
+AlertsTable.hasMany(DecisionsTable, {
   sourceKey: 'id',
   foreignKey: 'alert_id',
   as: 'decisions',
 });
 
-Decision.belongsTo(AlertsTable, {
+DecisionsTable.belongsTo(AlertsTable, {
   foreignKey: 'alert_id',
   as: 'alert',
 });
@@ -39,11 +39,11 @@ BlocklistIp.belongsTo(CsBlocklist, {
   as: 'csBlocklist',
 });
 
-export { AlertsTable, Decision, Blocklist, BlocklistIp, CsBlocklist, Migration };
+export { AlertsTable, DecisionsTable, Blocklist, BlocklistIp, CsBlocklist, Migration };
 
 export * from '@/models/db/Alerts';
 export * from '@/models/db/Blocklist';
 export * from '@/models/db/BlocklistIp';
 export * from '@/models/db/CsBlocklist';
-export * from '@/models/db/Decision';
+export * from '@/models/db/Decisions';
 export * from '@/models/db/Migration';

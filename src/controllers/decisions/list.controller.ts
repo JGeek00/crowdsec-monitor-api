@@ -1,24 +1,22 @@
 import { Request, Response } from 'express';
-import { Decision } from '@/models/db';
 import { Op, WhereOptions } from 'sequelize';
+import { Alert_SourceInfo, Decision, DecisionsTable, GetDecisionsQueryParams, GetDecisionsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { DecisionAttributes } from '@/models/db/Decision';
-import { Alert_SourceInfo } from '@/models';
-import { DecisionListResponse } from '@/interfaces/decision.interface';
 import { DB_SORTING } from '@/interfaces/database.interface';
 
 /**
  * Get all decisions with filtering and pagination
  * @param only_active - Optional boolean to filter only active decisions (expiration > now)
  */
-export async function getAllDecisions(req: Request, res: Response): Promise<void> {
+type Res = ResponseWithError<GetDecisionsResponse>;
+export async function getAllDecisions(req: Request<{}, Res, {}, GetDecisionsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged = false, type, scope, value, simulated, scenario, ip_address, country, ip_owner, only_active } = req.query;
 
-    const where: WhereOptions<DecisionAttributes> = {};
+    const where: WhereOptions<Decision> = {};
     
     if (type) {
       where.type = String(type);
@@ -63,7 +61,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     }
 
     // Fetch all decisions for filtering options (from entire database)
-    const allDecisions = await Decision.findAll({
+    const allDecisions = await DecisionsTable.findAll({
       attributes: ['source'],
       raw: true,
     });
@@ -87,12 +85,12 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
     });
 
     // Fetch decisions with filters
-    let decisions = await Decision.findAll({
+    let decisions = await DecisionsTable.findAll({
       where,
       attributes: {
-        exclude: [Decision.col.createdAt, Decision.col.updatedAt]
+        exclude: [DecisionsTable.col.createdAt, DecisionsTable.col.updatedAt]
       },
-      order: [[Decision.col.crowdsecCreatedAt, DB_SORTING.DESC]],
+      order: [[DecisionsTable.col.crowdsecCreatedAt, DB_SORTING.DESC]],
     });
 
     // Filter by country in JavaScript (since source is JSON)
@@ -130,7 +128,7 @@ export async function getAllDecisions(req: Request, res: Response): Promise<void
       paginatedDecisions = decisions.slice(offset as number, (offset as number) + (limit as number));
     }
 
-    const response: DecisionListResponse = {
+    const response: GetDecisionsResponse = {
       filtering: {
         countries: Array.from(countriesSet).sort(),
         ipOwners: Array.from(ipOwnersSet).sort(),

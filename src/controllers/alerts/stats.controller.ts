@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AlertsTable, ErrorResponse, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario } from '@/models';
+import { AlertsTable, ErrorResponse, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DB_SORTING } from '@/interfaces/database.interface';
@@ -7,7 +7,8 @@ import { DB_SORTING } from '@/interfaces/database.interface';
 /**
  * Get alerts statistics
  */
-export async function getAlertStats(req: Request, res: Response<GetAlertsStatsResponse | ErrorResponse>): Promise<void> {
+type Res = ResponseWithError<GetAlertsStatsResponse>;
+export async function getAlertStats(req: Request<{}, Res>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const total = await AlertsTable.count() as number;

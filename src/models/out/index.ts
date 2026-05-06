@@ -2,3 +2,8 @@ export * from '@/models/out/GetAlertsResponse.model';
 export * from '@/models/out/GetAlertResponse.model';
 export * from '@/models/out/DeleteAlertResponse.model';
 export * from '@/models/out/GetAlertsStatsResponse.model';
+export * from '@/models/out/GetDecisionsResponse.model';
+export * from '@/models/out/DeleteDecisionResponse.model';
+export * from '@/models/out/GetDecisionResponse.model';
+export * from '@/models/out/GetDecisionsStatsResponse.model';
+export * from '@/models/out/PostDecisionResponse.model';

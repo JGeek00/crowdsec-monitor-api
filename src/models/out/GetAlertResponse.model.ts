@@ -1,5 +1,5 @@
-import { Alert, DecisionAttributes, ParsedMetaData } from "@/models";
+import { Alert, Decision, ParsedMetaData } from "@/models";
 
 export interface GetAlertResponse extends Alert<ParsedMetaData> {
-  decisions?: DecisionAttributes[]
+  decisions?: Decision[]
 }

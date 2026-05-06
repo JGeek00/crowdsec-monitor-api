@@ -37,7 +37,7 @@ export class DecisionsService {
 
   /**
    * Delete a decision by ID from CrowdSec LAPI
-   * @param id - Decision ID to delete
+   * @param id - DecisionsTable ID to delete
    * @returns Number of deleted decisions
    */
   async deleteDecision(id: number): Promise<number> {

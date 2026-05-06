@@ -4,7 +4,7 @@ import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { Alert_EventData, Alert_SourceInfo, Alert, GetAlertsResponse, UnparsedMetaData, ErrorResponse } from '@/models';
+import { Alert_EventData, Alert_SourceInfo, Alert, GetAlertsResponse, UnparsedMetaData, ErrorResponse, ResponseWithError } from '@/models';
 import { DB_SORTING } from '@/interfaces/database.interface';
 import { GetAlertsQueryParams } from '@/models/in/GetAlertsQueryParams.model';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
@@ -12,7 +12,8 @@ import { parseAlertMeta } from '@/utils/parse-meta-values';
 /**
  * Get all alerts with filtering and pagination
  */
-export async function getAllAlerts(req: Request<{}, {}, GetAlertsResponse, GetAlertsQueryParams>, res: Response<GetAlertsResponse | ErrorResponse>): Promise<void> {
+type Res = ResponseWithError<GetAlertsResponse>;
+export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParams>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner, target } = req.query;

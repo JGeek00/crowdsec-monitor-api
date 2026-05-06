@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { AlertsTable, Decision } from '@/models/db';
+import { AlertsTable, DecisionsTable } from '@/models/db';
 import { defaults } from '@/config/env-defaults';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
@@ -32,7 +32,7 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       : {};
     
     const whereClauseDecisions = sinceDate
-      ? { [Decision.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } }
+      ? { [DecisionsTable.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } }
       : {};
 
     // 1. Alerts in last 24 hours
@@ -46,10 +46,10 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
 
     // 2. Active decisions (not expired)
     const now = new Date();
-    const activeDecisions = await Decision.count({
+    const activeDecisions = await DecisionsTable.count({
       where: {
         expiration: { [Op.gt]: now },
-        ...(sinceDate ? { [Decision.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } } : {}),
+        ...(sinceDate ? { [DecisionsTable.col.crowdsecCreatedAt]: { [Op.gte]: sinceDate } } : {}),
       },
     });
 
@@ -65,14 +65,14 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       raw: true,
     }) as unknown as DateCountRow[];
 
-    const decisionsByDate = await Decision.findAll({
+    const decisionsByDate = await DecisionsTable.findAll({
       attributes: [
-        [Decision.sequelize!.fn('DATE', Decision.sequelize!.col(Decision.col.crowdsecCreatedAt)), 'date'],
-        [Decision.sequelize!.fn('COUNT', Decision.sequelize!.col(Decision.col.id)), 'count'],
+        [DecisionsTable.sequelize!.fn('DATE', DecisionsTable.sequelize!.col(DecisionsTable.col.crowdsecCreatedAt)), 'date'],
+        [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), 'count'],
       ],
       where: whereClauseDecisions,
-      group: [Decision.sequelize!.fn('DATE', Decision.sequelize!.col(Decision.col.crowdsecCreatedAt))],
-      order: [[Decision.sequelize!.fn('DATE', Decision.sequelize!.col(Decision.col.crowdsecCreatedAt)), DB_SORTING.ASC]],
+      group: [DecisionsTable.sequelize!.fn('DATE', DecisionsTable.sequelize!.col(DecisionsTable.col.crowdsecCreatedAt))],
+      order: [[DecisionsTable.sequelize!.fn('DATE', DecisionsTable.sequelize!.col(DecisionsTable.col.crowdsecCreatedAt)), DB_SORTING.ASC]],
       raw: true,
     }) as unknown as DateCountRow[];
 
