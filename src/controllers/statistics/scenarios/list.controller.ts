@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { AlertsTable, ResponseWithError, GetTopScenariosResponse } from '@/models';
+import { AlertsTable, ResponseWithError, GetTopScenariosResponse, ScenarioCountRow } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { ScenarioCountRow } from '@/interfaces/statistics.interface';
 import { DB_SORTING } from '@/types/database.types';
 
 /**
