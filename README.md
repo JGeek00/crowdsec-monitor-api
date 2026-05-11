@@ -114,7 +114,7 @@ curl -H "Authorization: Bearer your_password_here" \
 - External Identity Provider (Auth0, Keycloak, etc.)
 - API Gateway with advanced authentication
 
-The `/api/v1/api-health` endpoint is always accessible without authentication.
+The `/api/v1/health` endpoint is always accessible without authentication.
 
 #### Rate Limiting (Optional)
 
