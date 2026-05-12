@@ -246,7 +246,7 @@ jobs:
         run: |
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
           VERSION="${{ needs.validate.outputs.version }}"
-          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-amd64" --format '{{.Ref}}')
+          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-amd64" | jq -r '.RepoDigests[0]')
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 
   push-arm64:
@@ -327,7 +327,7 @@ jobs:
         run: |
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
           VERSION="${{ needs.validate.outputs.version }}"
-          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-arm64" --format '{{.Ref}}')
+          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-arm64" | jq -r '.RepoDigests[0]')
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 
   manifest-release:
