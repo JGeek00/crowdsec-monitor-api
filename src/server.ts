@@ -6,6 +6,7 @@ import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { webSocketApp } from '@/sockets';
 import appDefaults from '@/constants/app-defaults';
 import { setLevel as initLogger, log } from '@/services'
+import { LogLevel } from '@/types/log.types';
 import packageJson from '../package.json';
 
 /**
@@ -56,7 +57,7 @@ const step = (label: string, status: '✓' | '⚠' | '✗', detail?: string): vo
 
 const startServer = async (): Promise<void> => {
   try {
-    initLogger(config.logs.level);
+    initLogger(config.logs.level as LogLevel);
 
     console.log('');
     console.log('  ╔══════════════════════════════════════╗');
