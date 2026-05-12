@@ -346,13 +346,15 @@ jobs:
           VERSION="${{ needs.validate.outputs.version }}"
           CHANNEL="${{ needs.validate.outputs.channel_tag }}"
 
-          crane manifest create "${REPO}:${VERSION}" \
-            "${REPO}:${VERSION}-amd64" "${REPO}:${VERSION}-arm64"
-          crane manifest push "${REPO}:${VERSION}"
+          crane index append \
+            -m "${REPO}:${VERSION}-amd64" \
+            -m "${REPO}:${VERSION}-arm64" \
+            -t "${REPO}:${VERSION}"
 
-          crane manifest create "${REPO}:${CHANNEL}" \
-            "${REPO}:${VERSION}-amd64" "${REPO}:${VERSION}-arm64"
-          crane manifest push "${REPO}:${CHANNEL}"
+          crane index append \
+            -m "${REPO}:${VERSION}-amd64" \
+            -m "${REPO}:${VERSION}-arm64" \
+            -t "${REPO}:${CHANNEL}"
 
       - name: Checkout
         uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
