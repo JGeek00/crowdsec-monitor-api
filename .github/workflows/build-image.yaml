@@ -7,24 +7,50 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+  actions: write
+
 jobs:
-  build-push-image:
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: './'
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      is_beta: ${{ steps.release_type.outputs.IS_BETA }}
+      channel_tag: ${{ steps.release_type.outputs.CHANNEL_TAG }}
+      changelog_path: ${{ steps.changelog.outputs.CHANGELOG_PATH }}
     steps:
-      - name: "Checkout GitHub Action"
-        uses: actions/checkout@main
+      - name: Checkout
+        uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      - name: "Login to GitHub Container Registry"
-        uses: docker/login-action@v1
+      - name: Verify actor authorization
+        run: |
+          ACTOR="${{ github.actor }}"
+          OWNER="jgeek00"
+          if [ "$ACTOR" != "$OWNER" ]; then
+            echo "ERROR: Only $OWNER can trigger deployments."
+            echo "Actor '$ACTOR' is not authorized."
+            exit 1
+          fi
+          echo "Authorized actor: $ACTOR"
+
+      - name: Verify tag signature
+        if: github.ref_type == 'tag'
+        run: |
+          TAG="${{ github.ref_name }}"
+          if ! git tag -v "$TAG" 2>&1; then
+            echo "WARNING: Tag '$TAG' is not signed or signature could not be verified."
+            echo "Consider using signed tags: git tag -s vX.X.X"
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GH_TOKEN}}
+          node-version: 24
 
-      - name: "Validate version format"
+      - name: Validate tag format
         if: github.ref_type == 'tag'
         run: |
           TAG="${{ github.ref_name }}"
@@ -36,7 +62,37 @@ jobs:
             exit 1
           fi
 
-      - name: "Determine release type"
+      - name: Extract version from package.json
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Verify tag matches package.json
+        if: github.ref_type == 'tag'
+        run: |
+          TAG="${{ github.ref_name }}"
+          PKG_VERSION="${{ steps.version.outputs.VERSION }}"
+          EXPECTED_TAG="v${PKG_VERSION}"
+          if [[ "$TAG" != "$EXPECTED_TAG" ]]; then
+            echo "ERROR: Tag ($TAG) does not match package.json version ($PKG_VERSION)"
+            echo "Expected tag: $EXPECTED_TAG"
+            exit 1
+          fi
+          echo "Tag matches package.json version: $TAG"
+
+      - name: Verify changelog exists
+        if: github.ref_type == 'tag'
+        id: changelog
+        run: |
+          CHANGELOG_FILE="changelog/${{ github.ref_name }}.md"
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "ERROR: Changelog file not found: $CHANGELOG_FILE"
+            echo "Please create the changelog file before creating a release."
+            exit 1
+          fi
+          echo "Changelog file found: $CHANGELOG_FILE"
+          echo "CHANGELOG_PATH=$CHANGELOG_FILE" >> $GITHUB_OUTPUT
+
+      - name: Determine release type
         id: release_type
         if: github.ref_type == 'tag'
         run: |
@@ -49,44 +105,425 @@ jobs:
             echo "CHANNEL_TAG=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: "Extract version from package.json"
-        id: version
-        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
-      - name: "Verify changelog exists"
-        if: github.ref_type == 'tag'
+      - name: Install dependencies
         run: |
-          CHANGELOG_FILE="changelog/${{ github.ref_name }}.md"
-          if [ ! -f "$CHANGELOG_FILE" ]; then
-            echo "ERROR: Changelog file not found: $CHANGELOG_FILE"
-            echo "Please create the changelog file before creating a release."
-            exit 1
-          fi
-          echo "Changelog file found: $CHANGELOG_FILE"
-          echo "CHANGELOG_PATH=$CHANGELOG_FILE" >> $GITHUB_ENV
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
+          pnpm install --frozen-lockfile
 
-      - name: "Set up QEMU"
-        uses: docker/setup-qemu-action@v3
+      - name: Dependency security audit
+        run: |
+          corepack enable
+          pnpm audit --audit-level=high || true
+        continue-on-error: true
 
-      - name: "Set up Docker Buildx"
-        uses: docker/setup-buildx-action@v3
-        
-      - name: "Build and push Docker image"
-        uses: docker/build-push-action@v6
+      - name: TypeScript compile check
+        run: |
+          corepack enable
+          pnpm exec tsc --noEmit
+        working-directory: ./
+
+  build:
+    name: Build Production
+    needs: [validate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
+          pnpm install --frozen-lockfile
+
+      - name: Production build
+        run: |
+          corepack enable
+          pnpm run build:prod
+
+      - name: Generate dist integrity checksum
+        run: |
+          cd dist
+          find . -type f | sort | xargs sha256sum > ../dist-sha256sum.txt
+          cd ..
+          cat dist-sha256sum.txt
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4 # ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+      - name: Upload dist checksum artifact
+        uses: actions/upload-artifact@v4 # ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dist-checksum
+          path: dist-sha256sum.txt
+          retention-days: 1
+
+  push-amd64:
+    name: Push AMD64
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.get_digest.outputs.digest }}
+      image-pushed: ${{ steps.push_step.outputs.image-pushed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4 # d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: dist
+          path: dist/
+
+      - name: Download dist checksum artifact
+        uses: actions/download-artifact@v4 # d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: dist-checksum
+          path: .
+
+      - name: Verify dist integrity
+        run: |
+          cd dist
+          sha256sum -c ../dist-sha256sum.txt
+          cd ..
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3 # 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Build image locally
+        uses: docker/build-push-action@v6 # 10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.release_type.outputs.CHANNEL_TAG || 'latest' }}
-            ghcr.io/jgeek00/crowdsec-monitor-api:${{ steps.version.outputs.VERSION }}
+          push: false
+          load: true
+          platforms: linux/amd64
+          tags: ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,scope=amd64,mode=max
+          labels: |
+            org.opencontainers.image.version=${{ needs.validate.outputs.version }}
+            org.opencontainers.image.source=https://github.com/JGeek00/crowdsec-monitor-api
 
-      - name: "Create GitHub Release"
-        uses: softprops/action-gh-release@v1
+      - name: Security scan (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0 # 915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2
+        with:
+          image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64"
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+
+      - name: Docker login
+        if: success()
+        uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Push AMD64
+        id: push_step
+        if: success()
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+          docker push "${REPO}:${VERSION}-amd64"
+          echo "image-pushed=true" >> $GITHUB_OUTPUT
+
+      - name: Get image digest
+        id: get_digest
+        if: success()
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-amd64" --format '{{.Ref}}')
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+
+  push-arm64:
+    name: Push ARM64
+    needs: [validate, build]
+    runs-on: ubuntu-latest-arm64
+    outputs:
+      digest: ${{ steps.get_digest.outputs.digest }}
+      image-pushed: ${{ steps.push_step.outputs.image-pushed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4 # d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: dist
+          path: dist/
+
+      - name: Download dist checksum artifact
+        uses: actions/download-artifact@v4 # d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: dist-checksum
+          path: .
+
+      - name: Verify dist integrity
+        run: |
+          cd dist
+          sha256sum -c ../dist-sha256sum.txt
+          cd ..
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3 # 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Build image locally
+        uses: docker/build-push-action@v6 # 10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          push: false
+          load: true
+          platforms: linux/arm64
+          tags: ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,scope=arm64,mode=max
+          labels: |
+            org.opencontainers.image.version=${{ needs.validate.outputs.version }}
+            org.opencontainers.image.source=https://github.com/JGeek00/crowdsec-monitor-api
+
+      - name: Security scan (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0 # 915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2
+        with:
+          image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64"
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+
+      - name: Docker login
+        if: success()
+        uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Push ARM64
+        id: push_step
+        if: success()
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+          docker push "${REPO}:${VERSION}-arm64"
+          echo "image-pushed=true" >> $GITHUB_OUTPUT
+
+      - name: Get image digest
+        id: get_digest
+        if: success()
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-arm64" --format '{{.Ref}}')
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+
+  manifest-release:
+    name: Manifest + Release
+    needs: [validate, push-amd64, push-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker login
+        uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Create manifest by digest
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+          CHANNEL="${{ needs.validate.outputs.channel_tag }}"
+          AMD64_DIGEST="${{ needs.push-amd64.outputs.digest }}"
+          ARM64_DIGEST="${{ needs.push-arm64.outputs.digest }}"
+
+          docker manifest create "${REPO}:${VERSION}" \
+            --amend "${AMD64_DIGEST}" \
+            --amend "${ARM64_DIGEST}"
+
+          docker manifest annotate --arch amd64 --os linux "${REPO}:${VERSION}" "${AMD64_DIGEST}"
+          docker manifest annotate --arch arm64 --os linux "${REPO}:${VERSION}" "${ARM64_DIGEST}"
+
+          docker manifest push "${REPO}:${VERSION}"
+
+          docker manifest create "${REPO}:${CHANNEL}" \
+            --amend "${AMD64_DIGEST}" \
+            --amend "${ARM64_DIGEST}"
+
+          docker manifest annotate --arch amd64 --os linux "${REPO}:${CHANNEL}" "${AMD64_DIGEST}"
+          docker manifest annotate --arch arm64 --os linux "${REPO}:${CHANNEL}" "${ARM64_DIGEST}"
+
+          docker manifest push "${REPO}:${CHANNEL}"
+
+      - name: Checkout
+        uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2 # 3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         if: github.ref_type == 'tag'
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          body_path: ${{ env.CHANGELOG_PATH }}
-          prerelease: ${{ steps.release_type.outputs.IS_BETA == 'true' }}
+          body_path: ${{ needs.validate.outputs.changelog_path }}
+          prerelease: ${{ needs.validate.outputs.is_beta == 'true' }}
           token: ${{ secrets.GH_TOKEN }}
+
+  cleanup-success:
+    name: Cleanup Success
+    needs: [validate, manifest-release]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Delete arch-specific tags and artifacts
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          GHCR_TOKEN=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            "https://ghcr.io/token?service=ghcr.io&scope=repository:jgeek00/crowdsec-monitor-api:delete" \
+            | jq -r '.token')
+
+          for ARCH_TAG in "${VERSION}-amd64" "${VERSION}-arm64"; do
+            DIGEST=$(curl -s -H "Authorization: Bearer $GHCR_TOKEN" \
+              -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+              -I "https://ghcr.io/v2/jgeek00/crowdsec-monitor-api/manifests/$ARCH_TAG" \
+              | grep -i "^docker-content-digest:" | awk '{print $2}' | tr -d '\r')
+
+            if [ -n "$DIGEST" ]; then
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+                -H "Authorization: Bearer $GHCR_TOKEN" \
+                -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+                "https://ghcr.io/v2/jgeek00/crowdsec-monitor-api/manifests/$DIGEST")
+
+              if [ "$HTTP_CODE" = "202" ]; then
+                echo "Deleted: $ARCH_TAG"
+              else
+                echo "Failed to delete $ARCH_TAG (HTTP $HTTP_CODE)"
+              fi
+            fi
+          done
+
+      - name: Delete GitHub Artifacts
+        uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted artifact: ${artifact.name} (id: ${artifact.id})`);
+              }
+            }
+
+  cleanup-failure-partial:
+    name: Cleanup Failure (One Arch Failed)
+    needs: [validate, push-amd64, push-arm64]
+    runs-on: ubuntu-latest
+    if: >-
+      always() &&
+      (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
+      (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
+    steps:
+      - name: Rollback successful arch image and delete artifacts
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          AMD64_RESULT="${{ needs.push-amd64.result }}"
+          ARM64_RESULT="${{ needs.push-arm64.result }}"
+
+          if [ "$AMD64_RESULT" = "success" ]; then
+            ARCH_TAG="${VERSION}-amd64"
+          elif [ "$ARM64_RESULT" = "success" ]; then
+            ARCH_TAG="${VERSION}-arm64"
+          else
+            echo "No successful push to clean up"
+            exit 0
+          fi
+
+          GHCR_TOKEN=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            "https://ghcr.io/token?service=ghcr.io&scope=repository:jgeek00/crowdsec-monitor-api:delete" \
+            | jq -r '.token')
+
+          DIGEST=$(curl -s -H "Authorization: Bearer $GHCR_TOKEN" \
+            -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+            -I "https://ghcr.io/v2/jgeek00/crowdsec-monitor-api/manifests/$ARCH_TAG" \
+            | grep -i "^docker-content-digest:" | awk '{print $2}' | tr -d '\r')
+
+          if [ -n "$DIGEST" ]; then
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+              -H "Authorization: Bearer $GHCR_TOKEN" \
+              -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+              "https://ghcr.io/v2/jgeek00/crowdsec-monitor-api/manifests/$DIGEST")
+
+            if [ "$HTTP_CODE" = "202" ]; then
+              echo "Rolled back: $ARCH_TAG"
+            else
+              echo "Failed to delete $ARCH_TAG (HTTP $HTTP_CODE)"
+            fi
+          fi
+
+      - name: Delete GitHub Artifacts
+        uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted artifact: ${artifact.name} (id: ${artifact.id})`);
+              }
+            }
+
+  cleanup-failure-both:
+    name: Cleanup Failure (Both Failed)
+    needs: [validate, push-amd64, push-arm64]
+    runs-on: ubuntu-latest
+    if: >-
+      always() &&
+      needs.push-amd64.result == 'failure' &&
+      needs.push-arm64.result == 'failure'
+    steps:
+      - name: Delete GitHub Artifacts
+        uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted artifact: ${artifact.name} (id: ${artifact.id})`);
+              }
+            }
