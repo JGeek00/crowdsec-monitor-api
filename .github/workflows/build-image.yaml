@@ -336,7 +336,7 @@ jobs:
     needs: [validate, push-amd64, push-arm64]
     runs-on: ubuntu-24.04
     container:
-      image: gcr.io/go-containerregistry/crane:v0.21.5
+      image: gcr.io/go-containerregistry/crane:debug
     steps:
       - name: Login to GHCR
         run: |
@@ -397,7 +397,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: success()
     container:
-      image: gcr.io/go-containerregistry/crane:v0.21.5
+      image: gcr.io/go-containerregistry/crane:debug
     steps:
       - name: Login to GHCR
         run: |
@@ -432,7 +432,7 @@ jobs:
       (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
       (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
     container:
-      image: gcr.io/go-containerregistry/crane:v0.21.5
+      image: gcr.io/go-containerregistry/crane:debug
     steps:
       - name: Login to GHCR
         run: |
@@ -476,7 +476,7 @@ jobs:
       needs.push-amd64.result == 'failure' &&
       needs.push-arm64.result == 'failure'
     container:
-      image: gcr.io/go-containerregistry/crane:v0.21.5
+      image: gcr.io/go-containerregistry/crane:debug
     steps:
       - name: Delete GitHub Artifacts
         run: |
