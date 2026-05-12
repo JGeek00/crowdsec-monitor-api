@@ -7,13 +7,11 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
   workflow_dispatch:
 
-env:
-  CRANE_IMAGE: gcr.io/go-containerregistry/crane:v0.21.5
-
 permissions:
   contents: write
   packages: write
   actions: write
+
 
 jobs:
   validate:
@@ -337,7 +335,8 @@ jobs:
     name: Create Manifest
     needs: [validate, push-amd64, push-arm64]
     runs-on: ubuntu-24.04
-    container: ${{ env.CRANE_IMAGE }}
+    container:
+      image: gcr.io/go-containerregistry/crane:v0.21.5
     steps:
       - name: Login to GHCR
         run: |
@@ -397,7 +396,8 @@ jobs:
     needs: [validate, manifest, release]
     runs-on: ubuntu-24.04
     if: success()
-    container: ${{ env.CRANE_IMAGE }}
+    container:
+      image: gcr.io/go-containerregistry/crane:v0.21.5
     steps:
       - name: Login to GHCR
         run: |
@@ -431,7 +431,8 @@ jobs:
       always() &&
       (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
       (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
-    container: ${{ env.CRANE_IMAGE }}
+    container:
+      image: gcr.io/go-containerregistry/crane:v0.21.5
     steps:
       - name: Login to GHCR
         run: |
@@ -474,7 +475,8 @@ jobs:
       always() &&
       needs.push-amd64.result == 'failure' &&
       needs.push-arm64.result == 'failure'
-    container: ${{ env.CRANE_IMAGE }}
+    container:
+      image: gcr.io/go-containerregistry/crane:v0.21.5
     steps:
       - name: Delete GitHub Artifacts
         run: |
