@@ -306,13 +306,10 @@ jobs:
           path: ./images
           merge-multiple: false
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3 # 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-
-      - name: Load images
+      - name: Install skopeo
         run: |
-          docker load < ./images/image-amd64/image-amd64.tar.gz
-          docker load < ./images/image-arm64/image-arm64.tar.gz
+          sudo apt-get update
+          sudo apt-get install -y skopeo
 
       - name: Docker login
         uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
@@ -320,6 +317,22 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
+
+      - name: Push arch images to GHCR
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          skopeo copy --dest-creds "${{ github.actor }}:${{ secrets.GH_TOKEN }}" \
+            "docker-archive:./images/image-amd64/image-amd64.tar.gz" \
+            "docker://${REPO}:${VERSION}-amd64"
+
+          skopeo copy --dest-creds "${{ github.actor }}:${{ secrets.GH_TOKEN }}" \
+            "docker-archive:./images/image-arm64/image-arm64.tar.gz" \
+            "docker://${REPO}:${VERSION}-arm64"
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3 # 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
       - name: Create and push manifests
         run: |
@@ -331,14 +344,36 @@ jobs:
           docker buildx imagetools create \
             --annotation "org.opencontainers.image.description=${DESCRIPTION}" \
             -t "${REPO}:${VERSION}" \
-            "crowdsec-monitor-api:${VERSION}-amd64" \
-            "crowdsec-monitor-api:${VERSION}-arm64"
+            "${REPO}:${VERSION}-amd64" \
+            "${REPO}:${VERSION}-arm64"
 
           docker buildx imagetools create \
             --annotation "org.opencontainers.image.description=${DESCRIPTION}" \
             -t "${REPO}:${CHANNEL}" \
-            "crowdsec-monitor-api:${VERSION}-amd64" \
-            "crowdsec-monitor-api:${VERSION}-arm64"
+            "${REPO}:${VERSION}-amd64" \
+            "${REPO}:${VERSION}-arm64"
+
+      - name: Delete arch tags
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/user/packages/container/crowdsec-monitor-api/versions")
+
+          for ARCH in "${VERSION}-amd64" "${VERSION}-arm64"; do
+            VERSION_ID=$(echo "$VERSIONS" | jq -r ".[] | select(.metadata.container.tags[] == \"$ARCH\") | .id")
+            if [ -n "$VERSION_ID" ] && [ "$VERSION_ID" != "null" ]; then
+              curl -s -X DELETE \
+                -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/user/packages/container/crowdsec-monitor-api/versions/${VERSION_ID}"
+              echo "Deleted arch tag: $ARCH (version id: $VERSION_ID)"
+            else
+              echo "WARNING: Could not find version id for tag: $ARCH"
+            fi
+          done
 
   release:
     name: GitHub Release
