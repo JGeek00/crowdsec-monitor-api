@@ -331,15 +331,26 @@ jobs:
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 
   manifest:
-    name: Create Manifest
-    needs: [validate, push-amd64, push-arm64]
-    runs-on: ubuntu-24.04
-    container:
-      image: gcr.io/go-containerregistry/crane:debug
-    steps:
+     name: Create Manifest
+     needs: [validate, push-amd64, push-arm64]
+     runs-on: ubuntu-24.04
+     container:
+       image: gcr.io/go-containerregistry/crane:debug
+     steps:
       - name: Login to GHCR
         run: |
           echo "${{ secrets.GH_TOKEN }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Verify arch images exist
+        run: |
+          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          echo "=== Fetching amd64 manifest ==="
+          crane manifest "${REPO}:${VERSION}-amd64" || echo "FAILED: amd64 not found"
+
+          echo "=== Fetching arm64 manifest ==="
+          crane manifest "${REPO}:${VERSION}-arm64" || echo "FAILED: arm64 not found"
 
       - name: Create manifest
         run: |
@@ -347,17 +358,25 @@ jobs:
           VERSION="${{ needs.validate.outputs.version }}"
           CHANNEL="${{ needs.validate.outputs.channel_tag }}"
 
+          echo "=== Creating VERSION manifest ==="
           crane index append \
             --docker-empty-base \
             -m "${REPO}:${VERSION}-amd64" \
             -m "${REPO}:${VERSION}-arm64" \
             -t "${REPO}:${VERSION}"
 
+          echo "=== Verifying VERSION manifest ==="
+          crane manifest "${REPO}:${VERSION}"
+
+          echo "=== Creating CHANNEL manifest ==="
           crane index append \
             --docker-empty-base \
             -m "${REPO}:${VERSION}-amd64" \
             -m "${REPO}:${VERSION}-arm64" \
             -t "${REPO}:${CHANNEL}"
+
+          echo "=== Verifying CHANNEL manifest ==="
+          crane manifest "${REPO}:${CHANNEL}"
 
   release:
     name: GitHub Release
