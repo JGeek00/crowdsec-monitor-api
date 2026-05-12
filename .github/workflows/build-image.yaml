@@ -222,13 +222,13 @@ jobs:
 
       - name: Export image
         run: |
-          docker save crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64 | gzip -1 > image-amd64.tar.gz
+          docker save crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64 > image-amd64.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4 # ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: image-amd64
-          path: image-amd64.tar.gz
+          path: image-amd64.tar
           retention-days: 1
 
   build-arm64:
@@ -285,13 +285,13 @@ jobs:
 
       - name: Export image
         run: |
-          docker save crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64 | gzip -1 > image-arm64.tar.gz
+          docker save crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64 > image-arm64.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4 # ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: image-arm64
-          path: image-arm64.tar.gz
+          path: image-arm64.tar
           retention-days: 1
 
   manifest:
@@ -324,11 +324,11 @@ jobs:
           VERSION="${{ needs.validate.outputs.version }}"
 
           skopeo copy --dest-creds "${{ github.actor }}:${{ secrets.GH_TOKEN }}" \
-            "docker-archive:./images/image-amd64/image-amd64.tar.gz" \
+            "docker-archive:./images/image-amd64/image-amd64.tar" \
             "docker://${REPO}:${VERSION}-amd64"
 
           skopeo copy --dest-creds "${{ github.actor }}:${{ secrets.GH_TOKEN }}" \
-            "docker-archive:./images/image-arm64/image-arm64.tar.gz" \
+            "docker-archive:./images/image-arm64/image-arm64.tar" \
             "docker://${REPO}:${VERSION}-arm64"
 
       - name: Setup Docker Buildx
@@ -339,16 +339,13 @@ jobs:
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
           VERSION="${{ needs.validate.outputs.version }}"
           CHANNEL="${{ needs.validate.outputs.channel_tag }}"
-          DESCRIPTION="CrowdSec Monitor API provides a persistent storage layer and query interface for CrowdSec security alerts and decisions. It automatically syncs data from your CrowdSec LAPI instance and stores it in a local SQLite database, allowing you to query historical data, generate statistics, and monitor your security posture over time."
 
           docker buildx imagetools create \
-            --annotation "org.opencontainers.image.description=${DESCRIPTION}" \
             -t "${REPO}:${VERSION}" \
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
 
           docker buildx imagetools create \
-            --annotation "org.opencontainers.image.description=${DESCRIPTION}" \
             -t "${REPO}:${CHANNEL}" \
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
