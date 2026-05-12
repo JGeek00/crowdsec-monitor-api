@@ -350,21 +350,6 @@ jobs:
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
 
-      - name: Delete arch tags
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-
-          # Install crane
-          curl -sL https://github.com/google/go-containerregistry/releases/download/v0.21.5/go-containerregistry_Linux_x86_64.tar.gz | tar xz
-
-          # Login
-          echo "${{ secrets.GH_TOKEN }}" | ./crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-          # Delete arch tags only (tag-only deletion, preserves manifest content)
-          ./crane delete "${REPO}:${VERSION}-amd64"
-          ./crane delete "${REPO}:${VERSION}-arm64"
-
   release:
     name: GitHub Release
     needs: [validate, manifest]
