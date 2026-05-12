@@ -355,22 +355,15 @@ jobs:
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
           VERSION="${{ needs.validate.outputs.version }}"
 
-          VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/user/packages/container/crowdsec-monitor-api/versions")
+          # Install crane
+          curl -sL https://github.com/google/go-containerregistry/releases/download/v0.21.5/go-containerregistry_Linux_x86_64.tar.gz | tar xz
 
-          for ARCH in "${VERSION}-amd64" "${VERSION}-arm64"; do
-            VERSION_ID=$(echo "$VERSIONS" | jq -r ".[] | select(.metadata.container.tags[] == \"$ARCH\") | .id")
-            if [ -n "$VERSION_ID" ] && [ "$VERSION_ID" != "null" ]; then
-              curl -s -X DELETE \
-                -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/user/packages/container/crowdsec-monitor-api/versions/${VERSION_ID}"
-              echo "Deleted arch tag: $ARCH (version id: $VERSION_ID)"
-            else
-              echo "WARNING: Could not find version id for tag: $ARCH"
-            fi
-          done
+          # Login
+          echo "${{ secrets.GH_TOKEN }}" | ./crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+          # Delete arch tags only (tag-only deletion, preserves manifest content)
+          ./crane delete "${REPO}:${VERSION}-amd64"
+          ./crane delete "${REPO}:${VERSION}-arm64"
 
   release:
     name: GitHub Release
