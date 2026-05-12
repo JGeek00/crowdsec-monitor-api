@@ -168,13 +168,10 @@ jobs:
           path: dist-sha256sum.txt
           retention-days: 1
 
-  push-amd64:
-    name: Push AMD64
+  build-amd64:
+    name: Build AMD64
     needs: [validate, build]
     runs-on: ubuntu-24.04
-    outputs:
-      digest: ${{ steps.get_digest.outputs.digest }}
-      image-pushed: ${{ steps.push_step.outputs.image-pushed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -207,7 +204,7 @@ jobs:
           push: false
           load: true
           platforms: linux/amd64
-          tags: ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64
+          tags: crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64
           cache-from: type=gha,scope=amd64
           cache-to: type=gha,scope=amd64,mode=max
           labels: |
@@ -217,45 +214,27 @@ jobs:
       - name: Security scan (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0 # a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
         with:
-          image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64"
+          image-ref: "crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64"
           format: table
           severity: CRITICAL,HIGH
           exit-code: 0
           ignore-unfixed: true
 
-      - name: Docker login
-        if: success()
-        uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
+      - name: Export image
+        run: |
+          docker save crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64 | gzip -1 > image-amd64.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4 # ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GH_TOKEN }}
+          name: image-amd64
+          path: image-amd64.tar.gz
+          retention-days: 1
 
-      - name: Push AMD64
-        id: push_step
-        if: success()
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-          docker push "${REPO}:${VERSION}-amd64"
-          echo "image-pushed=true" >> $GITHUB_OUTPUT
-
-      - name: Get image digest
-        id: get_digest
-        if: success()
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-amd64" --format '{{json .}}' | jq -r '.RepoDigests[0]')
-          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-
-  push-arm64:
-    name: Push ARM64
+  build-arm64:
+    name: Build ARM64
     needs: [validate, build]
     runs-on: ubuntu-24.04-arm
-    outputs:
-      digest: ${{ steps.get_digest.outputs.digest }}
-      image-pushed: ${{ steps.push_step.outputs.image-pushed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -288,7 +267,7 @@ jobs:
           push: false
           load: true
           platforms: linux/arm64
-          tags: ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64
+          tags: crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64
           cache-from: type=gha,scope=arm64
           cache-to: type=gha,scope=arm64,mode=max
           labels: |
@@ -298,85 +277,68 @@ jobs:
       - name: Security scan (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0 # a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
         with:
-          image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64"
+          image-ref: "crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64"
           format: table
           severity: CRITICAL,HIGH
           exit-code: 0
           ignore-unfixed: true
 
+      - name: Export image
+        run: |
+          docker save crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64 | gzip -1 > image-arm64.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4 # ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-arm64
+          path: image-arm64.tar.gz
+          retention-days: 1
+
+  manifest:
+    name: Create Manifest
+    needs: [validate, build-amd64, build-arm64]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download image artifacts
+        uses: actions/download-artifact@v4 # d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: image-*
+          path: ./images
+          merge-multiple: false
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3 # 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Load images
+        run: |
+          docker load < ./images/image-amd64/image-amd64.tar.gz
+          docker load < ./images/image-arm64/image-arm64.tar.gz
+
       - name: Docker login
-        if: success()
         uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
 
-      - name: Push ARM64
-        id: push_step
-        if: success()
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-          docker push "${REPO}:${VERSION}-arm64"
-          echo "image-pushed=true" >> $GITHUB_OUTPUT
-
-      - name: Get image digest
-        id: get_digest
-        if: success()
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-arm64" --format '{{json .}}' | jq -r '.RepoDigests[0]')
-          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-
-  manifest:
-     name: Create Manifest
-     needs: [validate, push-amd64, push-arm64]
-     runs-on: ubuntu-24.04
-     container:
-       image: gcr.io/go-containerregistry/crane:debug
-     steps:
-      - name: Login to GHCR
-        run: |
-          echo "${{ secrets.GH_TOKEN }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Verify arch images exist
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-
-          echo "=== Fetching amd64 manifest ==="
-          crane manifest "${REPO}:${VERSION}-amd64" || echo "FAILED: amd64 not found"
-
-          echo "=== Fetching arm64 manifest ==="
-          crane manifest "${REPO}:${VERSION}-arm64" || echo "FAILED: arm64 not found"
-
-      - name: Create manifest
+      - name: Create and push manifests
         run: |
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
           VERSION="${{ needs.validate.outputs.version }}"
           CHANNEL="${{ needs.validate.outputs.channel_tag }}"
+          DESCRIPTION="CrowdSec Monitor API provides a persistent storage layer and query interface for CrowdSec security alerts and decisions. It automatically syncs data from your CrowdSec LAPI instance and stores it in a local SQLite database, allowing you to query historical data, generate statistics, and monitor your security posture over time."
 
-          echo "=== Creating VERSION manifest ==="
-          crane index append \
-            --docker-empty-base \
-            -m "${REPO}:${VERSION}-amd64" \
-            -m "${REPO}:${VERSION}-arm64" \
-            -t "${REPO}:${VERSION}"
+          docker buildx imagetools create \
+            --annotation "org.opencontainers.image.description=${DESCRIPTION}" \
+            -t "${REPO}:${VERSION}" \
+            "crowdsec-monitor-api:${VERSION}-amd64" \
+            "crowdsec-monitor-api:${VERSION}-arm64"
 
-          echo "=== Verifying VERSION manifest ==="
-          crane manifest "${REPO}:${VERSION}"
-
-          echo "=== Creating CHANNEL manifest ==="
-          crane index append \
-            --docker-empty-base \
-            -m "${REPO}:${VERSION}-amd64" \
-            -m "${REPO}:${VERSION}-arm64" \
-            -t "${REPO}:${CHANNEL}"
-
-          echo "=== Verifying CHANNEL manifest ==="
-          crane manifest "${REPO}:${CHANNEL}"
+          docker buildx imagetools create \
+            --annotation "org.opencontainers.image.description=${DESCRIPTION}" \
+            -t "${REPO}:${CHANNEL}" \
+            "crowdsec-monitor-api:${VERSION}-amd64" \
+            "crowdsec-monitor-api:${VERSION}-arm64"
 
   release:
     name: GitHub Release
@@ -421,7 +383,8 @@ jobs:
               repo: context.repo.repo,
             });
             for (const artifact of artifacts.data.artifacts) {
-              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum' ||
+                  artifact.name === 'image-amd64' || artifact.name === 'image-arm64') {
                 await github.rest.actions.deleteArtifact({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -433,12 +396,12 @@ jobs:
 
   cleanup-failure-partial:
     name: Cleanup Failure (One Arch Failed)
-    needs: [validate, push-amd64, push-arm64]
+    needs: [validate, build-amd64, build-arm64]
     runs-on: ubuntu-24.04
     if: >-
       always() &&
-      (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
-      (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
+      (needs.build-amd64.result == 'failure' || needs.build-arm64.result == 'failure') &&
+      (needs.build-amd64.result == 'success' || needs.build-arm64.result == 'success')
     steps:
       - name: Setup Node
         uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -454,7 +417,8 @@ jobs:
               repo: context.repo.repo,
             });
             for (const artifact of artifacts.data.artifacts) {
-              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum' ||
+                  artifact.name === 'image-amd64' || artifact.name === 'image-arm64') {
                 await github.rest.actions.deleteArtifact({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -466,12 +430,12 @@ jobs:
 
   cleanup-failure-both:
     name: Cleanup Failure (Both Failed)
-    needs: [validate, push-amd64, push-arm64]
+    needs: [validate, build-amd64, build-arm64]
     runs-on: ubuntu-24.04
     if: >-
       always() &&
-      needs.push-amd64.result == 'failure' &&
-      needs.push-arm64.result == 'failure'
+      needs.build-amd64.result == 'failure' &&
+      needs.build-arm64.result == 'failure'
     steps:
       - name: Setup Node
         uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -487,7 +451,8 @@ jobs:
               repo: context.repo.repo,
             });
             for (const artifact of artifacts.data.artifacts) {
-              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum' ||
+                  artifact.name === 'image-amd64' || artifact.name === 'image-arm64') {
                 await github.rest.actions.deleteArtifact({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
