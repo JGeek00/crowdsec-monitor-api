@@ -28,8 +28,8 @@ jobs:
       - name: Verify actor authorization
         run: |
           ACTOR="${{ github.actor }}"
-          OWNER="jgeek00"
-          if [ "$ACTOR" != "$OWNER" ]; then
+          OWNER="${{ github.repository_owner }}"
+          if [[ "${ACTOR,,}" != "${OWNER,,}" ]]; then
             echo "ERROR: Only $OWNER can trigger deployments."
             echo "Actor '$ACTOR' is not authorized."
             exit 1
