@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Migration } from '@/models/db/Migration';
 import { MigrationService } from '@/services/migrations/migration.service';
+import { log } from '@/services/log.service';
 
 /**
  * Load and execute a migration file as a TypeScript module
@@ -10,9 +11,9 @@ function loadMigration(filePath: string): any {
   try {
     const module = require(filePath);
     return module.default || module;
-  } catch (error) {
-    console.error(`Error loading migration from ${filePath}:`, error);
-    throw error;
+  } catch (err) {
+    log.error(`Error loading migration from ${filePath}:`, err);
+    throw err;
   }
 }
 
@@ -37,7 +38,7 @@ export class MigrationRunner {
   private async ensureMigrationsTable(): Promise<void> {
     await Migration.ensureInitialized();
     await Migration.sync({ force: false });
-    console.log('✓ Migrations table created/ensured.');
+    log.info('Migrations table created/ensured.');
   }
 
   /**
@@ -45,41 +46,41 @@ export class MigrationRunner {
    */
   async run(): Promise<void> {
     await this.ensureMigrationsTable();
-    console.log('🔍 Starting database migrations...');
+    log.info('Starting database migrations...');
 
     try {
       const migrationNames = this.loadMigrations();
 
       if (migrationNames.length === 0) {
-        console.log('ℹ️ No migrations found in src/migrations/');
+        log.info('No migrations found in src/migrations/');
         return;
       }
 
-      console.log(`📦 Found ${migrationNames.length} migration(s) in filesystem`);
+      log.info(`Found ${migrationNames.length} migration(s) in filesystem`);
 
       const appliedNames = await this.migrationService.getAppliedMigrations();
 
       if (appliedNames.length > 0) {
-        console.log(`✅ ${appliedNames.length} migration(s) already applied`);
+        log.info(`${appliedNames.length} migration(s) already applied`);
       }
 
       const pendingNames = await this.migrationService.getPendingMigrations(migrationNames);
 
       if (pendingNames.length === 0) {
-        console.log('✨ All migrations are up to date');
+        log.info('All migrations are up to date');
         return;
       }
 
-      console.log(`⏳ ${pendingNames.length} migration(s) pending execution`);
+      log.info(`${pendingNames.length} migration(s) pending execution`);
 
       for (const migrationName of pendingNames) {
         await this.executeMigration(migrationName);
       }
 
-      console.log('✅ Database migrations completed successfully');
-    } catch (error) {
-      console.error('❌ Database migrations failed:', error);
-      throw error;
+      log.info('Database migrations completed successfully');
+    } catch (err) {
+      log.error('Database migrations failed:', err);
+      throw err;
     }
   }
 
@@ -88,7 +89,7 @@ export class MigrationRunner {
    */
   private loadMigrations(): string[] {
     if (!fs.existsSync(this.migrationsDir)) {
-      console.warn(`⚠️ Migrations directory not found: ${this.migrationsDir}`);
+      log.warn(`Migrations directory not found: ${this.migrationsDir}`);
       return [];
     }
 
@@ -113,8 +114,8 @@ export class MigrationRunner {
         const migration = loadMigration(migrationPath);
 
         this.migrationsCache.set(migrationName, migration);
-      } catch (error) {
-        console.error(`⚠️ Failed to load migration ${name}:`, error);
+      } catch (err) {
+        log.error(`Failed to load migration ${name}:`, err);
       }
     }
 
@@ -132,7 +133,7 @@ export class MigrationRunner {
    * Execute a single migration
    */
   private async executeMigration(migrationName: string): Promise<void> {
-    console.log(`\n🔄 Executing migration: ${migrationName}`);
+    log.info(`Executing migration: ${migrationName}`);
 
     try {
       const migration = this.migrationsCache.get(migrationName);
@@ -145,10 +146,10 @@ export class MigrationRunner {
 
       await this.migrationService.registerMigration(migrationName);
 
-      console.log(`✅ Migration ${migrationName} applied successfully`);
-    } catch (error) {
-      console.error(`❌ Migration ${migrationName} failed:`, error);
-      throw error;
+      log.info(`Migration ${migrationName} applied successfully`);
+    } catch (err) {
+      log.error(`Migration ${migrationName} failed:`, err);
+      throw err;
     }
   }
 }

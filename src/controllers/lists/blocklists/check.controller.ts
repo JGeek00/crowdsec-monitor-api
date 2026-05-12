@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 
 /**
@@ -13,8 +14,8 @@ export async function checkBlocklist(req: Request, res: Response): Promise<void>
     const results = ips.map(ip => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
 
     res.status(200).json({ results });
-  } catch (error) {
-    console.error('Error checking blocklist:', error);
-    res.status(500).json(errorResponse('Failed to check blocklist', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error checking blocklist:', err);
+    res.status(500).json(errorResponse('Failed to check blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '@/config';
 import { CrowdSecLoginResponse } from '@/types/crowdsec.types';
 import { BLOCKLIST_SCENARIO_PREFIX, MANUAL_DECISION } from '@/constants/scenarios';
+import { log } from '@/services/log.service';
 
 export class CrowdSecBaseClient {
   readonly client: AxiosInstance;
@@ -26,7 +27,7 @@ export class CrowdSecBaseClient {
    */
   async login(): Promise<boolean> {
     try {
-      console.log('Authenticating with CrowdSec LAPI...');
+     log.debug('Authenticating with CrowdSec LAPI...');
 
       const response = await this.client.post<CrowdSecLoginResponse>('/v1/watchers/login', {
         machine_id: config.crowdsec.user,
@@ -37,14 +38,14 @@ export class CrowdSecBaseClient {
       if (response.data && response.data.token) {
         this.token = response.data.token;
         this.tokenExpiration = new Date(response.data.expire);
-        console.log(`✓ Authentication successful. Token expires at: ${this.tokenExpiration.toISOString()}`);
+        log.info(`Authentication successful. Token expires at: ${this.tokenExpiration.toISOString()}`);
         return true;
       }
 
-      console.error('✗ Authentication failed: No token received');
+      log.error('Authentication failed: No token received');
       return false;
-    } catch (error) {
-      this.handleError(error, 'authenticating');
+    } catch (err) {
+      this.handleError(err, 'authenticating');
       return false;
     }
   }
@@ -77,7 +78,7 @@ export class CrowdSecBaseClient {
       return await this.loginPromise;
     }
 
-    console.log('Token expired or not available, re-authenticating...');
+    log.debug('Token expired or not available, re-authenticating...');
     this.loginPromise = this.login().finally(() => {
       this.loginPromise = null;
     });
@@ -113,8 +114,8 @@ export class CrowdSecBaseClient {
       await this.client.get('/v1/alerts', { headers });
       this.lastLapiConnected = true;
       return true;
-    } catch (error) {
-      console.error('CrowdSec LAPI connection test failed:', error);
+    } catch (err) {
+      log.error('CrowdSec LAPI connection test failed:', err);
       this.lastLapiConnected = false;
       return false;
     }
@@ -154,14 +155,14 @@ export class CrowdSecBaseClient {
       await this.client.get('/v1/decisions', {
         headers: { 'X-Api-Key': config.crowdsec.bouncerKey },
       });
-      this.bouncerConnected = true;
-      console.log('✓ CrowdSec bouncer API key validated successfully');
-    } catch (error) {
+     this.bouncerConnected = true;
+      log.info('CrowdSec bouncer API key validated successfully');
+    } catch (err) {
       this.bouncerConnected = false;
-      if (axios.isAxiosError(error) && error.response) {
-        console.error(`✗ CrowdSec bouncer API key validation failed: HTTP ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      if (axios.isAxiosError(err) && err.response) {
+        log.error(`CrowdSec bouncer API key validation failed: HTTP ${err.response.status} - ${JSON.stringify(err.response.data)}`);
       } else {
-        console.error('✗ CrowdSec bouncer API key validation failed: Unable to reach CrowdSec LAPI');
+        log.error('CrowdSec bouncer API key validation failed: Unable to reach CrowdSec LAPI');
       }
     }
   }
@@ -190,18 +191,18 @@ export class CrowdSecBaseClient {
   /**
    * Handle API errors
    */
-  handleError(error: unknown, action: string): void {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError;
+  handleError(err: unknown, action: string): void {
+    if (axios.isAxiosError(err)) {
+      const axiosError = err as AxiosError;
       if (axiosError.response) {
-        console.error(`Error ${action}: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
+        log.error(`Error ${action}: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
       } else if (axiosError.request) {
-        console.error(`No response received when ${action}`);
+        log.error(`No response received when ${action}`);
       } else {
-        console.error(`Error setting up request when ${action}: ${axiosError.message}`);
+        log.error(`Error setting up request when ${action}: ${axiosError.message}`);
       }
     } else {
-      console.error(`Unexpected error when ${action}:`, error);
+      log.error(`Unexpected error when ${action}:`, err);
     }
   }
 }

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Blocklist, BlocklistIp, BlocklistIpsTable, BlocklistsTable, BlocklistType, CsBlocklist, CsBlocklistsTable, GetBlocklistParams, GetBlocklistQueryParams, GetBlocklistResponse, ResponseWithError } from "@/models";
 import { errorResponse } from "@/utils/error-response";
 import { createRequestSignal } from "@/utils/request-signal";
+import { log } from '@/services/log.service';
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE } from '@/helpers/blocklists.helper';
 import { DB_SORTING } from '@/types/database.types';
 
@@ -76,10 +77,10 @@ export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {},
       result.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
     }
     res.status(200).json({ data: result });
-  } catch (error) {
+  } catch (err) {
     if (signal.aborted) return;
-    console.error('Error fetching blocklist:', error);
-    res.status(500).json(errorResponse('Failed to fetch blocklist', error instanceof Error ? error.message : 'Unknown error'));
+    log.error('Error fetching blocklist:', err);
+    res.status(500).json(errorResponse('Failed to fetch blocklist', err instanceof Error ? err.message : 'Unknown error'));
   } finally {
     cleanup();
   }

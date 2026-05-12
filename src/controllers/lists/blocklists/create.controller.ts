@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { BlocklistsTable, PostBlocklistBody, PostBlocklistResponse, ResponseWithError } from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { assertSafeUrl } from '@/utils/url';
 import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
@@ -15,7 +16,7 @@ export async function createBlocklist(req: Request<{}, Res, PostBlocklistBody>, 
   try {
     await crowdSecAPI.checkBouncerConnection();
     if (!crowdSecAPI.isBouncerConnected()) {
-      console.error('[Blocklist] Cannot create blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
+      log.warn('[Blocklist] Cannot create blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
       res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
       return;
     }
@@ -60,10 +61,10 @@ export async function createBlocklist(req: Request<{}, Res, PostBlocklistBody>, 
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
         statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        console.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+        log.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
       });
-  } catch (error) {
-    console.error('Error creating blocklist:', error);
-    res.status(500).json(errorResponse('Failed to create blocklist', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error creating blocklist:', err);
+    res.status(500).json(errorResponse('Failed to create blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

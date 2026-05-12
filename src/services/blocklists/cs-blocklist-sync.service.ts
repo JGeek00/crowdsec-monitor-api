@@ -2,6 +2,7 @@ import { CsBlocklistsTable, BLOCKLIST_IP_ORIGIN, BlocklistIpsTable } from '@/mod
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import appDefaults from '@/constants/app-defaults';
+import { log } from '@/services/log.service';
 
 class CsBlocklistSyncService {
   /**
@@ -13,10 +14,14 @@ class CsBlocklistSyncService {
     let ipsCount = 0;
     let errors = 0;
 
+    log.debug('Fetching CrowdSec-managed blocklists (origin=lists)...');
+
     const alerts = await crowdSecAPI.alerts.getAlerts({
       has_active_decision: true,
       origin: 'lists',
     });
+
+    log.debug(`Fetched ${alerts.length} CrowdSec alerts with origin=lists`);
 
     if (alerts.length === 0) {
       return { synced: 0, ips: 0, errors: 0 };
@@ -34,27 +39,35 @@ class CsBlocklistSyncService {
       }
     }
     const deduplicatedAlerts = Array.from(alertsByName.values());
+    log.debug(`Deduplicated: ${deduplicatedAlerts.length} unique blocklist(s) from ${alerts.length} alerts`);
 
     for (const alert of deduplicatedAlerts) {
       try {
         const decisions = alert.decisions ?? [];
         const name = alert.source?.scope ?? '';
+        log.debug(`Syncing CS blocklist "${name}" (${decisions.length} decisions, alert#${alert.id})`);
 
         await sequelize.transaction(async (t) => {
           // Destroy any existing entry for this name (IPs cascade-delete via FK).
           // This handles stale rows with different alert IDs from previous syncs.
+          log.debug(`  Removing existing entry for CS blocklist "${name}"`);
           await CsBlocklistsTable.destroy({
             where: { name },
             transaction: t,
           });
 
+          log.debug(`  Creating CS blocklist entry "${name}" (id: crowdsec-${alert.id})`);
           await CsBlocklistsTable.create(
             { id: `crowdsec-${alert.id}`, name },
             { transaction: t }
           );
 
-          for (let i = 0; i < decisions.length; i += appDefaults.blocklists.csBlocklistDbWriteChunkSize) {
-            const chunk = decisions.slice(i, i + appDefaults.blocklists.csBlocklistDbWriteChunkSize).map((decision) => ({
+          const chunkSize = appDefaults.blocklists.csBlocklistDbWriteChunkSize;
+          const chunkCount = Math.ceil(decisions.length / chunkSize);
+          log.debug(`  Writing ${decisions.length} IPs to DB for "${name}" in ${chunkCount} chunk(s)`);
+
+          for (let i = 0; i < decisions.length; i += chunkSize) {
+            const chunk = decisions.slice(i, i + chunkSize).map((decision) => ({
               cs_blocklist_id: `crowdsec-${alert.id}`,
               blocklist_name: decision.scenario,
               value: decision.value,
@@ -67,11 +80,14 @@ class CsBlocklistSyncService {
         const count = decisions.length;
         ipsCount += count;
         synced++;
-      } catch (error) {
+        log.debug(`  CS blocklist "${name}" synced: ${count} IPs`);
+      } catch (err) {
         errors++;
-        console.error(`✗ Failed to sync CrowdSec blocklist alert id=${alert.id}:`, error);
+        log.error(`Failed to sync CrowdSec blocklist alert id=${alert.id}:`, err);
       }
     }
+
+    log.info(`CS blocklists sync complete: ${synced} synced, ${ipsCount} IPs, ${errors} errors`);
 
     return { synced, ips: ipsCount, errors };
   }

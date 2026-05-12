@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { FindAndCountOptions } from 'sequelize';
 import { BlocklistIp, BlocklistIpsTable, BlocklistsTable, CsBlocklistsTable, GetBlocklistIpsParams, GetBlocklistIpsQueryParams, GetBlocklistIpsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { DB_SORTING } from '@/types/database.types';
 
@@ -74,10 +75,10 @@ export async function getBlocklistIps(req: Request<GetBlocklistIpsParams, Res, {
     }
 
     res.status(200).json(response);
-  } catch (error) {
+  } catch (err) {
     if (signal.aborted) return;
-    console.error('Error fetching blocklist IPs:', error);
-    res.status(500).json(errorResponse('Failed to fetch blocklist IPs', error instanceof Error ? error.message : 'Unknown error'));
+    log.error('Error fetching blocklist IPs:', err);
+    res.status(500).json(errorResponse('Failed to fetch blocklist IPs', err instanceof Error ? err.message : 'Unknown error'));
   } finally {
     cleanup();
   }

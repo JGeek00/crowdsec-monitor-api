@@ -3,6 +3,7 @@ import { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/m
 import { crowdSecAPI } from '@/services';
 import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 
 /**
@@ -38,8 +39,8 @@ export async function getAllowlistByName(req: Request<GetAllowlistParams, Res>, 
     res.status(200).json({
       data: sanitizedAllowlist,
     });
-  } catch (error) {
-    console.error('Error fetching allowlist:', error);
-    res.status(500).json(errorResponse('Failed to fetch allowlist', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error fetching allowlist:', err);
+    res.status(500).json(errorResponse('Failed to fetch allowlist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

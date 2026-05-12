@@ -1,3 +1,5 @@
+import { log } from '@/services/log.service';
+
 type ScheduledTask = () => void | Promise<void>;
 
 interface SchedulerOptions {
@@ -34,7 +36,7 @@ class SchedulerService {
 
     const intervalMs = options.intervalSeconds * 1000;
 
-    console.log(`⏱️  Scheduler '${id}' started with ${options.intervalSeconds}s interval`);
+    log.info(`Scheduler '${id}' started with ${options.intervalSeconds}s interval`);
 
     // Schedule the recurring task
     const intervalId = setInterval(() => {
@@ -67,15 +69,15 @@ class SchedulerService {
 
     // Prevent concurrent execution
     if (taskInfo.isRunning) {
-      console.warn(`⚠️  Task '${id}' still running, skipping this interval`);
+      log.warn(`Task '${id}' still running, skipping this interval`);
       return;
     }
 
     try {
       taskInfo.isRunning = true;
       await task();
-    } catch (error) {
-      console.error(`❌ Scheduled task '${id}' failed:`, error);
+    } catch (err) {
+      log.error(`Scheduled task '${id}' failed:`, err);
     } finally {
       taskInfo.isRunning = false;
     }
@@ -89,7 +91,7 @@ class SchedulerService {
     if (taskInfo) {
       clearInterval(taskInfo.intervalId);
       this.tasks.delete(id);
-      console.log(`⏱️  Scheduler '${id}' stopped`);
+      log.info(`Scheduler '${id}' stopped`);
     }
   }
 

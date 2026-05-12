@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI } from '@/services';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 
 /**
@@ -14,8 +15,8 @@ export async function checkAllowlist(req: Request, res: Response): Promise<void>
     res.status(200).json({
       results,
     });
-  } catch (error) {
-    console.error('Error checking allowlist:', error);
-    res.status(500).json(errorResponse('Failed to check allowlist', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error checking allowlist:', err);
+    res.status(500).json(errorResponse('Failed to check allowlist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

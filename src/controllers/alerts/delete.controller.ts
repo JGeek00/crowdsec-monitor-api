@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '@/services';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { DeleteAlertParams, DeleteAlertResponse, AlertsTable, ResponseWithError } from '@/models';
 
@@ -35,15 +36,15 @@ export const deleteAlert = async (req: Request<DeleteAlertParams, Res>, res: Res
       message: 'Alert deleted successfully',
       nbDeleted: nbDeleted.toString()
     });
-  } catch (error: unknown) {
-    const err = error as { message?: string; response?: { status?: number } };
-    console.error('Error deleting alert:', err.message);
-    
-    if (err.response?.status === 404) {
+  } catch (err: unknown) {
+    const typedErr = err as { message?: string; response?: { status?: number } };
+    log.error('Error deleting alert:', typedErr.message);
+
+    if (typedErr.response?.status === 404) {
       res.status(404).json(errorResponse('Alert not found', `Alert with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(err.response?.status || 500).json(errorResponse('Failed to delete alert', err.message ?? 'Unknown error'));
+    res.status(typedErr.response?.status || 500).json(errorResponse('Failed to delete alert', typedErr.message ?? 'Unknown error'));
   }
 };

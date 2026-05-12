@@ -3,6 +3,7 @@ import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
 import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
 import { resolveIps } from '@/utils/dns-resolve';
 import { config } from '@/config';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { PostCheckDomainBody, PostCheckDomainResponse, PostCheckDomainResponse_IP, ResponseWithError } from '@/models';
 
@@ -34,8 +35,8 @@ export async function checkDomainInList(req: Request<{}, Res, PostCheckDomainBod
     }));
 
     res.status(200).json({ domain, ips: results });
-  } catch (error) {
-    console.error('Error checking domain in lists:', error);
-    res.status(500).json(errorResponse('Failed to check domain in lists', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error checking domain in lists:', err);
+    res.status(500).json(errorResponse('Failed to check domain in lists', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

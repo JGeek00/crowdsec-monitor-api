@@ -3,6 +3,7 @@ import { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } f
 import { isIpv4 } from '@/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
 import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
 
@@ -37,8 +38,8 @@ export async function checkIpsInList(req: Request<{}, Res, PostCheckIpsInListBod
     }));
 
     res.status(200).json({ results });
-  } catch (error) {
-    console.error('Error checking lists:', error);
-    res.status(500).json(errorResponse('Failed to check lists', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error checking lists:', err);
+    res.status(500).json(errorResponse('Failed to check lists', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

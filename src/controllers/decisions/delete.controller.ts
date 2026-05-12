@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { crowdSecAPI, databaseService } from '@/services';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { DecisionsTable, DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/models';
 
@@ -39,15 +40,15 @@ export const deleteDecision = async (req: Request<DeleteDecisionParams, Res, {}>
       message: 'DecisionsTable deleted successfully',
       nbDeleted: nbDeleted.toString()
     });
-  } catch (error: unknown) {
-    const err = error as { message?: string; response?: { status?: number } };
-    console.error('Error deleting decision:', err.message);
-    
-    if (err.response?.status === 404) {
+  } catch (err: unknown) {
+    const typedErr = err as { message?: string; response?: { status?: number } };
+    log.error('Error deleting decision:', typedErr.message);
+
+    if (typedErr.response?.status === 404) {
       res.status(404).json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(err.response?.status || 500).json(errorResponse('Failed to delete decision', err.message ?? 'Unknown error'));
+    res.status(typedErr.response?.status || 500).json(errorResponse('Failed to delete decision', typedErr.message ?? 'Unknown error'));
   }
 };

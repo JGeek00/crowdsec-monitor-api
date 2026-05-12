@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { BlocklistsTable, ResponseWithError, PostToggleBlocklistParams, PostToggleBlocklistResponse, BlocklistIpsTable } from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
 
@@ -38,7 +39,7 @@ export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Re
     if (enabled) {
       await crowdSecAPI.checkBouncerConnection();
       if (!crowdSecAPI.isBouncerConnected()) {
-        console.error('[Blocklists] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
+        log.warn('[Blocklists] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
         res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. BlocklistsTable operations are unavailable.'));
         return;
       }
@@ -62,12 +63,12 @@ export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Re
 
     crowdsecOp
       .then(() => statusBlocklistService.completeProcess(processId, true))
-      .catch((error) => {
-        statusBlocklistService.completeProcess(processId, false, error instanceof Error ? error.message : null);
-        console.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${error instanceof Error ? error.message : error}`);
+      .catch((err) => {
+        statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
+        log.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
       });
-  } catch (error) {
-    console.error('Error toggling blocklist:', error);
-    res.status(500).json(errorResponse('Failed to toggle blocklist', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error toggling blocklist:', err);
+    res.status(500).json(errorResponse('Failed to toggle blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

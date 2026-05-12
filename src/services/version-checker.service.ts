@@ -1,5 +1,6 @@
 import axios from 'axios';
 import packageJson from '../../package.json';
+import { log } from '@/services/log.service';
 
 interface GitHubRelease {
   tag_name: string;
@@ -45,8 +46,8 @@ class VersionCheckerService {
    */
   async checkForNewVersion(): Promise<void> {
     try {
-      console.log('🔍 Checking for new version...');
-      
+      log.debug('Checking for new version...');
+
       const response = await axios.get<GitHubRelease>(this.GITHUB_API_URL, {
         timeout: 10000,
         headers: {
@@ -64,15 +65,15 @@ class VersionCheckerService {
       // Compare versions
       if (this.isVersionLower(currentVersion, latestVersionTag)) {
         this.latestVersion = latestVersionTag;
-        console.log(`📦 New version available: ${latestVersionTag} (current: ${currentVersion})`);
+        log.warn(`New version available: ${latestVersionTag} (current: ${currentVersion})`);
       } else {
         this.latestVersion = null;
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(`❌ Failed to check for new version: ${error.message}`);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        log.error(`Failed to check for new version: ${err.message}`);
       } else {
-        console.error('❌ Failed to check for new version:', error);
+        log.error('Failed to check for new version:', err);
       }
       // Don't throw, just log the error
     }

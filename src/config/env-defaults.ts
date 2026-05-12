@@ -34,5 +34,9 @@ export const defaults = {
   },
   blocklists: {
     writeChunkSize: 1000, // Number of IPs to write in a single database transaction when syncing blocklists
+  },
+  logs: {
+    level: 'info',
+    httpRequests: true,
   }
 };

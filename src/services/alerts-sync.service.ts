@@ -4,6 +4,7 @@ import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
+import { log } from '@/services/log.service';
 
 class AlertsSyncService {
   private lastSuccessfulSync: Date | null = null;
@@ -24,16 +25,20 @@ class AlertsSyncService {
     // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
     let alerts: Awaited<ReturnType<typeof crowdSecAPI.alerts.getAlerts>>;
     try {
+      log.debug(`Fetching alerts from ${appDefaults.alerts.originsFetch.length} origin(s)...`);
       const results = await Promise.all(appDefaults.alerts.originsFetch.map(origin => crowdSecAPI.alerts.getAlerts({ origin })));
       alerts = results.flat();
-    } catch (error) {
-      console.error('Error fetching alerts from LAPI:', error);
+      log.debug(`Fetched ${alerts.length} alerts from LAPI`);
+    } catch (err) {
+      log.error('Error fetching alerts from LAPI:', err);
       return { synced: 0, updated: 0, errors: 1, decisions: 0 };
     }
 
     // --- Phase 2: write to DB (inside the lock) ---
     return this.acquireWriteLock(async () => {
       try {
+        log.debug(`Writing ${alerts.length} alerts to DB...`);
+
         let synced = 0;
         let updated = 0;
         let errors = 0;
@@ -71,17 +76,26 @@ class AlertsSyncService {
               await existingAlert.update(alertData);
               alertInstance = existingAlert;
               updated++;
+              log.debug(`  Updated alert #${alert.id} (${alert.scenario})`);
             } else {
               alertInstance = await AlertsTable.create({ ...alertData, created_at: new Date() });
               synced++;
+              log.debug(`  New alert #${alert.id} (${alert.scenario})`);
             }
 
             if (alert.decisions && alert.decisions.length > 0) {
               const lapiDecisionIds = alert.decisions.map(d => d.id);
 
-              await DecisionsTable.destroy({
+              const staleCount = await DecisionsTable.count({
                 where: { [DecisionsTable.col.alertId]: alertInstance.id, [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds } },
               });
+
+              if (staleCount > 0) {
+                log.debug(`    Removing ${staleCount} stale decisions for alert #${alert.id}`);
+                await DecisionsTable.destroy({
+                  where: { [DecisionsTable.col.alertId]: alertInstance.id, [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds } },
+                });
+              }
 
               for (const decision of alert.decisions) {
                 try {
@@ -109,14 +123,15 @@ class AlertsSyncService {
                   }
                   decisionsCount++;
                 } catch (decisionError) {
-                  console.error(`Error syncing decision ${decision.id}:`, decisionError);
+                  log.error(`Error syncing decision ${decision.id}:`, decisionError);
                 }
               }
+              log.debug(`    Synced ${alert.decisions.length} decisions for alert #${alert.id}`);
             } else {
               await DecisionsTable.destroy({ where: { [DecisionsTable.col.alertId]: alertInstance.id } });
             }
-          } catch (error) {
-            console.error(`Error syncing alert ${alert.id}:`, error);
+          } catch (err) {
+            log.error(`Error syncing alert ${alert.id}:`, err);
             errors++;
           }
         }
@@ -124,9 +139,11 @@ class AlertsSyncService {
         await this.cleanupOldData();
         this.lastSuccessfulSync = new Date();
 
+        log.debug(`Sync complete: ${synced} new, ${updated} updated, ${decisionsCount} decisions, ${errors} errors`);
+
         return { synced, updated, errors, decisions: decisionsCount };
-      } catch (error) {
-        console.error('Error syncing alerts:', error);
+      } catch (err) {
+        log.error('Error syncing alerts:', err);
         return { synced: 0, updated: 0, errors: 1, decisions: 0 };
       }
     });
@@ -136,34 +153,41 @@ class AlertsSyncService {
     const cutoffDate = calculateRetentionCutoff(config.database.retention);
 
     if (!cutoffDate) {
+      log.debug('No retention configured, skipping cleanup');
       return { deletedAlerts: 0, deletedDecisions: 0 };
     }
 
+    log.debug(`Retention cutoff: ${cutoffDate.toISOString()}`);
+
     try {
-      console.log(`Starting data cleanup for records older than ${cutoffDate.toISOString()}...`);
+      log.debug(`Starting data cleanup for records older than ${cutoffDate.toISOString()}...`);
 
       const deletedDecisions = await DecisionsTable.destroy({
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 
+      log.debug(`Deleted ${deletedDecisions} stale decisions`);
+
       const deletedAlerts = await AlertsTable.destroy({
         where: { created_at: { [Op.lt]: cutoffDate } },
       });
 
+      log.debug(`Deleted ${deletedAlerts} stale alerts`);
+
       if (deletedAlerts > 0 || deletedDecisions > 0) {
-        console.log(`✓ Cleanup completed: ${deletedAlerts} alerts and ${deletedDecisions} decisions deleted`);
+        log.info(`Cleanup completed: ${deletedAlerts} alerts and ${deletedDecisions} decisions deleted`);
       }
 
       return { deletedAlerts, deletedDecisions };
-    } catch (error) {
-      console.error('Error during data cleanup:', error);
+    } catch (err) {
+      log.error('Error during data cleanup:', err);
       return { deletedAlerts: 0, deletedDecisions: 0 };
     }
   }
 
   /** @deprecated Use syncAlerts() instead */
   async syncDecisions(): Promise<{ synced: number; errors: number }> {
-    console.log('⚠️  syncDecisions is deprecated. Decisions are now synced with alerts.');
+    log.warn('syncDecisions is deprecated. Decisions are now synced with alerts.');
     return { synced: 0, errors: 0 };
   }
 

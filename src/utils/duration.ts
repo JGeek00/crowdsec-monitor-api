@@ -1,7 +1,9 @@
+import { log } from '@/services/log.service';
+
 /**
  * Parse CrowdSec duration string and convert to milliseconds
  * Supports formats like: "4h", "30m", "2h30m", "1d", "1.5h", etc.
- * 
+ *
  * @param duration - Duration string from CrowdSec (e.g., "4h", "30m", "2h30m")
  * @returns Duration in milliseconds
  */
@@ -45,8 +47,10 @@ export function parseDuration(duration: string): number {
       case 'w': // weeks
         totalMs += value * 7 * 24 * 60 * 60 * 1000;
         break;
-      default:
-        console.warn(`Unknown duration unit: ${unit}`);
+      default: {
+        log.warn(`Unknown duration unit: ${unit}`);
+        break;
+      }
     }
   }
 
@@ -68,7 +72,7 @@ export function calculateExpiration(duration: string, baseDate: Date = new Date(
 /**
  * Parse retention period string and convert to milliseconds
  * Supports formats like: "1d", "3w", "2m", "1y" for days, weeks, months, years
- * 
+ *
  * @param retention - Retention period string (e.g., "1d", "3w", "2m", "1y")
  * @returns Duration in milliseconds, or null if invalid/not specified
  */
@@ -81,7 +85,7 @@ export function parseRetentionPeriod(retention: string | undefined): number | nu
   const match = regex.exec(retention.trim());
 
   if (!match) {
-    console.warn(`Invalid retention period format: ${retention}. Expected format: <number><unit> (e.g., 1d, 3w, 2m, 1y)`);
+    log.warn(`Invalid retention period format: ${retention}. Expected format: <number><unit> (e.g., 1d, 3w, 2m, 1y)`);
     return null;
   }
 

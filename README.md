@@ -67,6 +67,13 @@ Instructions on the [wiki page](https://github.com/JGeek00/crowdsec-monitor-api/
 | `POSTGRES_PASSWORD` | Password for that user | - | Yes |
 | `POSTGRES_DB` | Database in PostgreSQL for this application | - | Yes |
 
+#### Logging
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `LOG_LEVEL` | Amount of logs to print. Options: debug, info, warn, error | info | No |
+| `LOG_HTTP_RESPONSES` | Print in console HTTP responses | true | No |
+
 #### Others
 
 | Variable | Description | Default | Required |

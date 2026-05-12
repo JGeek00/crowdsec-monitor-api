@@ -30,10 +30,12 @@ export const createApp = (): Application => {
   app.use(express.urlencoded({ extended: true }));
 
   // Logging middleware
-  if (config.server.nodeEnv === 'development') {
-    app.use(morgan('dev'));
-  } else {
-    app.use(morgan('combined'));
+  if (config.logs.httpRequests) {
+    if (config.server.nodeEnv === 'development') {
+      app.use(morgan('dev'));
+    } else {
+      app.use(morgan('combined'));
+    }
   }
 
   // Routes

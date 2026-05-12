@@ -5,6 +5,7 @@ import { databaseService, schedulerService, versionCheckerService, statusService
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { webSocketApp } from '@/sockets';
 import appDefaults from '@/constants/app-defaults';
+import { setLevel as initLogger, log } from '@/services'
 import packageJson from '../package.json';
 
 /**
@@ -50,11 +51,13 @@ const formatInterval = (seconds: number): string => {
 const step = (label: string, status: '✓' | '⚠' | '✗', detail?: string): void => {
   const paddedLabel = label.padEnd(36, '.');
   const suffix = detail ? ` (${detail})` : '';
-  console.log(`  ${paddedLabel} ${status}${suffix}`);
+  log.info(`  ${paddedLabel} ${status}${suffix}`);
 };
 
 const startServer = async (): Promise<void> => {
   try {
+    initLogger(config.logs.level);
+
     console.log('');
     console.log('  ╔══════════════════════════════════════╗');
     console.log(`  ║   CrowdSec Monitor API  v${packageJson.version.padEnd(12)}║`);
@@ -137,13 +140,13 @@ const startServer = async (): Promise<void> => {
     );
 
     console.log('');
-    console.log('  Schedulers:');
-    console.log(`    ↻ LAPI status check       every ${formatInterval(config.lapiCheck.intervalSeconds)}`);
-    console.log(`    ↻ Alerts sync            every ${formatInterval(config.sync.intervalSeconds)}`);
-    console.log(`    ↻ Blocklists sync        every ${formatInterval(config.blocklists.refreshTimeSeconds)}`);
-    console.log(`    ↻ CS blocklists sync     every ${formatInterval(config.crowdsecBlocklists.refreshTimeSeconds)}`);
-    console.log(`    ↻ Blocklist reconcile    every ${formatInterval(config.blocklistReconcile.intervalSeconds)}`);
-    console.log(`    ↻ Version check          every 1h`);
+    log.info('  Schedulers:');
+    log.info(`    ↻ LAPI status check       every ${formatInterval(config.lapiCheck.intervalSeconds)}`);
+    log.info(`    ↻ Alerts sync            every ${formatInterval(config.sync.intervalSeconds)}`);
+    log.info(`    ↻ Blocklists sync        every ${formatInterval(config.blocklists.refreshTimeSeconds)}`);
+    log.info(`    ↻ CS blocklists sync     every ${formatInterval(config.crowdsecBlocklists.refreshTimeSeconds)}`);
+    log.info(`    ↻ Blocklist reconcile    every ${formatInterval(config.blocklistReconcile.intervalSeconds)}`);
+    log.info(`    ↻ Version check          every 1h`);
 
     // Create and start Express app
     const app = createApp();
@@ -161,9 +164,9 @@ const startServer = async (): Promise<void> => {
 
     // Start websocket
     webSocketApp.setup(server);
-  } catch (error) {
+  } catch (err) {
     console.error('');
-    console.error('  ✗ Failed to start server:', error);
+    console.error('  ✗ Failed to start server:', err);
     console.error('');
     process.exit(1);
   }
@@ -171,27 +174,27 @@ const startServer = async (): Promise<void> => {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  log.error('Unhandled Rejection at:', promise, 'reason:', reason);
   schedulerService.stopAll();
   process.exit(1);
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error: Error) => {
-  console.error('Uncaught Exception:', error);
+process.on('uncaughtException', (err: Error) => {
+  log.error('Uncaught Exception:', err);
   schedulerService.stopAll();
   process.exit(1);
 });
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('\n  Shutting down gracefully (SIGTERM)...');
+  log.info('\n  Shutting down gracefully (SIGTERM)...');
   schedulerService.stopAll();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('\n  Shutting down gracefully (SIGINT)...');
+  log.info('\n  Shutting down gracefully (SIGINT)...');
   schedulerService.stopAll();
   process.exit(0);
 });

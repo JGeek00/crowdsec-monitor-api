@@ -1,17 +1,18 @@
 import { WsChannel } from '@/utils/ws-channel';
 import { statusService } from '@/services/status.service';
+import { log } from '@/services/log.service';
 
 const statusChannel = new WsChannel((ws) => {
   const route = "/api/v1/status";
 
-  console.log(`✓ WebSocket ${route} client connected`);
+  log.debug(`WebSocket ${route} client connected`);
 
   ws.on('close', () => {
-    console.log(`✗ WebSocket ${route} client disconnected`);
+    log.info(`WebSocket ${route} client disconnected`);
   });
 
   ws.on('error', (err) => {
-    console.error(`WebSocket ${route} client error:`, err);
+    log.error(`WebSocket ${route} client error:`, err);
   });
 });
 

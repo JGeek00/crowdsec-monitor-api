@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { defaults } from '@/config/env-defaults';
 import { dnsServers } from '@/constants/dns-servers';
 import { DB_MODE, DbMode } from '@/types/database.types';
+import { LOG_LEVELS } from '@/types/log.types';
 
 dotenv.config();
 
@@ -165,6 +166,15 @@ export const config = {
       return dnsServers[key];
     })(),
   },
+  logs: {
+    level: ((() => {
+      const raw = (process.env.LOG_LEVEL || defaults.logs.level).trim().toLowerCase();
+      if (raw in LOG_LEVELS) return raw;
+      console.warn(`WARNING: Invalid LOG_LEVEL "${raw}". Falling back to "${defaults.logs.level}".`);
+      return defaults.logs.level;
+    })()),
+    httpRequests: process.env.LOG_HTTP_RESPONSES !== 'false',
+  }
 };
 
 export { defaults } from '@/config/env-defaults';

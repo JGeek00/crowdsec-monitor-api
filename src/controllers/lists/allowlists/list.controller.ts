@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { crowdSecAPI } from '@/services';
 import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
+import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { GetAllowlistsResponse, ResponseWithError } from '@/models';
 
@@ -31,8 +32,8 @@ export async function getAllowlists(_: Request<{}, Res>, res: Response<Res>): Pr
       data: sanitizedAllowlists,
       length: sanitizedAllowlists.length,
     });
-  } catch (error) {
-    console.error('Error fetching allowlists:', error);
-    res.status(500).json(errorResponse('Failed to fetch allowlists', error instanceof Error ? error.message : 'Unknown error'));
+  } catch (err) {
+    log.error('Error fetching allowlists:', err);
+    res.status(500).json(errorResponse('Failed to fetch allowlists', err instanceof Error ? err.message : 'Unknown error'));
   }
 }
