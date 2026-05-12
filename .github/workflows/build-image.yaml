@@ -342,6 +342,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
 
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3 # 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
       - name: Create manifest by digest
         run: |
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
@@ -350,23 +353,11 @@ jobs:
           AMD64_DIGEST="${{ needs.push-amd64.outputs.digest }}"
           ARM64_DIGEST="${{ needs.push-arm64.outputs.digest }}"
 
-          docker manifest create "${REPO}:${VERSION}" \
-            --amend "${AMD64_DIGEST}" \
-            --amend "${ARM64_DIGEST}"
+          docker buildx imagetools create -t "${REPO}:${VERSION}" \
+            "${AMD64_DIGEST}" "${ARM64_DIGEST}"
 
-          docker manifest annotate --arch amd64 --os linux "${REPO}:${VERSION}" "${AMD64_DIGEST}"
-          docker manifest annotate --arch arm64 --os linux "${REPO}:${VERSION}" "${ARM64_DIGEST}"
-
-          docker manifest push "${REPO}:${VERSION}"
-
-          docker manifest create "${REPO}:${CHANNEL}" \
-            --amend "${AMD64_DIGEST}" \
-            --amend "${ARM64_DIGEST}"
-
-          docker manifest annotate --arch amd64 --os linux "${REPO}:${CHANNEL}" "${AMD64_DIGEST}"
-          docker manifest annotate --arch arm64 --os linux "${REPO}:${CHANNEL}" "${ARM64_DIGEST}"
-
-          docker manifest push "${REPO}:${CHANNEL}"
+          docker buildx imagetools create -t "${REPO}:${CHANNEL}" \
+            "${AMD64_DIGEST}" "${ARM64_DIGEST}"
 
       - name: Checkout
         uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
