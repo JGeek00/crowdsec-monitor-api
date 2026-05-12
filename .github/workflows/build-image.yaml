@@ -215,7 +215,7 @@ jobs:
             org.opencontainers.image.source=https://github.com/JGeek00/crowdsec-monitor-api
 
       - name: Security scan (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0 # 915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2
+        uses: aquasecurity/trivy-action@v0.36.0 # a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
         with:
           image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64"
           format: table
@@ -296,7 +296,7 @@ jobs:
             org.opencontainers.image.source=https://github.com/JGeek00/crowdsec-monitor-api
 
       - name: Security scan (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0 # 915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2
+        uses: aquasecurity/trivy-action@v0.36.0 # a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
         with:
           image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64"
           format: table
