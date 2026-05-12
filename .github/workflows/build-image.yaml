@@ -330,8 +330,8 @@ jobs:
           DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}-arm64" --format '{{json .}}' | jq -r '.RepoDigests[0]')
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 
-  manifest-release:
-     name: Manifest + Release
+  manifest:
+     name: Create Manifest
      needs: [validate, push-amd64, push-arm64]
      runs-on: ubuntu-24.04
      container: gcr.io/go-containerregistry/crane:debug
@@ -356,12 +356,22 @@ jobs:
             -m "${REPO}:${VERSION}-arm64" \
             -t "${REPO}:${CHANNEL}"
 
+  release:
+     name: GitHub Release
+     needs: [validate, manifest]
+     runs-on: ubuntu-24.04
+     if: github.ref_type == 'tag'
+     steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
       - name: Checkout
         uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2 # 3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
-        if: github.ref_type == 'tag'
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
@@ -370,11 +380,16 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
   cleanup-success:
-    name: Cleanup Success
-    needs: [validate, manifest-release]
-    runs-on: ubuntu-24.04
-    if: success()
-    steps:
+     name: Cleanup Success
+     needs: [validate, manifest, release]
+     runs-on: ubuntu-24.04
+     if: success()
+     steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
       - name: Delete arch-specific tags and artifacts
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
@@ -423,14 +438,19 @@ jobs:
             }
 
   cleanup-failure-partial:
-    name: Cleanup Failure (One Arch Failed)
-    needs: [validate, push-amd64, push-arm64]
-    runs-on: ubuntu-24.04
-    if: >-
-      always() &&
-      (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
-      (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
-    steps:
+     name: Cleanup Failure (One Arch Failed)
+     needs: [validate, push-amd64, push-arm64]
+     runs-on: ubuntu-24.04
+     if: >-
+       always() &&
+       (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
+       (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
+     steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
       - name: Rollback successful arch image and delete artifacts
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
@@ -489,14 +509,19 @@ jobs:
             }
 
   cleanup-failure-both:
-    name: Cleanup Failure (Both Failed)
-    needs: [validate, push-amd64, push-arm64]
-    runs-on: ubuntu-24.04
-    if: >-
-      always() &&
-      needs.push-amd64.result == 'failure' &&
-      needs.push-arm64.result == 'failure'
-    steps:
+     name: Cleanup Failure (Both Failed)
+     needs: [validate, push-amd64, push-arm64]
+     runs-on: ubuntu-24.04
+     if: >-
+       always() &&
+       needs.push-amd64.result == 'failure' &&
+       needs.push-arm64.result == 'failure'
+     steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
       - name: Delete GitHub Artifacts
         uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
