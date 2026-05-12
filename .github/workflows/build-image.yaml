@@ -350,11 +350,13 @@ jobs:
           CHANNEL="${{ needs.validate.outputs.channel_tag }}"
 
           crane index append \
+            --docker-empty-base \
             -m "${REPO}:${VERSION}-amd64" \
             -m "${REPO}:${VERSION}-arm64" \
             -t "${REPO}:${VERSION}"
 
           crane index append \
+            --docker-empty-base \
             -m "${REPO}:${VERSION}-amd64" \
             -m "${REPO}:${VERSION}-arm64" \
             -t "${REPO}:${CHANNEL}"
