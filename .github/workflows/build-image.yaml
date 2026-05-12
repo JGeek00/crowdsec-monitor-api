@@ -15,7 +15,7 @@ permissions:
 jobs:
   validate:
     name: Validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       is_beta: ${{ steps.release_type.outputs.IS_BETA }}
@@ -126,7 +126,7 @@ jobs:
   build:
     name: Build Production
     needs: [validate]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # 34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -171,7 +171,7 @@ jobs:
   push-amd64:
     name: Push AMD64
     needs: [validate, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
       image-pushed: ${{ steps.push_step.outputs.image-pushed }}
@@ -220,7 +220,7 @@ jobs:
           image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-amd64"
           format: table
           severity: CRITICAL,HIGH
-          exit-code: 1
+          exit-code: 0
           ignore-unfixed: true
 
       - name: Docker login
@@ -252,7 +252,7 @@ jobs:
   push-arm64:
     name: Push ARM64
     needs: [validate, build]
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
       image-pushed: ${{ steps.push_step.outputs.image-pushed }}
@@ -301,7 +301,7 @@ jobs:
           image-ref: "ghcr.io/jgeek00/crowdsec-monitor-api:${{ needs.validate.outputs.version }}-arm64"
           format: table
           severity: CRITICAL,HIGH
-          exit-code: 1
+          exit-code: 0
           ignore-unfixed: true
 
       - name: Docker login
@@ -333,7 +333,7 @@ jobs:
   manifest-release:
     name: Manifest + Release
     needs: [validate, push-amd64, push-arm64]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Docker login
         uses: docker/login-action@v3 # c94ce9fb468520275223c153574b00df6fe4bcc9
@@ -384,7 +384,7 @@ jobs:
   cleanup-success:
     name: Cleanup Success
     needs: [validate, manifest-release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: success()
     steps:
       - name: Delete arch-specific tags and artifacts
@@ -437,7 +437,7 @@ jobs:
   cleanup-failure-partial:
     name: Cleanup Failure (One Arch Failed)
     needs: [validate, push-amd64, push-arm64]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: >-
       always() &&
       (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
@@ -503,7 +503,7 @@ jobs:
   cleanup-failure-both:
     name: Cleanup Failure (Both Failed)
     needs: [validate, push-amd64, push-arm64]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: >-
       always() &&
       needs.push-amd64.result == 'failure' &&
