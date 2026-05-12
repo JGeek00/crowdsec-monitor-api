@@ -12,7 +12,6 @@ permissions:
   packages: write
   actions: write
 
-
 jobs:
   validate:
     name: Validate
@@ -360,14 +359,6 @@ jobs:
             -m "${REPO}:${VERSION}-arm64" \
             -t "${REPO}:${CHANNEL}"
 
-      - name: Delete arch-specific tags
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-
-          crane delete "${REPO}:${VERSION}-amd64"
-          crane delete "${REPO}:${VERSION}-arm64"
-
   release:
     name: GitHub Release
     needs: [validate, manifest]
@@ -396,32 +387,30 @@ jobs:
     needs: [validate, manifest, release]
     runs-on: ubuntu-24.04
     if: success()
-    container:
-      image: gcr.io/go-containerregistry/crane:debug
     steps:
-      - name: Login to GHCR
-        run: |
-          echo "${{ secrets.GH_TOKEN }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Delete arch-specific tags
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-
-          crane delete "${REPO}:${VERSION}-amd64"
-          crane delete "${REPO}:${VERSION}-arm64"
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
 
       - name: Delete GitHub Artifacts
-        run: |
-          curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" \
-            | jq -r '.artifacts[] | select(.name == "dist" or .name == "dist-checksum") | .id' \
-            | while read ARTIFACT_ID; do
-                curl -s -X DELETE \
-                  -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-                  "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
-                echo "Deleted artifact ID: $ARTIFACT_ID"
-              done
+        uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted artifact: ${artifact.name} (id: ${artifact.id})`);
+              }
+            }
 
   cleanup-failure-partial:
     name: Cleanup Failure (One Arch Failed)
@@ -431,41 +420,30 @@ jobs:
       always() &&
       (needs.push-amd64.result == 'failure' || needs.push-arm64.result == 'failure') &&
       (needs.push-amd64.result == 'success' || needs.push-arm64.result == 'success')
-    container:
-      image: gcr.io/go-containerregistry/crane:debug
     steps:
-      - name: Login to GHCR
-        run: |
-          echo "${{ secrets.GH_TOKEN }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Rollback successful arch image
-        run: |
-          REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
-          VERSION="${{ needs.validate.outputs.version }}"
-
-          AMD64_RESULT="${{ needs.push-amd64.result }}"
-          ARM64_RESULT="${{ needs.push-arm64.result }}"
-
-          if [ "$AMD64_RESULT" = "success" ]; then
-            crane delete "${REPO}:${VERSION}-amd64"
-          elif [ "$ARM64_RESULT" = "success" ]; then
-            crane delete "${REPO}:${VERSION}-arm64"
-          else
-            echo "No successful push to clean up"
-            exit 0
-          fi
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
 
       - name: Delete GitHub Artifacts
-        run: |
-          curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" \
-            | jq -r '.artifacts[] | select(.name == "dist" or .name == "dist-checksum") | .id' \
-            | while read ARTIFACT_ID; do
-                curl -s -X DELETE \
-                  -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-                  "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
-                echo "Deleted artifact ID: $ARTIFACT_ID"
-              done
+        uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted artifact: ${artifact.name} (id: ${artifact.id})`);
+              }
+            }
 
   cleanup-failure-both:
     name: Cleanup Failure (Both Failed)
@@ -475,17 +453,27 @@ jobs:
       always() &&
       needs.push-amd64.result == 'failure' &&
       needs.push-arm64.result == 'failure'
-    container:
-      image: gcr.io/go-containerregistry/crane:debug
     steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4 # 49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
       - name: Delete GitHub Artifacts
-        run: |
-          curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" \
-            | jq -r '.artifacts[] | select(.name == "dist" or .name == "dist-checksum") | .id' \
-            | while read ARTIFACT_ID; do
-                curl -s -X DELETE \
-                  -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-                  "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
-                echo "Deleted artifact ID: $ARTIFACT_ID"
-              done
+        uses: actions/github-script@v7 # f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'dist' || artifact.name === 'dist-checksum') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted artifact: ${artifact.name} (id: ${artifact.id})`);
+              }
+            }
