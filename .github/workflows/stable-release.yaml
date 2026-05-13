@@ -1,0 +1,128 @@
+name: Stable Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - "master"
+
+permissions:
+  contents: write
+
+jobs:
+  bump-stable:
+    name: Bump Stable Version
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate source branch
+        id: validate
+        run: |
+          SOURCE="${{ github.event.pull_request.head.ref }}"
+
+          if [[ "$SOURCE" =~ ^release/ ]]; then
+            echo "Source branch '$SOURCE' is a release branch. OK."
+          elif [[ "$SOURCE" =~ ^merge/release- ]]; then
+            echo "Source branch '$SOURCE' is a merge branch. OK."
+          else
+            echo "ERROR: Stable releases must come from a release/* or merge/release-* branch."
+            echo "Current source: $SOURCE"
+            exit 1
+          fi
+
+      - name: Extract version from source branch
+        id: version
+        run: |
+          SOURCE="${{ github.event.pull_request.head.ref }}"
+
+          if [[ "$SOURCE" =~ ^release/ ]]; then
+            BASE_VERSION=$(echo "$SOURCE" | sed 's|^release/||')
+          elif [[ "$SOURCE" =~ ^merge/release- ]]; then
+            BASE_VERSION=$(echo "$SOURCE" | sed 's|^merge/release-||')
+          fi
+
+          if ! [[ "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Invalid version in branch name '$SOURCE'"
+            echo "Expected format: release/X.X.X or merge/release-X.X.X"
+            exit 1
+          fi
+
+          NEW_VERSION="$BASE_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Stable version: $NEW_VERSION"
+
+      - name: Extract changelog from PR body
+        id: changelog
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          if [ -z "$PR_BODY" ]; then
+            echo "ERROR: PR body is empty. A changelog is required."
+            exit 1
+          fi
+
+          CHANGELOG=$(echo "$PR_BODY" | sed -n '/^```$/,/^```$/p' | tail -n +1 | head -n -1)
+
+          if [ -z "$CHANGELOG" ]; then
+            echo "ERROR: No changelog found in PR body (content between \`\`\` markers)."
+            exit 1
+          fi
+
+          TEMP_FILE=$(mktemp)
+          echo "$CHANGELOG" > "$TEMP_FILE"
+          echo "CHANGELOG_FILE=$TEMP_FILE" >> $GITHUB_OUTPUT
+
+          echo "Extracted changelog:"
+          cat "$TEMP_FILE"
+
+      - name: Update package.json
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const old = pkg.version;
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('package.json: ' + old + ' -> ' + pkg.version);
+          "
+
+      - name: Commit and tag with changelog
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          CHANGELOG_FILE="${{ steps.changelog.outputs.CHANGELOG_FILE }}"
+          CHANGELOG=$(cat "$CHANGELOG_FILE")
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add package.json
+          git commit -m "${NEW_VERSION}
+
+          $CHANGELOG"
+          git tag "v${NEW_VERSION}"
+
+          echo "Commit created:"
+          git log -1 --format="%H %s"
+          git log -1 --format="%B"
+
+       - name: Push commit and tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+
+          git push origin HEAD:master
+          git push origin "v${NEW_VERSION}"
+
+          echo "Pushed commit and tag v${NEW_VERSION} to master"
+
+      - name: Delete source branch
+        run: |
+          SOURCE="${{ github.event.pull_request.head.ref }}"
+          git push origin --delete "$SOURCE"
+          echo "Deleted source branch: $SOURCE"

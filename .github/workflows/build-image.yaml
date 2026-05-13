@@ -79,18 +79,26 @@ jobs:
           fi
           echo "Tag matches package.json version: $TAG"
 
-      - name: Verify changelog exists
+      - name: Extract changelog from commit message
         if: github.ref_type == 'tag'
         id: changelog
         run: |
-          CHANGELOG_FILE="changelog/${{ github.ref_name }}.md"
-          if [ ! -f "$CHANGELOG_FILE" ]; then
-            echo "ERROR: Changelog file not found: $CHANGELOG_FILE"
-            echo "Please create the changelog file before creating a release."
+          TAG="${{ github.ref_name }}"
+          COMMIT_MSG=$(git log -1 --format=%B "$TAG" | sed '/^$/N;/^\n$/d')
+          CHANGELOG=$(echo "$COMMIT_MSG" | tail -n +2 | sed '/^$/N;/^\n$/d')
+
+          if [ -z "$CHANGELOG" ]; then
+            echo "ERROR: No changelog found in commit message for tag $TAG"
+            echo "The commit message must include a changelog on lines after the version."
             exit 1
           fi
-          echo "Changelog file found: $CHANGELOG_FILE"
+
+          CHANGELOG_FILE=$(mktemp)
+          echo "$CHANGELOG" > "$CHANGELOG_FILE"
           echo "CHANGELOG_PATH=$CHANGELOG_FILE" >> $GITHUB_OUTPUT
+
+          echo "Changelog extracted from commit:"
+          cat "$CHANGELOG_FILE"
 
       - name: Determine release type
         id: release_type

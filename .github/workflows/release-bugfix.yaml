@@ -1,0 +1,97 @@
+name: Release Bugfix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-release-branch:
+    name: Create Release Branch
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: |
+          git fetch --tags
+
+      - name: Get last stable tag
+        id: lasttag
+        run: |
+          LAST_TAG=$(git tag -l 'v*' | grep -v '\-beta' | sort -V | tail -n 1)
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "ERROR: No stable tags found."
+            exit 1
+          fi
+
+          echo "Last stable tag: $LAST_TAG"
+          echo "TAG=$LAST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: version
+        run: |
+          TAG="${{ steps.lasttag.outputs.TAG }}"
+          VERSION=$(echo "$TAG" | sed 's/^v//')
+
+          IFS='.' read -r MAJOR MINOR BUGFIX <<< "$VERSION"
+
+          NEW_BUGFIX=$((BUGFIX + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_BUGFIX}"
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "From $TAG ($VERSION) → $NEW_VERSION"
+
+      - name: Check branch does not exist
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          BRANCH="release/$NEW_VERSION"
+
+          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            echo "ERROR: Branch '$BRANCH' already exists."
+            exit 1
+          fi
+
+          echo "Branch '$BRANCH' does not exist. OK."
+
+      - name: Check stable tag does not exist
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          TAG="v$NEW_VERSION"
+
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "ERROR: Tag '$TAG' already exists."
+            exit 1
+          fi
+
+          echo "Stable tag '$TAG' does not exist. OK."
+
+      - name: Check beta tags do not exist
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+
+          EXISTING_BETAS=$(git ls-remote --tags origin | grep "refs/tags/v${NEW_VERSION}-beta\." || true)
+
+          if [ -n "$EXISTING_BETAS" ]; then
+            echo "ERROR: Beta tags already exist for version $NEW_VERSION:"
+            echo "$EXISTING_BETAS"
+            exit 1
+          fi
+
+          echo "No beta tags exist for version $NEW_VERSION. OK."
+
+      - name: Create release branch
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
+          BRANCH="release/$NEW_VERSION"
+
+          git checkout -b "$BRANCH" origin/master
+          git push origin "$BRANCH"
+
+          echo "Created branch '$BRANCH' from master."
+          echo "Branch URL: https://github.com/${{ github.repository }}/tree/$BRANCH"

@@ -1,0 +1,176 @@
+name: PR Validate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - "release/**"
+      - "merge/**"
+      - "master"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine target branch
+        id: target
+        run: |
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          echo "SOURCE_BRANCH=$SOURCE_BRANCH" >> $GITHUB_OUTPUT
+          echo "Target: $TARGET_BRANCH"
+          echo "Source: $SOURCE_BRANCH"
+
+    outputs:
+      target: ${{ steps.target.outputs.TARGET_BRANCH }}
+      source: ${{ steps.target.outputs.SOURCE_BRANCH }}
+
+  validate-target-master:
+    name: Validate PR to Master
+    needs: [validate-pr]
+    runs-on: ubuntu-24.04
+    if: needs.validate-pr.outputs.target == 'master'
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Fetch remote branches
+        run: |
+          git fetch origin 'refs/heads/release/*:refs/remotes/origin/release/*'
+
+      - name: Check source branch type
+        run: |
+          SOURCE="${{ needs.validate-pr.outputs.source }}"
+          if [[ "$SOURCE" =~ ^release/ ]]; then
+            echo "Source branch '$SOURCE' is a release branch. OK."
+          elif [[ "$SOURCE" =~ ^merge/ ]]; then
+            echo "Source branch '$SOURCE' is a merge branch. OK."
+          else
+            echo "ERROR: PRs to master must originate from a release/* or merge/* branch."
+            echo "Current source: $SOURCE"
+            exit 1
+          fi
+
+      - name: Validate merge branch origin
+        if: contains(needs.validate-pr.outputs.source, 'merge/')
+        run: |
+          SOURCE="${{ needs.validate-pr.outputs.source }}"
+          EXPECTED_RELEASE=$(echo "$SOURCE" | sed 's|^merge/release-||')
+          EXPECTED_RELEASE_BRANCH="release/$EXPECTED_RELEASE"
+
+          echo "Expected origin: $EXPECTED_RELEASE_BRANCH"
+
+          if ! git show-ref --verify -- "refs/remotes/origin/$EXPECTED_RELEASE_BRANCH"; then
+            echo "ERROR: Expected release branch 'origin/$EXPECTED_RELEASE_BRANCH' not found remotely."
+            exit 1
+          fi
+
+          MERGE_BASE=$(git merge-base HEAD "origin/$EXPECTED_RELEASE_BRANCH")
+          RELEASE_HEAD=$(git rev-parse "origin/$EXPECTED_RELEASE_BRANCH")
+
+          if [ "$MERGE_BASE" = "$RELEASE_HEAD" ]; then
+            echo "Merge branch '$SOURCE' diverged from '$EXPECTED_RELEASE_BRANCH'. OK."
+          else
+            echo ""
+            echo "ERROR: Merge branch '$SOURCE' does not originate from '$EXPECTED_RELEASE_BRANCH'."
+            echo "Merge-base: $MERGE_BASE"
+            echo "Release HEAD: $RELEASE_HEAD"
+            echo ""
+            echo "Merge branches must be created directly from their corresponding release branch."
+            exit 1
+          fi
+
+  validate-target-release-or-merge:
+    name: Validate PR to Release/Merge
+    needs: [validate-pr]
+    runs-on: ubuntu-24.04
+    if: contains(needs.validate-pr.outputs.target, 'release/') || contains(needs.validate-pr.outputs.target, 'merge/')
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Fetch remote branches
+        run: |
+          git fetch origin 'refs/heads/release/*:refs/remotes/origin/release/*'
+          git fetch origin 'refs/heads/merge/*:refs/remotes/origin/merge/*'
+          git fetch origin 'refs/heads/master:refs/remotes/origin/master'
+
+      - name: Validate source branch type
+        run: |
+          SOURCE="${{ needs.validate-pr.outputs.source }}"
+          if [[ "$SOURCE" =~ ^feature/ ]]; then
+            echo "Source is a feature branch: $SOURCE"
+          elif [[ "$SOURCE" =~ ^bugfix/ ]]; then
+            echo "Source is a bugfix branch: $SOURCE"
+          else
+            echo "ERROR: PRs to release/* or merge/* must originate from feature/** or bugfix/**."
+            echo "Current source: $SOURCE"
+            exit 1
+          fi
+
+      - name: Validate branch originates from target branch
+        run: |
+          TARGET="${{ needs.validate-pr.outputs.target }}"
+          SOURCE="${{ needs.validate-pr.outputs.source }}"
+
+          echo "Checking if '$SOURCE' diverged from '$TARGET'..."
+
+          if ! git show-ref --verify -- "refs/remotes/origin/$TARGET"; then
+            echo "ERROR: Target branch 'origin/$TARGET' not found remotely."
+            exit 1
+          fi
+
+          MERGE_BASE=$(git merge-base HEAD "origin/$TARGET")
+          TARGET_HEAD=$(git rev-parse "origin/$TARGET")
+
+          if [ "$MERGE_BASE" = "$TARGET_HEAD" ]; then
+            echo "Branch '$SOURCE' diverged from '$TARGET'. OK."
+          else
+            echo ""
+            echo "WARNING: Branch '$SOURCE' does not have its merge-base at the HEAD of '$TARGET'."
+            echo "This may indicate the branch was created from an older commit of the target branch."
+            echo "Merge-base: $MERGE_BASE"
+            echo "Target HEAD: $TARGET_HEAD"
+            echo ""
+            echo "Consider rebasing onto the latest '$TARGET' before merging."
+          fi
+
+      - name: Check changelog in PR body
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          if [ -z "$PR_BODY" ]; then
+            echo "ERROR: PR body is empty. A changelog is required."
+            exit 1
+          fi
+
+          if ! echo "$PR_BODY" | grep -q '```'; then
+            echo "ERROR: PR body must contain a changelog inside a code fence (\`\`\`)."
+            echo ""
+            echo "Example:"
+            echo '```'
+            echo '### Added'
+            echo '- New feature description'
+            echo '```'
+            echo ""
+            exit 1
+          fi
+
+          echo "Changelog found in PR body. OK."
