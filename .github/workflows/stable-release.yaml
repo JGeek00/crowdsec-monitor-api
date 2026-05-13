@@ -112,7 +112,7 @@ jobs:
           git log -1 --format="%H %s"
           git log -1 --format="%B"
 
-       - name: Push commit and tag
+      - name: Push commit and tag
         run: |
           NEW_VERSION="${{ steps.version.outputs.NEW_VERSION }}"
 
