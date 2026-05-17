@@ -8,9 +8,9 @@ import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/pr
 import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { countIpsInValue } from '@/utils/ip-count';
 import { buildAllowlistMatcher } from '@/utils/ip';
+import { parseBlocklistContent } from '@/utils/parse-blocklist';
 import { config } from '@/config';
 import { defaults } from '@/config/env-defaults';
-import { ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex } from '@/constants/regexps';
 import { DB_MODE } from '@/types/database.types';
 import appDefaults from '@/constants/app-defaults';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
@@ -64,13 +64,7 @@ class BlocklistSyncService {
       statusBlocklistService.markFetched(processId, processField);
     }
 
-    const ips = response.data
-      .split('\n')
-      .map((line: string) => line.trim())
-      .filter((line: string) =>
-        !line.startsWith('#') &&
-        (ipv4Regex.test(line) || ipv4CidrRegex.test(line) || ipv6Regex.test(line) || ipv6CidrRegex.test(line))
-      );
+    const ips = parseBlocklistContent(response.data);
 
     const totalIpCount = ips.reduce((sum: number, v: string) => sum + countIpsInValue(v), 0);
     log.debug(`  Parsed "${name}": ${ips.length} lines, ${totalIpCount} total IPs (including CIDR ranges)`);
