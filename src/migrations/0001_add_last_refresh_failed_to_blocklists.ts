@@ -25,10 +25,14 @@ export default {
       `);
     } catch (error: any) {
       if (
-        error?.parent?.errno === 1 &&
-        error?.parent?.message?.includes('duplicate column name') ||
+        // SQLite: duplicate column name
+        (error?.parent?.errno === 1 &&
+          error?.parent?.message?.includes('duplicate column name')) ||
         error?.message?.includes('duplicate column name') ||
-        error?.code === 'SQLITE_ERROR'
+        error?.code === 'SQLITE_ERROR' ||
+        // PostgreSQL: duplicate column
+        error?.parent?.code === '42701' ||
+        error?.message?.includes('already exists')
       ) {
         console.log('Columna last_refresh_failed ya existe - saltando migración');
         return;

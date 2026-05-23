@@ -3,6 +3,9 @@ import path from 'path';
 import { Migration } from '@/models/db/Migration';
 import { MigrationService } from '@/services/migrations/migration.service';
 import { log } from '@/services/log.service';
+import { config } from '@/config/index';
+import { sequelize } from '@/config/database';
+import { DB_MODE } from '@/types/database.types';
 
 /**
  * Load and execute a migration file as a TypeScript module
@@ -42,10 +45,30 @@ export class MigrationRunner {
   }
 
   /**
+   * Check if the migrations table already exists in the database.
+   * Returns false for a brand new database (table created only by sync).
+   * Used to distinguish between:
+   *  - Old version (no migrations table) → run migrations normally
+   *  - Fresh database (table exists but empty via sync) → skip, register all as applied
+   */
+  private async migrationsTableExists(): Promise<boolean> {
+    if (config.database.mode === DB_MODE.POSTGRES) {
+      const [result] = await sequelize.query(
+        "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'migrations') AS table_exists"
+      );
+      return (result as { table_exists: boolean }[])[0]?.table_exists ?? false;
+    } else {
+      const [result] = await sequelize.query(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'"
+      );
+      return (result as unknown[]).length > 0;
+    }
+  }
+
+  /**
    * Main function to run all pending migrations
    */
   async run(): Promise<void> {
-    await this.ensureMigrationsTable();
     log.info('Starting database migrations...');
 
     try {
@@ -58,11 +81,39 @@ export class MigrationRunner {
 
       log.info(`Found ${migrationNames.length} migration(s) in filesystem`);
 
+      // Determine database state based on migrations table existence
+      const tableExists = await this.migrationsTableExists();
+
+      if (!tableExists) {
+        // Old version without migration system — run migrations normally.
+        // Migrations may create the table themselves (e.g., migration 0001).
+        log.info('No migrations table found — running migrations from scratch.');
+        await this.ensureMigrationsTable();
+        const pendingNames = await this.migrationService.getPendingMigrations(migrationNames);
+        for (const migrationName of pendingNames) {
+          await this.executeMigration(migrationName);
+        }
+        log.info('Database migrations completed successfully');
+        return;
+      }
+
+      // Table exists — ensure it's properly synced
+      await this.ensureMigrationsTable();
       const appliedNames = await this.migrationService.getAppliedMigrations();
 
-      if (appliedNames.length > 0) {
-        log.info(`${appliedNames.length} migration(s) already applied`);
+      if (appliedNames.length === 0) {
+        // Fresh database: sync() already created the latest schema.
+        // Register all migrations as applied without executing them.
+        log.info('Fresh database detected — schema already up to date via sync(). Registering all migrations as applied.');
+        for (const migrationName of migrationNames) {
+          await this.migrationService.registerMigration(migrationName);
+          log.info(`Migration ${migrationName} registered as applied (skipped)`);
+        }
+        log.info('Database migrations completed successfully');
+        return;
       }
+
+      log.info(`${appliedNames.length} migration(s) already applied`);
 
       const pendingNames = await this.migrationService.getPendingMigrations(migrationNames);
 
