@@ -21,7 +21,7 @@ export default {
     try {
       await sequelize.query(`
         ALTER TABLE blocklists 
-        ADD COLUMN last_refresh_failed BOOLEAN DEFAULT 0
+        ADD COLUMN last_refresh_failed BOOLEAN DEFAULT FALSE
       `);
     } catch (error: any) {
       if (
