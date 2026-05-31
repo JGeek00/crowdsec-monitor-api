@@ -16,10 +16,10 @@ const statusChannel = new WsChannel((ws) => {
   });
 });
 
-statusChannel.broadcast(JSON.stringify(statusService.getCleanSnapshot()));
+statusChannel.broadcast(JSON.stringify(statusService.getStatusSnapshot()));
 
 statusService.registerStateChangeCallback(() => {
-  statusChannel.broadcast(JSON.stringify(statusService.getCleanSnapshot()));
+  statusChannel.broadcast(JSON.stringify(statusService.getStatusSnapshot()));
 });
 
 export const statusSocket = statusChannel;
