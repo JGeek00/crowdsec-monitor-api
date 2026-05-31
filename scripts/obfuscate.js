@@ -35,7 +35,7 @@ const obfuscationOptions = {
   stringArrayWrappersParametersMaxCount: 4,
   stringArrayWrappersType: 'function',
   stringArrayThreshold: 0.75,
-  transformObjectKeys: true,
+  transformObjectKeys: false,
   unicodeEscapeSequence: false
 };
 

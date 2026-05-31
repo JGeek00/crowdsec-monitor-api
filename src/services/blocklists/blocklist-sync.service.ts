@@ -546,7 +546,7 @@ class BlocklistSyncService {
     }
 
     // Read totalIps from process state
-    const process = statusService.getStatusSnapshot().processes.find(p => p.id === processId);
+    const process = statusBlocklistService.getProcessById(processId);
     const totalIps = process?.blocklistRefresh?.totalIps ?? 0;
 
     log.debug(`Sync complete: ${refreshed} refreshed, ${totalIps} total IPs, ${errors.fetch.length} fetch errors, ${errors.parse.length} parse errors, ${errors.delete.length} delete errors, ${errors.import.length} import errors`);
