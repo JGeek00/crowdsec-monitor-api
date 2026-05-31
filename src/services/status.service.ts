@@ -40,12 +40,25 @@ export class StatusService {
     this.state.csMonitorApi.newVersionAvailable = newVersionAvailable;
   }
 
-  setProcesses(processes: import('@/types/process.types').Process[]): void {
-    this.state.processes = processes;
-  }
-
   getStatusSnapshot(): StatusSnapshot {
     return this.state;
+  }
+
+  /**
+   * Returns a clean snapshot for serialization (HTTP/WebSocket).
+   * Processes come from StatusBlocklistService via deep clone — zero proxy involvement.
+   * Lazy-require avoids circular dependency with StatusBlocklistService.
+   */
+  getCleanSnapshot(): StatusSnapshot {
+    const { statusBlocklistService } = require('./blocklists/status-blocklist.service') as {
+      statusBlocklistService: { getProcessesSnapshot(): import('@/types/process.types').Process[] };
+    };
+    return {
+      csLapi: this.state.csLapi,
+      csBouncer: this.state.csBouncer,
+      csMonitorApi: this.state.csMonitorApi,
+      processes: statusBlocklistService.getProcessesSnapshot(),
+    };
   }
 
   /**

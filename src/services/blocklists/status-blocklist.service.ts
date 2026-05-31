@@ -39,7 +39,6 @@ class StatusBlocklistService {
   }
 
   private syncAndNotify(): void {
-    this.statusService.setProcesses(this.processes);
     this.statusService.notifyChange();
   }
 
@@ -260,6 +259,16 @@ class StatusBlocklistService {
 
   isSyncingBlocklists(): boolean {
     return this.processes.some(p => p.endDatetime === null && p.blocklistRefresh !== undefined);
+  }
+
+  /** Returns a deep-cloned snapshot of processes for safe serialization (no proxy involvement). */
+  getProcessesSnapshot(): Process[] {
+    return JSON.parse(JSON.stringify(this.processes));
+  }
+
+  /** Finds a process by id. */
+  getProcessById(id: string): Process | undefined {
+    return this.processes.find(p => p.id === id);
   }
 
   // ─── Internals ───────────────────────────────────────────────────────────────
