@@ -162,6 +162,7 @@ Scheduled/bulk blocklist refresh operations go through 4 sequential steps per bl
 | Field | Type | Description |
 |-------|------|-------------|
 | `totalBlocklists` | number | Total number of blocklists to refresh |
+| `currentBlocklist` | number | Number of the blocklist currently being processed (1-indexed) |
 | `blocklists` | ProcessBlocklistRefreshEntry[] | Per-blocklist progress entries |
 | `totalIps` | number | Total IPs imported so far |
 
@@ -171,14 +172,18 @@ Scheduled/bulk blocklist refresh operations go through 4 sequential steps per bl
 |-------|------|-------------|
 | `number` | number | Sequential number of the blocklist in the refresh batch |
 | `name` | string | Name of the blocklist |
-| `steps` | ProcessBlocklistStepDetail[] | Per-blocklist step progress (4 steps) |
+| `steps` | object | Per-blocklist step progress (4 steps) |
 
-**ProcessBlocklistStepDetail object:**
+**Steps object:**
+
+Each blocklist has a `steps` object with 4 properties, each representing a step's status:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `step` | `'fetch'` \| `'parse'` \| `'delete'` \| `'import'` | Step name |
-| `status` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Current status of this step |
+| `fetch` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the fetch step |
+| `parse` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the parse step |
+| `delete` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the delete step |
+| `import` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Status of the import step |
 
 ---
 

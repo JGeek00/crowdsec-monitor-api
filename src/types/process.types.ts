@@ -29,15 +29,17 @@ export const PROCESS_BLOCKLIST_STEP_STATUS = {
 } as const;
 export type ProcessBlocklistStepStatus = typeof PROCESS_BLOCKLIST_STEP_STATUS[keyof typeof PROCESS_BLOCKLIST_STEP_STATUS];
 
-export interface ProcessBlocklistStepDetail {
-	step: ProcessBlocklistRefreshStep;
-	status: ProcessBlocklistStepStatus;
+export interface ProcessBlocklistRefreshSteps {
+	fetch: ProcessBlocklistStepStatus;
+	parse: ProcessBlocklistStepStatus;
+	delete: ProcessBlocklistStepStatus;
+	import: ProcessBlocklistStepStatus;
 }
 
 export interface ProcessBlocklistRefreshEntry {
 	number: number;
 	name: string;
-	steps: ProcessBlocklistStepDetail[];
+	steps: ProcessBlocklistRefreshSteps;
 }
 
 export const PROCESS_FIELD_BLOCKLIST = {

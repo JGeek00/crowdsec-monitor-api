@@ -12,7 +12,6 @@ import type {
 import {
   PROCESS_BLOCKLIST_STEP,
   PROCESS_BLOCKLIST_FIELD_STATUS,
-  PROCESS_BLOCKLIST_REFRESH_STEP,
   PROCESS_BLOCKLIST_STEP_STATUS,
   PROCESS_FIELD_BLOCKLIST,
 } from '@/types/process.types';
@@ -21,12 +20,12 @@ import { type StatusService, statusService } from '@/services/status.service';
 
 const PROCESS_RETENTION_MS = config.processes.finishedRetentionMs;
 
-const INITIAL_STEPS: ProcessBlocklistRefreshEntry['steps'] = [
-  { step: PROCESS_BLOCKLIST_REFRESH_STEP.FETCH, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
-  { step: PROCESS_BLOCKLIST_REFRESH_STEP.PARSE, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
-  { step: PROCESS_BLOCKLIST_REFRESH_STEP.DELETE, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
-  { step: PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
-];
+const INITIAL_STEPS: ProcessBlocklistRefreshEntry['steps'] = {
+  fetch: PROCESS_BLOCKLIST_STEP_STATUS.PENDING,
+  parse: PROCESS_BLOCKLIST_STEP_STATUS.PENDING,
+  delete: PROCESS_BLOCKLIST_STEP_STATUS.PENDING,
+  import: PROCESS_BLOCKLIST_STEP_STATUS.PENDING,
+};
 
 class StatusBlocklistService {
   constructor(private readonly statusService: StatusService) {}
@@ -98,7 +97,7 @@ class StatusBlocklistService {
     const blocklistEntries: ProcessBlocklistRefreshEntry[] = blocklists.map(bl => ({
       number: bl.number,
       name: bl.name,
-      steps: INITIAL_STEPS.map(s => ({ ...s })),
+      steps: { ...INITIAL_STEPS },
     }));
     const process: Process = {
       id,
@@ -135,9 +134,7 @@ class StatusBlocklistService {
     if (!rf) return;
     const entry = rf.blocklists[blocklistIndex];
     if (!entry) return;
-    const stepEntry = entry.steps.find(s => s.step === step);
-    if (!stepEntry) return;
-    stepEntry.status = status;
+    entry.steps[step] = status;
   }
 
   addBlocklistIps(id: string, count: number): void {

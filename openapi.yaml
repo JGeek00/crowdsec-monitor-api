@@ -2312,6 +2312,10 @@ components:
           type: integer
           description: Total number of blocklists to refresh
           example: 10
+        currentBlocklist:
+          type: integer
+          description: Number of the blocklist currently being processed (1-indexed)
+          example: 2
         blocklists:
           type: array
           description: Per-blocklist progress entries
@@ -2334,24 +2338,23 @@ components:
           description: Name of the blocklist
           example: spamhaus-drop
         steps:
-          type: array
+          type: object
           description: Per-blocklist step progress (4 steps, processed sequentially)
-          items:
-            $ref: '#/components/schemas/ProcessBlocklistStepDetail'
+          properties:
+            fetch:
+              $ref: '#/components/schemas/ProcessBlocklistStepStatus'
+            parse:
+              $ref: '#/components/schemas/ProcessBlocklistStepStatus'
+            delete:
+              $ref: '#/components/schemas/ProcessBlocklistStepStatus'
+            import:
+              $ref: '#/components/schemas/ProcessBlocklistStepStatus'
 
-    ProcessBlocklistStepDetail:
-      type: object
-      properties:
-        step:
-          type: string
-          enum: [fetch, parse, delete, import]
-          description: Step name
-          example: fetch
-        status:
-          type: string
-          enum: [pending, running, successful, failed]
-          description: Current status of this step
-          example: successful
+    ProcessBlocklistStepStatus:
+      type: string
+      enum: [pending, running, successful, failed]
+      description: Current status of a step
+      example: successful
 
   responses:
     UnauthorizedError:
