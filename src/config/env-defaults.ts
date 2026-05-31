@@ -18,10 +18,8 @@ export const defaults = {
     alertsSync: 30, // 60 seconds
     lapiCheckInterval: 30, // 30 seconds
     blocklistIpsBanDuration: '24h',
-    apiBlocklistsRefreshTime: 14400, // 4 hours
-    apiBlocklistsSyncTime: 900, // 15 min
+    apiBlocklistsRefreshTime: 43200, // 12 hours
     crowdsecBlocklistsRefreshTime: 3600, // 1 hour
-    blocklistReconcileTime: 3600, // 1 hour
   },
   dns: {
     server: 'cloudflare', // Default DNS server for domain checks

@@ -1,9 +1,32 @@
-import type { Process, ProcessBlocklist, ProcessBlocklistIps, ProcessBlocklistRefresh, ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
-import { PROCESS_BLOCKLIST_STEP, PROCESS_BLOCKLIST_FIELD_STATUS, PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
+import type {
+  Process,
+  ProcessBlocklist,
+  ProcessBlocklistIps,
+  ProcessBlocklistRefresh,
+  ProcessBlocklistRefreshEntry,
+  ProcessBlocklistRefreshStep,
+  ProcessBlocklistStepStatus,
+  ProcessFieldBlocklist,
+  ProcessFieldBlocklistOps,
+} from '@/types/process.types';
+import {
+  PROCESS_BLOCKLIST_STEP,
+  PROCESS_BLOCKLIST_FIELD_STATUS,
+  PROCESS_BLOCKLIST_REFRESH_STEP,
+  PROCESS_BLOCKLIST_STEP_STATUS,
+  PROCESS_FIELD_BLOCKLIST,
+} from '@/types/process.types';
 import { config } from '@/config';
 import { type StatusService, statusService } from '@/services/status.service';
 
 const PROCESS_RETENTION_MS = config.processes.finishedRetentionMs;
+
+const INITIAL_STEPS: ProcessBlocklistRefreshEntry['steps'] = [
+  { step: PROCESS_BLOCKLIST_REFRESH_STEP.FETCH, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
+  { step: PROCESS_BLOCKLIST_REFRESH_STEP.PARSE, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
+  { step: PROCESS_BLOCKLIST_REFRESH_STEP.DELETE, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
+  { step: PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT, status: PROCESS_BLOCKLIST_STEP_STATUS.PENDING },
+];
 
 class StatusBlocklistService {
   constructor(private readonly statusService: StatusService) {}
@@ -70,27 +93,58 @@ class StatusBlocklistService {
     return id;
   }
 
-  createBlocklistRefreshProcess(totalBlocklists: number): string {
+  createBlocklistRefreshProcess(blocklists: { number: number; name: string }[]): string {
     const id = crypto.randomUUID();
+    const blocklistEntries: ProcessBlocklistRefreshEntry[] = blocklists.map(bl => ({
+      number: bl.number,
+      name: bl.name,
+      steps: INITIAL_STEPS.map(s => ({ ...s })),
+    }));
     const process: Process = {
       id,
       beginDatetime: new Date().toISOString(),
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistRefresh: { totalBlocklists, processedBlocklists: 0, successful: 0, failed: 0 },
+      blocklistRefresh: {
+        totalBlocklists: blocklists.length,
+        currentBlocklist: 0,
+        blocklists: blocklistEntries,
+        totalIps: 0,
+      },
     };
     this.state.processes = [process, ...this.state.processes];
     return id;
   }
 
-  incrementRefreshBlocklist(id: string, successful: boolean): void {
+  setCurrentBlocklist(id: string, index: number): void {
     const p = this.state.processes.find(p => p.id === id);
     const rf = p?.blocklistRefresh as ProcessBlocklistRefresh | undefined;
     if (!rf) return;
-    rf.processedBlocklists++;
-    if (successful) rf.successful++;
-    else rf.failed++;
+    rf.currentBlocklist = index;
+  }
+
+  setBlocklistStepStatus(
+    id: string,
+    blocklistIndex: number,
+    step: ProcessBlocklistRefreshStep,
+    status: ProcessBlocklistStepStatus,
+  ): void {
+    const p = this.state.processes.find(p => p.id === id);
+    const rf = p?.blocklistRefresh as ProcessBlocklistRefresh | undefined;
+    if (!rf) return;
+    const entry = rf.blocklists[blocklistIndex];
+    if (!entry) return;
+    const stepEntry = entry.steps.find(s => s.step === step);
+    if (!stepEntry) return;
+    stepEntry.status = status;
+  }
+
+  addBlocklistIps(id: string, count: number): void {
+    const p = this.state.processes.find(p => p.id === id);
+    const rf = p?.blocklistRefresh as ProcessBlocklistRefresh | undefined;
+    if (!rf) return;
+    rf.totalIps += count;
   }
 
   // ─── Blocklist (import/enable) step updates ─────────────────────────────────
@@ -181,6 +235,10 @@ class StatusBlocklistService {
         p.blocklistDelete?.blocklistId === blocklistId
       );
     });
+  }
+
+  isSyncingBlocklists(): boolean {
+    return this.state.processes.some(p => p.endDatetime === null && p.blocklistRefresh !== undefined);
   }
 
   // ─── Internals ───────────────────────────────────────────────────────────────

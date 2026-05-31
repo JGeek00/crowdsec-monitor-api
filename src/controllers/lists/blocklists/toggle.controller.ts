@@ -17,6 +17,11 @@ import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/pr
 type Res = ResponseWithError<PostToggleBlocklistResponse>;
 export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
+    if (statusBlocklistService.isSyncingBlocklists()) {
+      res.status(503).json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
+      return;
+    }
+
     const { id } = req.params;
     const { enabled } = req.body;
 

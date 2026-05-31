@@ -157,12 +157,28 @@ Get comprehensive status information including CrowdSec LAPI connection status, 
 
 **ProcessBlocklistRefresh object:**
 
+Scheduled/bulk blocklist refresh operations go through 4 sequential steps per blocklist: **fetch** (download URL), **parse** (filter IPs, apply allowlist), **delete** (remove old CrowdSec alerts), then **import** (write DB, push to CrowdSec). Each blocklist has its own progress entry with individual step statuses. If a blocklist fails any step, remaining steps stay `pending` and the failed step is marked `failed`.
+
 | Field | Type | Description |
 |-------|------|-------------|
 | `totalBlocklists` | number | Total number of blocklists to refresh |
-| `processedBlocklists` | number | Blocklists processed so far |
-| `successful` | number | Number of successfully refreshed blocklists |
-| `failed` | number | Number of failed blocklist refreshes |
+| `blocklists` | ProcessBlocklistRefreshEntry[] | Per-blocklist progress entries |
+| `totalIps` | number | Total IPs imported so far |
+
+**ProcessBlocklistRefreshEntry object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `number` | number | Sequential number of the blocklist in the refresh batch |
+| `name` | string | Name of the blocklist |
+| `steps` | ProcessBlocklistStepDetail[] | Per-blocklist step progress (4 steps) |
+
+**ProcessBlocklistStepDetail object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `step` | `'fetch'` \| `'parse'` \| `'delete'` \| `'import'` | Step name |
+| `status` | `'pending'` \| `'running'` \| `'successful'` \| `'failed'` | Current status of this step |
 
 ---
 
@@ -1151,6 +1167,16 @@ curl -X POST "http://localhost:3000/api/v1/blocklists" \
   "message": "A blocklist with this URL already exists"
 }
 ```
+
+**Response (503 Service Unavailable):**
+```json
+{
+  "error": "Service Unavailable",
+  "message": "Blocklist refresh is in progress. Please try again later."
+}
+```
+
+Returned when a scheduled blocklist refresh is in progress. Create, toggle, and delete operations are blocked until the refresh completes.
 
 **Notes:**
 - The response is returned immediately after the database entry is created

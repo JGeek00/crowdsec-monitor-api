@@ -13,6 +13,11 @@ import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
 type Res = ResponseWithError<DeleteBlocklistResponse>;
 export async function deleteBlocklist(req: Request<DeleteBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
+    if (statusBlocklistService.isSyncingBlocklists()) {
+      res.status(503).json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
+      return;
+    }
+
     const { id } = req.params;
 
     const blocklist = await BlocklistsTable.findByPk(Number(id));

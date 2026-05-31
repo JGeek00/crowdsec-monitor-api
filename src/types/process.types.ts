@@ -7,11 +7,38 @@ export const PROCESS_BLOCKLIST_FIELD_STATUS = {
 export type ProcessBlocklistFieldStatus = typeof PROCESS_BLOCKLIST_FIELD_STATUS[keyof typeof PROCESS_BLOCKLIST_FIELD_STATUS];
 
 export const PROCESS_BLOCKLIST_STEP = {
-  FETCH: 'fetch',
-  PARSE: 'parse',
-  IMPORT: 'import',
+	FETCH: 'fetch',
+	PARSE: 'parse',
+	IMPORT: 'import',
 } as const;
 export type ProcessBlocklistStep = typeof PROCESS_BLOCKLIST_STEP[keyof typeof PROCESS_BLOCKLIST_STEP];
+
+export const PROCESS_BLOCKLIST_REFRESH_STEP = {
+	FETCH: 'fetch',
+	PARSE: 'parse',
+	DELETE: 'delete',
+	IMPORT: 'import',
+} as const;
+export type ProcessBlocklistRefreshStep = typeof PROCESS_BLOCKLIST_REFRESH_STEP[keyof typeof PROCESS_BLOCKLIST_REFRESH_STEP];
+
+export const PROCESS_BLOCKLIST_STEP_STATUS = {
+	PENDING: 'pending',
+	RUNNING: 'running',
+	SUCCESSFUL: 'successful',
+	FAILED: 'failed',
+} as const;
+export type ProcessBlocklistStepStatus = typeof PROCESS_BLOCKLIST_STEP_STATUS[keyof typeof PROCESS_BLOCKLIST_STEP_STATUS];
+
+export interface ProcessBlocklistStepDetail {
+	step: ProcessBlocklistRefreshStep;
+	status: ProcessBlocklistStepStatus;
+}
+
+export interface ProcessBlocklistRefreshEntry {
+	number: number;
+	name: string;
+	steps: ProcessBlocklistStepDetail[];
+}
 
 export const PROCESS_FIELD_BLOCKLIST = {
   IMPORT: 'blocklistImport',
@@ -50,10 +77,10 @@ export interface ProcessBlocklist extends BlocklistInfo {
 }
 
 export interface ProcessBlocklistRefresh {
-  totalBlocklists: number;
-  processedBlocklists: number;
-  successful: number;
-  failed: number;
+	totalBlocklists: number;
+	currentBlocklist: number;
+	blocklists: ProcessBlocklistRefreshEntry[];
+	totalIps: number;
 }
 
 export interface Process {

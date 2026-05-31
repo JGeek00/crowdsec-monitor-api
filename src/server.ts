@@ -1,7 +1,7 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
-import { databaseService, schedulerService, versionCheckerService, statusService } from '@/services';
+import { databaseService, schedulerService, versionCheckerService, statusService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { webSocketApp } from '@/sockets';
 import appDefaults from '@/constants/app-defaults';
@@ -124,7 +124,13 @@ const startServer = async (): Promise<void> => {
 
     schedulerService.schedule(
       appDefaults.scheduler.blocklistsSync,
-      async () => { await databaseService.syncBlocklists(); },
+      async () => {
+        if (statusBlocklistService.isSyncingBlocklists()) {
+          log.warn('Blocklists sync skipped: a refresh is already in progress');
+          return;
+        }
+        await databaseService.syncBlocklists();
+      },
       { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true }
     );
 
@@ -134,19 +140,12 @@ const startServer = async (): Promise<void> => {
       { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true }
     );
 
-    schedulerService.schedule(
-      appDefaults.scheduler.blocklistReconcile,
-      async () => { await databaseService.reconcileBlocklistIps(); },
-      { intervalSeconds: config.blocklistReconcile.intervalSeconds, runImmediately: false }
-    );
-
     console.log('');
     log.info('  Schedulers:');
     log.info(`    ↻ LAPI status check       every ${formatInterval(config.lapiCheck.intervalSeconds)}`);
     log.info(`    ↻ Alerts sync            every ${formatInterval(config.sync.intervalSeconds)}`);
     log.info(`    ↻ Blocklists sync        every ${formatInterval(config.blocklists.refreshTimeSeconds)}`);
     log.info(`    ↻ CS blocklists sync     every ${formatInterval(config.crowdsecBlocklists.refreshTimeSeconds)}`);
-    log.info(`    ↻ Blocklist reconcile    every ${formatInterval(config.blocklistReconcile.intervalSeconds)}`);
     log.info(`    ↻ Version check          every 1h`);
 
     // Create and start Express app

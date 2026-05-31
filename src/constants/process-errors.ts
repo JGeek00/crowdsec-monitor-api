@@ -32,5 +32,6 @@ export const PROCESS_ERRORS = {
   },
   blocklistRefresh: {
     partialFailure: 'One or more blocklists failed to refresh',
+    crowdSecUnavailable: 'Cannot connect to CrowdSec API. Aborting blocklist sync.',
   },
 } as const;

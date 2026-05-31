@@ -2,7 +2,6 @@ import { BlocklistsTable } from '@/models';
 import { alertsSyncService } from '@/services/alerts-sync.service';
 import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
 import { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
-import { blocklistReconcileService } from '@/services/blocklists/blocklist-reconcile.service';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 
 /**
@@ -45,10 +44,6 @@ class DatabaseService {
 
   async syncCsBlocklists() {
     return csBlocklistSyncService.syncCsBlocklists();
-  }
-
-  async reconcileBlocklistIps() {
-    return blocklistReconcileService.reconcile();
   }
 }
 

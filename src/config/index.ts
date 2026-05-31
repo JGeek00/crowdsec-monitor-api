@@ -71,6 +71,14 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
   };
 };
 
+// Parse BLOCKLISTS_REFRESH_TIME: must be at least 3600 seconds (1 hour). If below, use default.
+const parseBlocklistsRefreshTime = (raw: string | undefined): number => {
+  const value = raw ? parseInt(raw, 10) : NaN;
+  if (!isNaN(value) && value >= 3600) return value;
+  console.warn(`WARNING: BLOCKLISTS_REFRESH_TIME must be at least 3600 (1 hour). Using default value ${defaults.intervals.apiBlocklistsRefreshTime} seconds.`);
+  return defaults.intervals.apiBlocklistsRefreshTime;
+};
+
 // Parse BLOCKLISTS_WRITE_CHUNK_SIZE which can be a positive integer or "none". If its less than 100, log a warning and use the default value instead.
 const parseWriteChunkSize = (chunkSizeStr: string | undefined): number | null => {
   if (!chunkSizeStr) {
@@ -125,20 +133,13 @@ export const config = {
       : defaults.intervals.alertsSync,
   },
   blocklists: {
-    refreshTimeSeconds: process.env.BLOCKLISTS_REFRESH_TIME
-      ? parseInt(process.env.BLOCKLISTS_REFRESH_TIME, 10)
-      : defaults.intervals.apiBlocklistsRefreshTime,
+    refreshTimeSeconds: parseBlocklistsRefreshTime(process.env.BLOCKLISTS_REFRESH_TIME),
     writeChunkSize: parseWriteChunkSize(process.env.BLOCKLISTS_WRITE_CHUNK_SIZE),
   },
   crowdsecBlocklists: {
     refreshTimeSeconds: process.env.CROWDSEC_BLOCKLISTS_REFRESH_TIME
       ? parseInt(process.env.CROWDSEC_BLOCKLISTS_REFRESH_TIME, 10)
       : defaults.intervals.crowdsecBlocklistsRefreshTime,
-  },
-  blocklistReconcile: {
-    intervalSeconds: process.env.BLOCKLIST_RECONCILE_TIME
-      ? parseInt(process.env.BLOCKLIST_RECONCILE_TIME, 10)
-      : defaults.intervals.blocklistReconcileTime,
   },
   lapiCheck: {
     intervalSeconds: process.env.LAPI_CHECK_INTERVAL

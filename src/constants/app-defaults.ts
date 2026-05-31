@@ -14,6 +14,6 @@ export default {
     lapiCheck: 'lapi-check',
     blocklistsSync: 'blocklists-sync',
     csBlocklistsSync: 'cs-blocklists-sync',
-    blocklistReconcile: 'blocklist-reconcile',
+    
   }
 }

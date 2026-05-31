@@ -2312,18 +2312,46 @@ components:
           type: integer
           description: Total number of blocklists to refresh
           example: 10
-        processedBlocklists:
+        blocklists:
+          type: array
+          description: Per-blocklist progress entries
+          items:
+            $ref: '#/components/schemas/ProcessBlocklistRefreshEntry'
+        totalIps:
           type: integer
-          description: Number of blocklists processed so far
-          example: 5
-        successful:
+          description: Total IPs imported so far
+          example: 125000
+
+    ProcessBlocklistRefreshEntry:
+      type: object
+      properties:
+        number:
           type: integer
-          description: Number of successfully refreshed blocklists
-          example: 4
-        failed:
-          type: integer
-          description: Number of failed blocklist refreshes
+          description: Sequential number of the blocklist in the refresh batch
           example: 1
+        name:
+          type: string
+          description: Name of the blocklist
+          example: spamhaus-drop
+        steps:
+          type: array
+          description: Per-blocklist step progress (4 steps, processed sequentially)
+          items:
+            $ref: '#/components/schemas/ProcessBlocklistStepDetail'
+
+    ProcessBlocklistStepDetail:
+      type: object
+      properties:
+        step:
+          type: string
+          enum: [fetch, parse, delete, import]
+          description: Step name
+          example: fetch
+        status:
+          type: string
+          enum: [pending, running, successful, failed]
+          description: Current status of this step
+          example: successful
 
   responses:
     UnauthorizedError:
