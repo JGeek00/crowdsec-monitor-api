@@ -134,7 +134,8 @@ class StatusBlocklistService {
     if (!rf) return;
     const entry = rf.blocklists[blocklistIndex];
     if (!entry) return;
-    entry.steps[step] = status;
+    const steps = entry.steps;
+    steps[step] = status;
   }
 
   addBlocklistIps(id: string, count: number): void {
