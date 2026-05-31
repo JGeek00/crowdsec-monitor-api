@@ -40,8 +40,20 @@ export class StatusService {
     this.state.csMonitorApi.newVersionAvailable = newVersionAvailable;
   }
 
+  setProcesses(processes: import('@/types/process.types').Process[]): void {
+    this.state.processes = processes;
+  }
+
   getStatusSnapshot(): StatusSnapshot {
     return this.state;
+  }
+
+  /**
+   * Explicit notification for services that manage their own state
+   * (e.g., StatusBlocklistService). Triggers a debounced broadcast.
+   */
+  notifyChange(): void {
+    this.scheduleBroadcast();
   }
 
   private scheduleBroadcast(): void {
