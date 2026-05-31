@@ -1,6 +1,6 @@
 export default {
   alerts: {
-    originsFetch:['crowdsec', 'cscli', 'console', 'appsec'],
+    originsFetch:['crowdsec', 'cscli', 'console', 'appsec', 'waf'],
   },
   blocklists: {
     scenarioRegex: /^external\/blocklist \((.+)\)$/,
