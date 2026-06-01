@@ -201,137 +201,154 @@ class BlocklistSyncService {
     const name = blocklistsTableEntry.name;
     log.debug(`Refreshing blocklist "${name}" from ${blocklistsTableEntry.url}...`);
 
-    await this.acquireWriteLock(() =>
-      blocklistsTableEntry.update({ last_refresh_attempt: new Date(), last_refresh_failed: false })
-    );
-
-    const { ips } = await this.downloadBlocklist(blocklistsTableEntry.url, name);
-
-    if (processId && processField) {
-      statusBlocklistService.markFetched(processId, processField);
-    }
-
-    const entries = allowlistEntries ?? await this.fetchAllowlistEntries();
-    const filteredIps = await this.parseIps(ips, name, entries);
-    const allowlistSkipped = ips.length - filteredIps.length;
-
-    // Fetch currently active decisions from CrowdSec to avoid pushing duplicates
-    let activeDecisions: Set<string>;
-    try {
-      activeDecisions = await crowdSecAPI.decisions.getActiveDecisions();
-      crowdSecAPI.setBouncerConnected(true);
-      statusService.updateBouncerStatus(true);
-      log.debug(`  Fetched ${activeDecisions.size} active decisions from CrowdSec`);
-    } catch {
-      log.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${name}".`);
-      crowdSecAPI.setBouncerConnected(false);
-      statusService.updateBouncerStatus(false);
-      throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecDecisionsFailed);
-    }
-    const uniqueNewIps = [...new Set(filteredIps.filter((ip) => !activeDecisions.has(ip)))];
-    const alreadyBlocked = filteredIps.length - uniqueNewIps.length;
-
-    if (alreadyBlocked > 0) {
-      log.debug(`  "${name}": ${alreadyBlocked} IPs already blocked in CrowdSec`);
-    }
-
-    log.debug(`  "${name}": ${uniqueNewIps.length} new IPs ready to push`);
-
-    if (processId && processField) {
-      statusBlocklistService.markParsed(processId, processField, uniqueNewIps.length);
-    }
-
-    // Save all IPs from the list to the DB
-    const dbChunkSize = defaults.blocklists.writeChunkSize;
-    const dbChunkCount = Math.ceil(ips.length / dbChunkSize);
-    log.debug(`  Writing ${ips.length} IPs to DB for "${name}" in ${dbChunkCount} chunk(s)`);
+    let allowlistSkipped = 0;
+    let alreadyBlocked = 0;
+    let uniqueNewIps: string[] = [];
+    let ips: string[] = [];
+    let success = false;
 
     try {
-      await this.acquireWriteLock(async () => {
-        await sequelize.transaction(async (t) => {
-          await BlocklistIpsTable.destroy({ where: { [BlocklistIpsTable.col.blocklistId]: blocklistsTableEntry.id }, transaction: t });
+      const { ips: downloadedIps } = await this.downloadBlocklist(blocklistsTableEntry.url, name);
+      ips = downloadedIps;
 
-          for (let i = 0; i < ips.length; i += dbChunkSize) {
-            const chunk = ips.slice(i, i + dbChunkSize).map((value: string) => ({
-              blocklist_id: blocklistsTableEntry.id,
-              blocklist_name: blocklistsTableEntry.name,
-              value,
-              origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
-            }));
-            await BlocklistIpsTable.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
-            log.debug(`    DB chunk ${Math.floor(i / dbChunkSize) + 1}/${dbChunkCount} written for "${name}" (${chunk.length} IPs)`);
-          }
-        });
-      });
-    } catch {
-      throw new Error(PROCESS_ERRORS.blocklistImport.dbWriteFailed);
-    }
-
-    const scenario = `external/blocklist (${blocklistsTableEntry.name})`;
-    const now = new Date().toISOString();
-    const pushChunkSize = config.blocklists.writeChunkSize ?? uniqueNewIps.length;
-    const batchCount = Math.ceil(uniqueNewIps.length / Math.max(pushChunkSize, 1));
-
-    if (uniqueNewIps.length === 0) {
-      log.debug(`  No new IPs to push for "${name}" (all already blocked in CrowdSec)`);
-    } else {
-      log.debug(`  Pushing "${name}" to CrowdSec: ${uniqueNewIps.length} new IPs, ${batchCount} batch(es) of ${pushChunkSize}`);
-
-      for (let i = 0; i < uniqueNewIps.length; i += pushChunkSize) {
-        const chunk = uniqueNewIps.slice(i, i + pushChunkSize);
-
-        const payload: CrowdSecCreateAlertPayload = [
-          {
-            capacity: 0,
-            events: [],
-            events_count: 1,
-            leakspeed: '0',
-            message: `Blocking ${ips.length} IPs from list ${blocklistsTableEntry.name}`,
-            scenario,
-            scenario_hash: '',
-            scenario_version: '',
-            simulated: false,
-            source: { scope: 'Ip', value: '0.0.0.0' },
-            start_at: now,
-            stop_at: now,
-            decisions: chunk.map((value: string) => ({
-              duration: config.blocklistBanDuration,
-              origin: appDefaults.blocklists.importOrigin,
-              scenario,
-              scope: 'Ip',
-              type: 'ban',
-              value,
-            })),
-          },
-        ];
-
-        await crowdSecAPI.alerts.createAlerts(payload)
-          .catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecPushFailed); });
-
-        if (processId && processField) {
-          statusBlocklistService.addImportedIps(processId, processField, chunk.length);
-        }
-
-        const batchNum = Math.floor(i / pushChunkSize) + 1;
-        log.debug(`    Batch ${batchNum}/${batchCount} sent for "${name}" (${chunk.length} decisions)`);
+      if (processId && processField) {
+        statusBlocklistService.markFetched(processId, processField);
       }
+
+      const entries = allowlistEntries ?? await this.fetchAllowlistEntries();
+      const filteredIps = await this.parseIps(ips, name, entries);
+      allowlistSkipped = ips.length - filteredIps.length;
+
+      // Fetch currently active decisions from CrowdSec to avoid pushing duplicates
+      let activeDecisions: Set<string>;
+      try {
+        activeDecisions = await crowdSecAPI.decisions.getActiveDecisions();
+        crowdSecAPI.setBouncerConnected(true);
+        statusService.updateBouncerStatus(true);
+        log.debug(`  Fetched ${activeDecisions.size} active decisions from CrowdSec`);
+      } catch {
+        log.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${name}".`);
+        crowdSecAPI.setBouncerConnected(false);
+        statusService.updateBouncerStatus(false);
+        throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecDecisionsFailed);
+      }
+      uniqueNewIps = [...new Set(filteredIps.filter((ip) => !activeDecisions.has(ip)))];
+      alreadyBlocked = filteredIps.length - uniqueNewIps.length;
+
+      if (alreadyBlocked > 0) {
+        log.debug(`  "${name}": ${alreadyBlocked} IPs already blocked in CrowdSec`);
+      }
+
+      log.debug(`  "${name}": ${uniqueNewIps.length} new IPs ready to push`);
+
+      if (processId && processField) {
+        statusBlocklistService.markParsed(processId, processField, uniqueNewIps.length);
+      }
+
+      // Save all IPs from the list to the DB
+      const dbChunkSize = defaults.blocklists.writeChunkSize;
+      const dbChunkCount = Math.ceil(ips.length / dbChunkSize);
+      log.debug(`  Writing ${ips.length} IPs to DB for "${name}" in ${dbChunkCount} chunk(s)`);
+
+      try {
+        await this.acquireWriteLock(async () => {
+          await sequelize.transaction(async (t) => {
+            await BlocklistIpsTable.destroy({ where: { [BlocklistIpsTable.col.blocklistId]: blocklistsTableEntry.id }, transaction: t });
+
+            for (let i = 0; i < ips.length; i += dbChunkSize) {
+              const chunk = ips.slice(i, i + dbChunkSize).map((value: string) => ({
+                blocklist_id: blocklistsTableEntry.id,
+                blocklist_name: blocklistsTableEntry.name,
+                value,
+                origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
+              }));
+              await BlocklistIpsTable.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
+              log.debug(`    DB chunk ${Math.floor(i / dbChunkSize) + 1}/${dbChunkCount} written for "${name}" (${chunk.length} IPs)`);
+            }
+          });
+        });
+      } catch {
+        throw new Error(PROCESS_ERRORS.blocklistImport.dbWriteFailed);
+      }
+
+      const scenario = `external/blocklist (${blocklistsTableEntry.name})`;
+      const now = new Date().toISOString();
+      const pushChunkSize = config.blocklists.writeChunkSize ?? uniqueNewIps.length;
+      const batchCount = Math.ceil(uniqueNewIps.length / Math.max(pushChunkSize, 1));
+
+      if (uniqueNewIps.length === 0) {
+        log.debug(`  No new IPs to push for "${name}" (all already blocked in CrowdSec)`);
+      } else {
+        log.debug(`  Pushing "${name}" to CrowdSec: ${uniqueNewIps.length} new IPs, ${batchCount} batch(es) of ${pushChunkSize}`);
+
+        for (let i = 0; i < uniqueNewIps.length; i += pushChunkSize) {
+          const chunk = uniqueNewIps.slice(i, i + pushChunkSize);
+
+          const payload: CrowdSecCreateAlertPayload = [
+            {
+              capacity: 0,
+              events: [],
+              events_count: 1,
+              leakspeed: '0',
+              message: `Blocking ${ips.length} IPs from list ${blocklistsTableEntry.name}`,
+              scenario,
+              scenario_hash: '',
+              scenario_version: '',
+              simulated: false,
+              source: { scope: 'Ip', value: '0.0.0.0' },
+              start_at: now,
+              stop_at: now,
+              decisions: chunk.map((value: string) => ({
+                duration: config.blocklistBanDuration,
+                origin: appDefaults.blocklists.importOrigin,
+                scenario,
+                scope: 'Ip',
+                type: 'ban',
+                value,
+              })),
+            },
+          ];
+
+          await crowdSecAPI.alerts.createAlerts(payload)
+            .catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecPushFailed); });
+
+          if (processId && processField) {
+            statusBlocklistService.addImportedIps(processId, processField, chunk.length);
+          }
+
+          const batchNum = Math.floor(i / pushChunkSize) + 1;
+          log.debug(`    Batch ${batchNum}/${batchCount} sent for "${name}" (${chunk.length} decisions)`);
+        }
+      }
+
+      if (processId && processField) {
+        statusBlocklistService.markBlocklistOpComplete(processId, processField);
+      }
+
+      success = true;
+
+    } finally {
+      const updatePayload: {
+        last_refresh_attempt: Date;
+        last_successful_refresh?: Date;
+        last_refresh_failed: boolean;
+      } = {
+        last_refresh_attempt: new Date(),
+        last_refresh_failed: !success,
+      };
+
+      if (success) {
+        updatePayload.last_successful_refresh = new Date();
+        const parts = [
+          `${uniqueNewIps.length} pushed to CrowdSec`,
+          alreadyBlocked > 0 ? `${alreadyBlocked} already blocked` : null,
+          allowlistSkipped > 0 ? `${allowlistSkipped} in allowlist` : null,
+        ].filter(Boolean).join(', ');
+        log.info(`Refreshed "${name}": ${ips.length} IPs in list — ${parts}`);
+      }
+
+      await this.acquireWriteLock(() => blocklistsTableEntry.update(updatePayload));
     }
-
-    if (processId && processField) {
-      statusBlocklistService.markBlocklistOpComplete(processId, processField);
-    }
-
-    await this.acquireWriteLock(() =>
-      blocklistsTableEntry.update({ last_successful_refresh: new Date(), last_refresh_failed: false })
-    );
-    log.debug(`    Updated last_successful_refresh for "${name}"`);
-
-    const parts = [
-      `${uniqueNewIps.length} pushed to CrowdSec`,
-      alreadyBlocked > 0 ? `${alreadyBlocked} already blocked` : null,
-      allowlistSkipped > 0 ? `${allowlistSkipped} in allowlist` : null,
-    ].filter(Boolean).join(', ');
-    log.info(`Refreshed "${name}": ${ips.length} IPs in list — ${parts}`);
 
     return { allowlistSkipped };
   }
@@ -437,7 +454,7 @@ class BlocklistSyncService {
       statusService.updateBouncerStatus(false);
       // Mark all blocklists as failed since sync could not start
       for (const blocklist of blocklists) {
-        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true }));
+        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true, last_refresh_attempt: new Date() }));
       }
       statusBlocklistService.completeProcess(processId, false, PROCESS_ERRORS.blocklistRefresh.crowdSecUnavailable);
       return { refreshed: 0, totalIps: 0, errors: { fetch: [], parse: [], delete: [], import: [] } };
@@ -476,7 +493,7 @@ class BlocklistSyncService {
         log.error(`  FETCH failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
         statusBlocklistService.setBlocklistStepStatus(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.FETCH, 'failed');
         errors.fetch.push(blocklist.name);
-        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true }));
+        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true, last_refresh_attempt: new Date() }));
         shouldSkipRemaining = true;
       }
 
@@ -493,7 +510,7 @@ class BlocklistSyncService {
         log.error(`  PARSE failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
         statusBlocklistService.setBlocklistStepStatus(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.PARSE, 'failed');
         errors.parse.push(blocklist.name);
-        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true }));
+        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true, last_refresh_attempt: new Date() }));
         shouldSkipRemaining = true;
       }
 
@@ -508,7 +525,7 @@ class BlocklistSyncService {
         log.error(`  DELETE failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
         statusBlocklistService.setBlocklistStepStatus(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.DELETE, 'failed');
         errors.delete.push(blocklist.name);
-        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true }));
+        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true, last_refresh_attempt: new Date() }));
         shouldSkipRemaining = true;
       }
 
@@ -526,14 +543,14 @@ class BlocklistSyncService {
         log.info(`Refreshed "${blocklist.name}": ${filteredIps.length} lines, ${totalIpCount} IPs — ${pushed} pushed to CrowdSec`);
 
         await this.acquireWriteLock(() =>
-          blocklist.update({ last_successful_refresh: new Date(), last_refresh_failed: false })
+          blocklist.update({ last_successful_refresh: new Date(), last_refresh_failed: false, last_refresh_attempt: new Date() })
         );
         refreshed++;
       } catch (err) {
         log.error(`  IMPORT failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
         statusBlocklistService.setBlocklistStepStatus(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT, 'failed');
         errors.import.push(blocklist.name);
-        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true }));
+        await this.acquireWriteLock(() => blocklist.update({ last_refresh_failed: true, last_refresh_attempt: new Date() }));
       }
     }
 
