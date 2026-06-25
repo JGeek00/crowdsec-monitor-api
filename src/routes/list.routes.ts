@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import blocklistRoutes from '@/routes/blocklist.routes';
 import allowlistRoutes from '@/routes/allowlist.routes';
-import { handleValidationErrors, AuthMiddleware } from '@/middlewares';
+import { handleValidationErrors } from '@/middlewares';
 import { checkBlocklistValidators, checkDomainBlocklistValidators } from '@/validators/blocklist.validator';
 import { checkDomainInList, checkIpsInList } from '@/controllers';
 
@@ -11,14 +11,16 @@ router.use('/blocklists', blocklistRoutes);
 router.use('/allowlists', allowlistRoutes);
 
 /**
- * POST /api/v1/lists/check-ips
- * Check if IPs are in any list (blocklist or allowlist)
+ * @route   POST /api/lists/check-ips
+ * @desc    Check if IPs are in any list (blocklist or allowlist)
+ * @access  Authentication (configurable)
  */
 router.post('/check-ips', checkBlocklistValidators, handleValidationErrors, checkIpsInList);
 
 /**
- * POST /api/v1/lists/check-domain
- * Checks if an IP assigned to a domain is in any list (blocklist or allowlist)
+ * @route   POST /api/lists/check-domain
+ * @desc    Check if an IP assigned to a domain is in any list (blocklist or allowlist)
+ * @access  Authentication (configurable)
  */
 router.post('/check-domain', checkDomainBlocklistValidators, handleValidationErrors, checkDomainInList);
 

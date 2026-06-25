@@ -24,6 +24,7 @@ npm-debug.log*
 *.swp
 *.swo
 *~
+.codegraph
 
 # OS
 .DS_Store

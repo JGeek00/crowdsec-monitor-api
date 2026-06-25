@@ -16,14 +16,14 @@ router.get('/health', healthCheck);
 /**
  * @route   GET /api/status
  * @desc    Get comprehensive status information
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/status', AuthMiddleware.expressAuth, getStatus);
 
 /**
  * @route   GET /api/status/check-credentials
  * @desc    Check if the provided credentials are valid
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/check-credentials', AuthMiddleware.expressAuth, checkCredentials);
 

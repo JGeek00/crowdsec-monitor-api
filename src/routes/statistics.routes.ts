@@ -18,7 +18,7 @@ const router: Router = Router();
 /**
  * @route   GET /api/statistics
  * @desc    Get comprehensive statistics
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get(
   '/',
@@ -30,56 +30,56 @@ router.get(
 /**
  * @route   GET /api/statistics/countries
  * @desc    Get top countries full list
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/countries', getTopCountries);
 
 /**
  * @route   GET /api/statistics/scenarios
  * @desc    Get top scenarios full list
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/scenarios', getTopScenarios);
 
 /**
  * @route   GET /api/statistics/ip-owners
  * @desc    Get top IP owners full list
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/ip-owners', getTopIpOwners);
 
 /**
  * @route   GET /api/statistics/targets
  * @desc    Get top targets full list
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/targets', getTopTargets);
 
 /**
  * @route   GET /api/statistics/countries/:item
  * @desc    Get history for a specific country
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/countries/:item', getCountryHistory);
 
 /**
  * @route   GET /api/statistics/scenarios/:item
  * @desc    Get history for a specific scenario
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/scenarios/:item', getScenarioHistory);
 
 /**
  * @route   GET /api/statistics/ip-owners/:item
  * @desc    Get history for a specific IP owner
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/ip-owners/:item', getIpOwnerHistory);
 
 /**
  * @route   GET /api/statistics/targets/:item
  * @desc    Get history for a specific target
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/targets/:item', getTargetHistory);
 

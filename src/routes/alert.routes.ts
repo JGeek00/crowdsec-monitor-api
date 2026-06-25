@@ -8,7 +8,7 @@ const router: Router= Router();
 /**
  * @route   GET /api/alerts
  * @desc    Get all alerts
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get(
   '/',
@@ -20,21 +20,21 @@ router.get(
 /**
  * @route   GET /api/alerts/stats
  * @desc    Get alerts statistics
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/stats', getAlertStats);
 
 /**
  * @route   GET /api/alerts/:id
  * @desc    Get alert by ID
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.get('/:id', getAlertById);
 
 /**
  * @route   DELETE /api/alerts/:id
  * @desc    Delete alert by ID from CrowdSec LAPI
- * @access  Optional authentication
+ * @access  Authentication (configurable)
  */
 router.delete('/:id', deleteAlert);
 
