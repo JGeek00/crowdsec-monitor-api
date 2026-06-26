@@ -26,6 +26,9 @@ npm-debug.log*
 *~
 .codegraph
 
+# Lint
+.eslintcache
+
 # OS
 .DS_Store
 Thumbs.db

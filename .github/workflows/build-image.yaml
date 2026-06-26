@@ -123,6 +123,12 @@ jobs:
           pnpm exec tsc --noEmit
         working-directory: ./
 
+      - name: ESLint check
+        run: |
+          corepack enable
+          pnpm run lint
+        continue-on-error: true
+
   build:
     name: Build Production
     needs: [validate]
