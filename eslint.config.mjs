@@ -35,7 +35,6 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-wrapper-object-types': 'error',
-      // Allow `{}` and empty interfaces (Sequelize model patterns, Express types)
       '@typescript-eslint/no-empty-object-type': 'warn',
       // Allow dynamic require() for runtime package.json reads
       '@typescript-eslint/no-require-imports': 'off',
