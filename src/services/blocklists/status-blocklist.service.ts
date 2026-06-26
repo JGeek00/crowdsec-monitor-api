@@ -35,7 +35,7 @@ class StatusBlocklistService {
   // ─── Internal helpers ────────────────────────────────────────────────────────
 
   private findProcess(id: string): Process | undefined {
-    return this.processes.find(p => p.id === id);
+    return this.processes.find((p) => p.id === id);
   }
 
   private syncAndNotify(): void {
@@ -106,7 +106,7 @@ class StatusBlocklistService {
 
   createBlocklistRefreshProcess(blocklists: { number: number; name: string }[]): string {
     const id = crypto.randomUUID();
-    const blocklistEntries: ProcessBlocklistRefreshEntry[] = blocklists.map(bl => ({
+    const blocklistEntries: ProcessBlocklistRefreshEntry[] = blocklists.map((bl) => ({
       number: bl.number,
       name: bl.name,
       steps: { ...INITIAL_STEPS },
@@ -237,7 +237,7 @@ class StatusBlocklistService {
     }
     this.syncAndNotify();
     const timer = setTimeout(() => {
-      this.processes = this.processes.filter(p => p.id !== id);
+      this.processes = this.processes.filter((p) => p.id !== id);
       this.syncAndNotify();
     }, PROCESS_RETENTION_MS);
     timer.unref();
@@ -246,7 +246,7 @@ class StatusBlocklistService {
   // ─── Queries ─────────────────────────────────────────────────────────────────
 
   isBlocklistBusy(blocklistId: number): boolean {
-    return this.processes.some(p => {
+    return this.processes.some((p) => {
       if (p.endDatetime !== null) return false;
       return (
         p.blocklistImport?.blocklistId === blocklistId ||
@@ -258,7 +258,7 @@ class StatusBlocklistService {
   }
 
   isSyncingBlocklists(): boolean {
-    return this.processes.some(p => p.endDatetime === null && p.blocklistRefresh !== undefined);
+    return this.processes.some((p) => p.endDatetime === null && p.blocklistRefresh !== undefined);
   }
 
   /** Returns a deep-cloned snapshot of processes for safe serialization (no proxy involvement). */
@@ -268,7 +268,7 @@ class StatusBlocklistService {
 
   /** Finds a process by id. */
   getProcessById(id: string): Process | undefined {
-    return this.processes.find(p => p.id === id);
+    return this.processes.find((p) => p.id === id);
   }
 
   // ─── Internals ───────────────────────────────────────────────────────────────

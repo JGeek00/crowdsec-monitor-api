@@ -2,7 +2,7 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
 import type { Alert_SourceInfo, Alert, UnparsedMetaData, Decision } from '@/models';
 
-export interface DecisionCreationAttributes extends Optional<Decision, 'id' | 'created_at' | 'updated_at'> {}
+export type DecisionCreationAttributes = Optional<Decision, 'id' | 'created_at' | 'updated_at'>;
 
 class DecisionsTable extends Model<Decision, DecisionCreationAttributes> implements Decision {
   public id!: number;
@@ -109,7 +109,7 @@ DecisionsTable.init(
     underscored: true,
     timestamps: false,
     createdAt: false,
-    updatedAt:false,
+    updatedAt: false,
     indexes: [
       {
         name: 'idx_decisions_alert_id',
@@ -140,7 +140,7 @@ DecisionsTable.init(
         fields: ['created_at'],
       },
     ],
-  }
+  },
 );
 
 export default DecisionsTable;

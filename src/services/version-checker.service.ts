@@ -51,7 +51,7 @@ class VersionCheckerService {
       const response = await axios.get<GitHubRelease>(this.GITHUB_API_URL, {
         timeout: 10000,
         headers: {
-          'Accept': 'application/vnd.github.v3+json',
+          Accept: 'application/vnd.github.v3+json',
           'User-Agent': 'crowdsec-monitor-api',
         },
       });

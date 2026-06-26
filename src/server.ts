@@ -1,11 +1,17 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { createApp } from '@/app';
-import { databaseService, schedulerService, versionCheckerService, statusService, statusBlocklistService } from '@/services';
+import {
+  databaseService,
+  schedulerService,
+  versionCheckerService,
+  statusService,
+  statusBlocklistService,
+} from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { webSocketApp } from '@/sockets';
 import appDefaults from '@/constants/app-defaults';
-import { setLevel as initLogger, log } from '@/services'
+import { setLevel as initLogger, log } from '@/services';
 import { LogLevel } from '@/types/log.types';
 import packageJson from '../package.json';
 
@@ -99,18 +105,24 @@ const startServer = async (): Promise<void> => {
       appDefaults.scheduler.lapiCheck,
       async () => {
         await crowdSecAPI.checkStatus();
-        statusService.updateLapiStatus(crowdSecAPI.getLastLapiConnected(), databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
+        statusService.updateLapiStatus(
+          crowdSecAPI.getLastLapiConnected(),
+          databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
+        );
       },
-      { intervalSeconds: config.lapiCheck.intervalSeconds, runImmediately: false }
+      { intervalSeconds: config.lapiCheck.intervalSeconds, runImmediately: false },
     );
 
     schedulerService.schedule(
       appDefaults.scheduler.dataSync,
       async () => {
         await databaseService.syncAll();
-        statusService.updateLapiStatus(crowdSecAPI.getLastLapiConnected(), databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
+        statusService.updateLapiStatus(
+          crowdSecAPI.getLastLapiConnected(),
+          databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
+        );
       },
-      { intervalSeconds: config.sync.intervalSeconds, runImmediately: false }
+      { intervalSeconds: config.sync.intervalSeconds, runImmediately: false },
     );
 
     schedulerService.schedule(
@@ -119,7 +131,7 @@ const startServer = async (): Promise<void> => {
         await versionCheckerService.checkForNewVersion();
         statusService.updateVersionInfo(versionCheckerService.getLatestVersion());
       },
-      { intervalSeconds: 3600, runImmediately: true }
+      { intervalSeconds: 3600, runImmediately: true },
     );
 
     schedulerService.schedule(
@@ -131,13 +143,15 @@ const startServer = async (): Promise<void> => {
         }
         await databaseService.syncBlocklists();
       },
-      { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true }
+      { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true },
     );
 
     schedulerService.schedule(
       appDefaults.scheduler.csBlocklistsSync,
-      async () => { await databaseService.syncCsBlocklists(); },
-      { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true }
+      async () => {
+        await databaseService.syncCsBlocklists();
+      },
+      { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true },
     );
 
     console.log('');

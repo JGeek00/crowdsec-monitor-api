@@ -12,7 +12,10 @@ import { PostCheckDomainBody, PostCheckDomainResponse, PostCheckDomainResponse_I
  * resolved IP is in any list (blocklist or allowlist).
  */
 type Res = ResponseWithError<PostCheckDomainResponse>;
-export async function checkDomainInList(req: Request<{}, Res, PostCheckDomainBody>, res: Response<Res>): Promise<void> {
+export async function checkDomainInList(
+  req: Request<object, Res, PostCheckDomainBody>,
+  res: Response<Res>,
+): Promise<void> {
   try {
     const { domain } = req.body;
 
@@ -23,12 +26,9 @@ export async function checkDomainInList(req: Request<{}, Res, PostCheckDomainBod
       return;
     }
 
-    const [blocklistMap, allowlistMap] = await Promise.all([
-      lookupIpsInBlocklists(ips),
-      lookupIpsInAllowlists(ips),
-    ]);
+    const [blocklistMap, allowlistMap] = await Promise.all([lookupIpsInBlocklists(ips), lookupIpsInAllowlists(ips)]);
 
-    const results: PostCheckDomainResponse_IP[] = ips.map(ip => ({
+    const results: PostCheckDomainResponse_IP[] = ips.map((ip) => ({
       ip,
       blocklists: blocklistMap.get(ip) ?? [],
       allowlists: allowlistMap.get(ip) ?? [],
@@ -37,6 +37,8 @@ export async function checkDomainInList(req: Request<{}, Res, PostCheckDomainBod
     res.status(200).json({ domain, ips: results });
   } catch (err) {
     log.error('Error checking domain in lists:', err);
-    res.status(500).json(errorResponse('Failed to check domain in lists', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to check domain in lists', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

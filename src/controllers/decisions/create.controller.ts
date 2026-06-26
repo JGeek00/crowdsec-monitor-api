@@ -11,7 +11,7 @@ import { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/mod
  * Simplified endpoint that creates an alert with a decision
  */
 type Res = ResponseWithError<PostDecisionResponse>;
-export async function createDecision(req: Request<{}, Res, PostDecisionBody>, res: Response<Res>): Promise<void> {
+export async function createDecision(req: Request<object, Res, PostDecisionBody>, res: Response<Res>): Promise<void> {
   try {
     const { ip, duration, reason, type } = req.body;
 
@@ -67,6 +67,8 @@ export async function createDecision(req: Request<{}, Res, PostDecisionBody>, re
       },
     });
   } catch (error) {
-    res.status(500).json(errorResponse('Error creating decision', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error creating decision', error instanceof Error ? error.message : 'Unknown error'));
   }
 }

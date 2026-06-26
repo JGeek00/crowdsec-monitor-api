@@ -1,4 +1,4 @@
-import { Blocklist } from "@/models";
+import { Blocklist } from '@/models';
 
 export interface PostBlocklistResponse {
   data: Blocklist;

@@ -13,4 +13,4 @@ export const BLOCKLIST_TYPE = {
   API: 'api',
   CROWDSEC: 'cs',
 } as const;
-export type BlocklistType = typeof BLOCKLIST_TYPE[keyof typeof BLOCKLIST_TYPE];
+export type BlocklistType = (typeof BLOCKLIST_TYPE)[keyof typeof BLOCKLIST_TYPE];

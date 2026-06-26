@@ -1,5 +1,5 @@
 import { Alert, ParsedMetaData } from '@/models';
-import { Pagination } from "@/models";
+import { Pagination } from '@/models';
 
 export interface GetAlertsResponse {
   filtering: AlertsFiltering;
@@ -14,4 +14,3 @@ interface AlertsFiltering {
   ipOwners: string[];
   targets: string[];
 }
-

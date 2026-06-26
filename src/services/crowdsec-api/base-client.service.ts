@@ -27,7 +27,7 @@ export class CrowdSecBaseClient {
    */
   async login(): Promise<boolean> {
     try {
-     log.debug('Authenticating with CrowdSec LAPI...');
+      log.debug('Authenticating with CrowdSec LAPI...');
 
       const response = await this.client.post<CrowdSecLoginResponse>('/v1/watchers/login', {
         machine_id: config.crowdsec.user,
@@ -75,14 +75,14 @@ export class CrowdSecBaseClient {
     }
 
     if (this.loginPromise) {
-      return await this.loginPromise;
+      return this.loginPromise;
     }
 
     log.debug('Token expired or not available, re-authenticating...');
     this.loginPromise = this.login().finally(() => {
       this.loginPromise = null;
     });
-    return await this.loginPromise;
+    return this.loginPromise;
   }
 
   /**
@@ -155,12 +155,14 @@ export class CrowdSecBaseClient {
       await this.client.get('/v1/decisions', {
         headers: { 'X-Api-Key': config.crowdsec.bouncerKey },
       });
-     this.bouncerConnected = true;
+      this.bouncerConnected = true;
       log.info('CrowdSec bouncer API key validated successfully');
     } catch (err) {
       this.bouncerConnected = false;
       if (axios.isAxiosError(err) && err.response) {
-        log.error(`CrowdSec bouncer API key validation failed: HTTP ${err.response.status} - ${JSON.stringify(err.response.data)}`);
+        log.error(
+          `CrowdSec bouncer API key validation failed: HTTP ${err.response.status} - ${JSON.stringify(err.response.data)}`,
+        );
       } else {
         log.error('CrowdSec bouncer API key validation failed: Unable to reach CrowdSec LAPI');
       }

@@ -1,6 +1,7 @@
 // Shared strings used by more than one process operation
 const FETCH_FAILED = 'Failed to fetch the blocklist content from the remote URL';
-const CROWDSEC_DECISIONS_FAILED = 'Failed to retrieve active decisions from CrowdSec. This can be caused by an invalid bouncer API key. Check the CROWDSEC_BOUNCER_KEY configuration and ensure CrowdSec LAPI is accessible.';
+const CROWDSEC_DECISIONS_FAILED =
+  'Failed to retrieve active decisions from CrowdSec. This can be caused by an invalid bouncer API key. Check the CROWDSEC_BOUNCER_KEY configuration and ensure CrowdSec LAPI is accessible.';
 const DB_WRITE_FAILED = 'Failed to save IPs to the local database';
 const CROWDSEC_PUSH_FAILED = 'Failed to push IP decisions to CrowdSec';
 const CROWDSEC_ALERTS_FETCH_FAILED = 'Failed to retrieve blocklist alerts from CrowdSec';

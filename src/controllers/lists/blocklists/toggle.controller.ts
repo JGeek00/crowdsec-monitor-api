@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
-import { BlocklistsTable, ResponseWithError, PostToggleBlocklistParams, PostToggleBlocklistResponse, BlocklistIpsTable } from '@/models';
+import {
+  BlocklistsTable,
+  ResponseWithError,
+  PostToggleBlocklistParams,
+  PostToggleBlocklistResponse,
+  BlocklistIpsTable,
+} from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { log } from '@/services/log.service';
@@ -18,7 +24,9 @@ type Res = ResponseWithError<PostToggleBlocklistResponse>;
 export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
     if (statusBlocklistService.isSyncingBlocklists()) {
-      res.status(503).json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
+      res
+        .status(503)
+        .json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
       return;
     }
 
@@ -37,15 +45,31 @@ export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Re
     }
 
     if (statusBlocklistService.isBlocklistBusy(blocklist.id)) {
-      res.status(409).json(errorResponse('Conflict', 'A process is already running for this blocklist. Wait for it to complete before performing another action.'));
+      res
+        .status(409)
+        .json(
+          errorResponse(
+            'Conflict',
+            'A process is already running for this blocklist. Wait for it to complete before performing another action.',
+          ),
+        );
       return;
     }
 
     if (enabled) {
       await crowdSecAPI.checkBouncerConnection();
       if (!crowdSecAPI.isBouncerConnected()) {
-        log.warn('[Blocklists] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
-        res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. BlocklistsTable operations are unavailable.'));
+        log.warn(
+          '[Blocklists] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.',
+        );
+        res
+          .status(500)
+          .json(
+            errorResponse(
+              'CrowdSec connection error',
+              'Unable to reach CrowdSec LAPI with the configured bouncer key. BlocklistsTable operations are unavailable.',
+            ),
+          );
         return;
       }
     }
@@ -70,10 +94,14 @@ export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Re
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
         statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        log.error(`Background CrowdSec sync failed for blocklist "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
+        log.error(
+          `Background CrowdSec sync failed for blocklist "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`,
+        );
       });
   } catch (err) {
     log.error('Error toggling blocklist:', err);
-    res.status(500).json(errorResponse('Failed to toggle blocklist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to toggle blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

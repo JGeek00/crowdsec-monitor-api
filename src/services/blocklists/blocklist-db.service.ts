@@ -38,7 +38,9 @@ class BlocklistDbService {
               origin: BLOCKLIST_IP_ORIGIN.BLOCKLIST,
             }));
             await BlocklistIpsTable.bulkCreate(chunk, { transaction: t, ignoreDuplicates: true });
-            log.debug(`    DB chunk ${Math.floor(i / dbChunkSize) + 1}/${dbChunkCount} written for "${name}" (${chunk.length} IPs)`);
+            log.debug(
+              `    DB chunk ${Math.floor(i / dbChunkSize) + 1}/${dbChunkCount} written for "${name}" (${chunk.length} IPs)`,
+            );
           }
         });
       });

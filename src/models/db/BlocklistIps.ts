@@ -2,7 +2,7 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
 import type { CsBlocklist, BlocklistsTable, BlocklistIp, BlocklistIpOrigin } from '@/models';
 
-export interface BlocklistIpCreationAttributes extends Optional<BlocklistIp, 'id' | 'blocklist_id' | 'cs_blocklist_id'> {}
+export type BlocklistIpCreationAttributes = Optional<BlocklistIp, 'id' | 'blocklist_id' | 'cs_blocklist_id'>;
 
 class BlocklistIpsTable extends Model<BlocklistIp, BlocklistIpCreationAttributes> implements BlocklistIp {
   public id!: number;
@@ -82,7 +82,7 @@ BlocklistIpsTable.init(
         fields: ['cs_blocklist_id', 'value'],
       },
     ],
-  }
+  },
 );
 
 export default BlocklistIpsTable;

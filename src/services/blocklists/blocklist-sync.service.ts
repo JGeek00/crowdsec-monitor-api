@@ -17,17 +17,18 @@ import { blocklistDbService } from './blocklist-db.service';
 import { executeSyncStep, importBlocklistToCrowdSec } from '../../helpers/blocklist-sync-steps';
 
 class BlocklistSyncService {
-
   /**
    * Parse IPs and apply allowlist filter.
    */
   private async parseIps(ips: string[], blocklistName: string, allowlistEntries: string[]): Promise<string[]> {
     const isAllowlisted = buildAllowlistMatcher(allowlistEntries);
-    const allowlistFiltered = ips.filter(ip => !isAllowlisted(ip));
+    const allowlistFiltered = ips.filter((ip) => !isAllowlisted(ip));
     const allowlistSkipped = ips.length - allowlistFiltered.length;
 
     if (allowlistSkipped > 0) {
-      log.debug(`  Allowlist filtering "${blocklistName}": ${allowlistSkipped} skipped (${allowlistEntries.length} allowlist entries)`);
+      log.debug(
+        `  Allowlist filtering "${blocklistName}": ${allowlistSkipped} skipped (${allowlistEntries.length} allowlist entries)`,
+      );
     }
 
     return allowlistFiltered;
@@ -64,7 +65,7 @@ class BlocklistSyncService {
       }
 
       // ── Filter by allowlist ───────────────────────────────────
-      const entries = allowlistEntries ?? await blocklistCrowdSecService.fetchAllowlistEntries();
+      const entries = allowlistEntries ?? (await blocklistCrowdSecService.fetchAllowlistEntries());
       const filteredIps = await this.parseIps(ips, name, entries);
       allowlistSkipped = ips.length - filteredIps.length;
 
@@ -125,12 +126,14 @@ class BlocklistSyncService {
 
       if (success) {
         updatePayload.last_successful_refresh = new Date();
-        const alreadyBlocked = (ips.length - uniqueNewIps.length);
+        const alreadyBlocked = ips.length - uniqueNewIps.length;
         const parts = [
           `${uniqueNewIps.length} pushed to CrowdSec`,
           alreadyBlocked > 0 ? `${alreadyBlocked} already blocked` : null,
           allowlistSkipped > 0 ? `${allowlistSkipped} in allowlist` : null,
-        ].filter(Boolean).join(', ');
+        ]
+          .filter(Boolean)
+          .join(', ');
         log.info(`Refreshed "${name}": ${ips.length} IPs in list — ${parts}`);
       }
 
@@ -152,11 +155,14 @@ class BlocklistSyncService {
     const name = blocklist.name;
     log.debug(`Deleting blocklist "${name}" alerts from CrowdSec...`);
 
-    const { totalDecisions } = await blocklistCrowdSecService.deleteBlocklistAlerts(name, (alertId, decisionsCount, processedIps) => {
-      if (processId && processField) {
-        statusBlocklistService.setDeletedIps(processId, processField, processedIps);
-      }
-    });
+    const { totalDecisions } = await blocklistCrowdSecService.deleteBlocklistAlerts(
+      name,
+      (alertId, decisionsCount, processedIps) => {
+        if (processId && processField) {
+          statusBlocklistService.setDeletedIps(processId, processField, processedIps);
+        }
+      },
+    );
 
     if (processId && processField) {
       statusBlocklistService.setIpsToDelete(processId, processField, totalDecisions);
@@ -230,33 +236,48 @@ class BlocklistSyncService {
       statusBlocklistService.setCurrentBlocklist(processId, i + 1);
 
       // ── FETCH ────────────────────────────────────────────────
-      if (!await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.FETCH, blocklist, errors, async () => {
-        const { rawContent } = await blocklistCrowdSecService.downloadBlocklist(blocklist.url, blocklist.name);
-        fetchedIpsCache.set(blocklist.name, parseBlocklistContent(rawContent));
-      })) continue;
+      if (
+        !(await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.FETCH, blocklist, errors, async () => {
+          const { rawContent } = await blocklistCrowdSecService.downloadBlocklist(blocklist.url, blocklist.name);
+          fetchedIpsCache.set(blocklist.name, parseBlocklistContent(rawContent));
+        }))
+      )
+        continue;
 
       // ── PARSE ────────────────────────────────────────────────
-      if (!await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.PARSE, blocklist, errors, async () => {
-        const ips = fetchedIpsCache.get(blocklist.name) ?? [];
-        const filteredIps = await this.parseIps(ips, blocklist.name, allowlistEntries);
-        parsedIpsCache.set(blocklist.name, filteredIps);
-      })) continue;
+      if (
+        !(await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.PARSE, blocklist, errors, async () => {
+          const ips = fetchedIpsCache.get(blocklist.name) ?? [];
+          const filteredIps = await this.parseIps(ips, blocklist.name, allowlistEntries);
+          parsedIpsCache.set(blocklist.name, filteredIps);
+        }))
+      )
+        continue;
 
       // ── DELETE old CrowdSec alerts ───────────────────────────
-      if (!await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.DELETE, blocklist, errors, async () => {
-        await blocklistCrowdSecService.deleteBlocklistAlerts(blocklist.name);
-      })) continue;
+      if (
+        !(await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.DELETE, blocklist, errors, async () => {
+          await blocklistCrowdSecService.deleteBlocklistAlerts(blocklist.name);
+        }))
+      )
+        continue;
 
       // ── IMPORT to CrowdSec ───────────────────────────────────
       const importSuccess = await executeSyncStep(
-        processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT, blocklist, errors,
+        processId,
+        i,
+        PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT,
+        blocklist,
+        errors,
         async () => {
           const filteredIps = parsedIpsCache.get(blocklist.name) ?? [];
           const { ipsInDb, pushed } = await importBlocklistToCrowdSec(blocklist, filteredIps);
           statusBlocklistService.addBlocklistIps(processId, ipsInDb);
 
           const totalIpCount = filteredIps.reduce((sum: number, v: string) => sum + countIpsInValue(v), 0);
-          log.info(`Refreshed "${blocklist.name}": ${filteredIps.length} lines, ${totalIpCount} IPs — ${pushed} pushed to CrowdSec`);
+          log.info(
+            `Refreshed "${blocklist.name}": ${filteredIps.length} lines, ${totalIpCount} IPs — ${pushed} pushed to CrowdSec`,
+          );
         },
       );
 
@@ -270,8 +291,12 @@ class BlocklistSyncService {
       }
     }
 
-    const hasErrors = Object.values(errors).some(arr => arr.length > 0);
-    statusBlocklistService.completeProcess(processId, !hasErrors, hasErrors ? PROCESS_ERRORS.blocklistRefresh.partialFailure : null);
+    const hasErrors = Object.values(errors).some((arr) => arr.length > 0);
+    statusBlocklistService.completeProcess(
+      processId,
+      !hasErrors,
+      hasErrors ? PROCESS_ERRORS.blocklistRefresh.partialFailure : null,
+    );
 
     if (config.database.mode === DB_MODE.SQLITE) {
       log.debug('Running SQLite WAL checkpoint');
@@ -282,7 +307,9 @@ class BlocklistSyncService {
     const process = statusBlocklistService.getProcessById(processId);
     const totalIps = process?.blocklistRefresh?.totalIps ?? 0;
 
-    log.debug(`Sync complete: ${refreshed} refreshed, ${totalIps} total IPs, ${errors.fetch.length} fetch errors, ${errors.parse.length} parse errors, ${errors.delete.length} delete errors, ${errors.import.length} import errors`);
+    log.debug(
+      `Sync complete: ${refreshed} refreshed, ${totalIps} total IPs, ${errors.fetch.length} fetch errors, ${errors.parse.length} parse errors, ${errors.delete.length} delete errors, ${errors.import.length} import errors`,
+    );
 
     return { refreshed, totalIps, errors };
   }

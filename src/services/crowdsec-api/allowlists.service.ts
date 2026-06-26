@@ -29,7 +29,7 @@ export class AllowlistsService {
   async getAllowlistByName(allowlist_name: string): Promise<CrowdSecAllowlist | null> {
     try {
       const allowlists = await this.getAllowlists();
-      return allowlists.find(a => a.name === allowlist_name) || null;
+      return allowlists.find((a) => a.name === allowlist_name) || null;
     } catch (error) {
       this.base.handleError(error, `fetching allowlist ${allowlist_name}`);
       return null;
@@ -64,13 +64,13 @@ export class AllowlistsService {
         }
       }
 
-      return ips.map(ip => ({
+      return ips.map((ip) => ({
         ip,
         allowlist: ipAllowlistMap.get(ip) || null,
       }));
     } catch (error) {
       this.base.handleError(error, 'checking allowlists');
-      return ips.map(ip => ({ ip, allowlist: null }));
+      return ips.map((ip) => ({ ip, allowlist: null }));
     }
   }
 }

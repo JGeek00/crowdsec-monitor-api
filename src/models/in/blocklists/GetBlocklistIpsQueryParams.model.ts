@@ -1,5 +1,5 @@
 export interface GetBlocklistIpsQueryParams {
-  limit?: number
+  limit?: number;
   offset?: number;
   unpaged?: boolean;
   ip_string?: string;

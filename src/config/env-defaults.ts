@@ -36,5 +36,5 @@ export const defaults = {
   logs: {
     level: 'info',
     httpRequests: true,
-  }
+  },
 };

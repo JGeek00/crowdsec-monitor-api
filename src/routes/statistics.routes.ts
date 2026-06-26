@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { 
-  getStatistics, 
-  getTopCountries, 
-  getTopScenarios, 
-  getTopIpOwners, 
+import {
+  getStatistics,
+  getTopCountries,
+  getTopScenarios,
+  getTopIpOwners,
   getTopTargets,
   getCountryHistory,
   getScenarioHistory,
   getIpOwnerHistory,
-  getTargetHistory
+  getTargetHistory,
 } from '@/controllers';
 import { statisticsQueryValidators } from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
@@ -20,12 +20,7 @@ const router: Router = Router();
  * @desc    Get comprehensive statistics
  * @access  Authentication (configurable)
  */
-router.get(
-  '/',
-  statisticsQueryValidators,
-  handleValidationErrors,
-  getStatistics
-);
+router.get('/', statisticsQueryValidators, handleValidationErrors, getStatistics);
 
 /**
  * @route   GET /api/statistics/countries

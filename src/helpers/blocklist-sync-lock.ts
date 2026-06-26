@@ -12,7 +12,10 @@ export class AsyncWriteLock {
    */
   public acquire<T>(fn: () => Promise<T>): Promise<T> {
     const next = this.lock.then(() => fn());
-    this.lock = next.then(() => {}, () => {});
+    this.lock = next.then(
+      () => {},
+      () => {},
+    );
     return next;
   }
 }

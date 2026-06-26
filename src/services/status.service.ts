@@ -40,7 +40,7 @@ export class StatusService {
     this.state.csMonitorApi.newVersionAvailable = newVersionAvailable;
   }
 
- getStatusSnapshot(): StatusSnapshot {
+  getStatusSnapshot(): StatusSnapshot {
     return this.state;
   }
 

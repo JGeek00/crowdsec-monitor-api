@@ -21,11 +21,13 @@ export async function checkDomainBlocklist(req: Request, res: Response): Promise
     }
 
     const blocklistMap = await lookupIpsInBlocklists(ips);
-    const results = ips.map(ip => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
+    const results = ips.map((ip) => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
 
     res.status(200).json({ domain, ips: results });
   } catch (err) {
     log.error('Error checking domain blocklist:', err);
-    res.status(500).json(errorResponse('Failed to check domain blocklist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to check domain blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

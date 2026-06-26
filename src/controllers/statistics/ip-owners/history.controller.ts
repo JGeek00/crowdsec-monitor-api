@@ -21,9 +21,9 @@ export async function getIpOwnerHistory(req: Request<GetIpOwnerHistoryParams>, r
     // Filter by IP owner and group by date in JavaScript
     const dateMap = new Map<string, number>();
 
-    (alerts).forEach((alert) => {
+    alerts.forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
         if (source.as_name && source.as_name === item) {
           const date = new Date(alert.crowdsec_created_at as Date | string).toISOString().split('T')[0];
           dateMap.set(date, (dateMap.get(date) || 0) + 1);
@@ -39,7 +39,9 @@ export async function getIpOwnerHistory(req: Request<GetIpOwnerHistoryParams>, r
     res.json(history);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching IP owner history', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error fetching IP owner history', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

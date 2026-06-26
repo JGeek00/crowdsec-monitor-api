@@ -22,9 +22,9 @@ export async function getCountryHistory(req: Request<GetCountryHistoryParams>, r
     // Filter by country and group by date in JavaScript
     const dateMap = new Map<string, number>();
 
-    (alerts).forEach((alert) => {
+    alerts.forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
         if (source.cn && source.cn.toUpperCase() === countryCode) {
           const date = new Date(alert.crowdsec_created_at as Date | string).toISOString().split('T')[0];
           dateMap.set(date, (dateMap.get(date) || 0) + 1);
@@ -40,7 +40,9 @@ export async function getCountryHistory(req: Request<GetCountryHistoryParams>, r
     res.json(history);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching country history', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error fetching country history', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

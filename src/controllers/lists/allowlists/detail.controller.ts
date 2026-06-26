@@ -12,7 +12,7 @@ import { errorResponse } from '@/utils/error-response';
 function sanitizeAllowlist(allowlist: CrowdSecAllowlist): CrowdSecAllowlist {
   return {
     ...allowlist,
-    items: allowlist.items.map(item => ({
+    items: allowlist.items.map((item) => ({
       ...item,
       expiration: isValidDate(item.expiration) ? item.expiration : null,
     })),
@@ -41,6 +41,8 @@ export async function getAllowlistByName(req: Request<GetAllowlistParams, Res>, 
     });
   } catch (err) {
     log.error('Error fetching allowlist:', err);
-    res.status(500).json(errorResponse('Failed to fetch allowlist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to fetch allowlist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

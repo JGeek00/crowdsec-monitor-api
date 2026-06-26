@@ -1,4 +1,4 @@
-import { Alert_SourceInfo } from "@/models";
+import { Alert_SourceInfo } from '@/models';
 
 export interface Decision {
   id: number;

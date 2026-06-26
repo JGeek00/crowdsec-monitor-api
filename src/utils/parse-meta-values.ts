@@ -1,4 +1,4 @@
-import { Alert, ParsedMetaData, UnparsedMetaData } from "@/models";
+import { Alert, ParsedMetaData, UnparsedMetaData } from '@/models';
 
 /**
  * Parse meta array values that might be JSON strings
@@ -6,8 +6,8 @@ import { Alert, ParsedMetaData, UnparsedMetaData } from "@/models";
  */
 function parseMetaValues(meta: UnparsedMetaData[]): ParsedMetaData[] {
   if (!Array.isArray(meta)) return meta;
-  
-  return meta.map(item => {
+
+  return meta.map((item) => {
     if (item.value === undefined || item.value === null) {
       return { ...item, value: [] };
     }

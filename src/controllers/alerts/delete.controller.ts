@@ -34,7 +34,7 @@ export const deleteAlert = async (req: Request<DeleteAlertParams, Res>, res: Res
 
     res.json({
       message: 'Alert deleted successfully',
-      nbDeleted: nbDeleted.toString()
+      nbDeleted: nbDeleted.toString(),
     });
   } catch (err: unknown) {
     const typedErr = err as { message?: string; response?: { status?: number } };
@@ -45,6 +45,8 @@ export const deleteAlert = async (req: Request<DeleteAlertParams, Res>, res: Res
       return;
     }
 
-    res.status(typedErr.response?.status || 500).json(errorResponse('Failed to delete alert', typedErr.message ?? 'Unknown error'));
+    res
+      .status(typedErr.response?.status || 500)
+      .json(errorResponse('Failed to delete alert', typedErr.message ?? 'Unknown error'));
   }
 };

@@ -1,5 +1,14 @@
 import { Request, Response } from 'express';
-import { DecisionsTable, AlertsTable, Decision, Alert, UnparsedMetaData, GetDecisionParams, ResponseWithError, GetDecisionResponse } from '@/models';
+import {
+  DecisionsTable,
+  AlertsTable,
+  Decision,
+  Alert,
+  UnparsedMetaData,
+  GetDecisionParams,
+  ResponseWithError,
+  GetDecisionResponse,
+} from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
@@ -14,15 +23,17 @@ export async function getDecisionById(req: Request<GetDecisionParams, Res>, res:
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const decision = await DecisionsTable.findByPk(id, {
       attributes: {
-        exclude: [DecisionsTable.col.createdAt, DecisionsTable.col.updatedAt]
+        exclude: [DecisionsTable.col.createdAt, DecisionsTable.col.updatedAt],
       },
-      include: [{
-        model: AlertsTable,
-        as: 'alert',
-        attributes: {
-          exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt]
+      include: [
+        {
+          model: AlertsTable,
+          as: 'alert',
+          attributes: {
+            exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt],
+          },
         },
-      }],
+      ],
     });
 
     if (!decision) {
@@ -39,7 +50,9 @@ export async function getDecisionById(req: Request<GetDecisionParams, Res>, res:
     res.json(plainDecision);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching decision', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error fetching decision', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

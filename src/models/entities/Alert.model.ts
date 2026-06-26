@@ -1,4 +1,4 @@
-import { MetaData } from "@/models";
+import { MetaData } from '@/models';
 
 // T must be of type `UnparsedMetaData` or `ParsedMetaData`
 export interface Alert<T extends MetaData> {

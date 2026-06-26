@@ -11,4 +11,4 @@ export const DECISION_TYPE = {
   THROTTLE: 'throttle',
   ALLOW: 'allow',
 } as const;
-export type DecisionType = typeof DECISION_TYPE[keyof typeof DECISION_TYPE];
+export type DecisionType = (typeof DECISION_TYPE)[keyof typeof DECISION_TYPE];

@@ -11,10 +11,7 @@ export async function lookupIpsInBlocklists(ips: string[]): Promise<Map<string, 
 
   const entries = await BlocklistIpsTable.findAll({
     where: {
-      [Op.or]: [
-        { value: ips },
-        { value: { [Op.like]: '%/%' } },
-      ],
+      [Op.or]: [{ value: ips }, { value: { [Op.like]: '%/%' } }],
     },
     attributes: ['value', 'blocklist_name'],
   });

@@ -59,7 +59,7 @@ export function parseDuration(duration: string): number {
 
 /**
  * Calculate expiration date from a duration string
- * 
+ *
  * @param duration - Duration string from CrowdSec (e.g., "4h", "30m")
  * @param baseDate - Base date to add duration to (defaults to current date)
  * @returns Expiration date
@@ -108,13 +108,13 @@ export function parseRetentionPeriod(retention: string | undefined): number | nu
 
 /**
  * Calculate the cutoff date for data retention
- * 
+ *
  * @param retention - Retention period string (e.g., "1d", "3w", "2m", "1y")
  * @returns Date before which data should be deleted, or null if retention not configured
  */
 export function calculateRetentionCutoff(retention: string | undefined): Date | null {
   const retentionMs = parseRetentionPeriod(retention);
-  
+
   if (retentionMs === null) {
     return null;
   }

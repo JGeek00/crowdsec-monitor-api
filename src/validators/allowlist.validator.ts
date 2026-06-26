@@ -5,11 +5,7 @@ import { ipv4Regex, ipv6Regex } from '@/constants/regexps';
  * Validation rules for checking if IPs are in allowlists (POST /v1/allowlists/check)
  */
 export const checkAllowlistValidators: ValidationChain[] = [
-  body('ips')
-    .isArray()
-    .withMessage('ips must be an array')
-    .notEmpty()
-    .withMessage('ips array cannot be empty'),
+  body('ips').isArray().withMessage('ips must be an array').notEmpty().withMessage('ips array cannot be empty'),
 
   body('ips.*')
     .custom((value) => {

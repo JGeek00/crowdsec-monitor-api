@@ -1,7 +1,19 @@
 import { Request, Response } from 'express';
-import { Blocklist, BlocklistIp, BlocklistIpsTable, BlocklistsTable, BlocklistType, CsBlocklist, CsBlocklistsTable, GetBlocklistParams, GetBlocklistQueryParams, GetBlocklistResponse, ResponseWithError } from "@/models";
-import { errorResponse } from "@/utils/error-response";
-import { createRequestSignal } from "@/utils/request-signal";
+import {
+  Blocklist,
+  BlocklistIp,
+  BlocklistIpsTable,
+  BlocklistsTable,
+  BlocklistType,
+  CsBlocklist,
+  CsBlocklistsTable,
+  GetBlocklistParams,
+  GetBlocklistQueryParams,
+  GetBlocklistResponse,
+  ResponseWithError,
+} from '@/models';
+import { errorResponse } from '@/utils/error-response';
+import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/services/log.service';
 import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE } from '@/helpers/blocklists.helper';
 import { DB_SORTING } from '@/types/database.types';
@@ -13,8 +25,11 @@ import { DB_SORTING } from '@/types/database.types';
  *   - include_ips=full       → include blocklistIps as full objects
  *   - include_ips=ip_string  → include blocklistIps as plain IP strings
  */
-type Res = ResponseWithError<GetBlocklistResponse>
-export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {}, GetBlocklistQueryParams>, res: Response<Res>): Promise<void> {
+type Res = ResponseWithError<GetBlocklistResponse>;
+export async function getBlocklistById(
+  req: Request<GetBlocklistParams, Res, object, GetBlocklistQueryParams>,
+  res: Response<Res>,
+): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;
@@ -42,7 +57,10 @@ export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {},
           })
         : null;
 
-      const result = csBlocklist.toJSON() as (CsBlocklist & { type: BlocklistType; blocklistIps?: BlocklistIp[] | string[] });
+      const result = csBlocklist.toJSON() as CsBlocklist & {
+        type: BlocklistType;
+        blocklistIps?: BlocklistIp[] | string[];
+      };
       result.type = 'cs';
       if (ips !== null) {
         result.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
@@ -70,7 +88,10 @@ export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {},
         })
       : null;
 
-    const result = apiBlocklist.toJSON() as (Blocklist & { type: BlocklistType; blocklistIps?: BlocklistIp[] | string[] });
+    const result = apiBlocklist.toJSON() as Blocklist & {
+      type: BlocklistType;
+      blocklistIps?: BlocklistIp[] | string[];
+    };
     result.id = String(result.id) as unknown as number;
     result.type = 'api';
     if (ips !== null) {
@@ -80,7 +101,9 @@ export async function getBlocklistById(req: Request<GetBlocklistParams, Res, {},
   } catch (err) {
     if (signal.aborted) return;
     log.error('Error fetching blocklist:', err);
-    res.status(500).json(errorResponse('Failed to fetch blocklist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to fetch blocklist', err instanceof Error ? err.message : 'Unknown error'));
   } finally {
     cleanup();
   }

@@ -18,9 +18,9 @@ export async function getTopCountries(req: Request, res: Response<Res>): Promise
 
     const countryMap = new Map<string, number>();
 
-    (alertsWithSource).forEach((alert) => {
+    alertsWithSource.forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
         if (source.cn) {
           countryMap.set(source.cn, (countryMap.get(source.cn) || 0) + 1);
         }
@@ -34,7 +34,11 @@ export async function getTopCountries(req: Request, res: Response<Res>): Promise
     res.json(countries);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching countries statistics', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(
+        errorResponse('Error fetching countries statistics', error instanceof Error ? error.message : 'Unknown error'),
+      );
   } finally {
     cleanup();
   }

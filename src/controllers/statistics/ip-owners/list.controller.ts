@@ -17,9 +17,9 @@ export async function getTopIpOwners(req: Request, res: Response<Res>): Promise<
 
     const ipOwnerMap = new Map<string, number>();
 
-    (alertsWithSource).forEach((alert) => {
+    alertsWithSource.forEach((alert) => {
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
+        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
         if (source.as_name) {
           ipOwnerMap.set(source.as_name, (ipOwnerMap.get(source.as_name) || 0) + 1);
         }
@@ -33,7 +33,11 @@ export async function getTopIpOwners(req: Request, res: Response<Res>): Promise<
     res.json(ipOwners);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching IP owners statistics', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(
+        errorResponse('Error fetching IP owners statistics', error instanceof Error ? error.message : 'Unknown error'),
+      );
   } finally {
     cleanup();
   }

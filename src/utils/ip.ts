@@ -28,9 +28,12 @@ function expandIpv6(ip: string): string {
     const rightParts = right ? right.split(':') : [];
     const missing = 8 - leftParts.length - rightParts.length;
     const middle = Array(missing).fill('0000');
-    return [...leftParts, ...middle, ...rightParts].map(p => p.padStart(4, '0')).join(':');
+    return [...leftParts, ...middle, ...rightParts].map((p) => p.padStart(4, '0')).join(':');
   }
-  return ip.split(':').map(p => p.padStart(4, '0')).join(':');
+  return ip
+    .split(':')
+    .map((p) => p.padStart(4, '0'))
+    .join(':');
 }
 
 function ipv6ToBigInt(ip: string): bigint {
@@ -57,16 +60,16 @@ export function isIpv6InCidr(ip: string, cidr: string): boolean {
  */
 export function buildAllowlistMatcher(allowlistEntries: string[]): (value: string) => boolean {
   const exactSet = new Set(allowlistEntries);
-  const v4Cidrs = allowlistEntries.filter(e => ipv4CidrRegex.test(e));
-  const v6Cidrs = allowlistEntries.filter(e => ipv6CidrRegex.test(e));
+  const v4Cidrs = allowlistEntries.filter((e) => ipv4CidrRegex.test(e));
+  const v6Cidrs = allowlistEntries.filter((e) => ipv6CidrRegex.test(e));
 
   return (value: string): boolean => {
     if (exactSet.has(value)) return true;
     if (ipv4Regex.test(value)) {
-      return v4Cidrs.some(cidr => isIpv4InCidr(value, cidr));
+      return v4Cidrs.some((cidr) => isIpv4InCidr(value, cidr));
     }
     if (ipv6Regex.test(value)) {
-      return v6Cidrs.some(cidr => isIpv6InCidr(value, cidr));
+      return v6Cidrs.some((cidr) => isIpv6InCidr(value, cidr));
     }
     return false;
   };

@@ -30,11 +30,19 @@ class DatabaseService {
     return alertsSyncService.syncAll();
   }
 
-  async refreshBlocklist(blocklistsTableEntry: BlocklistsTable, processId?: string, processField?: ProcessFieldBlocklist) {
+  async refreshBlocklist(
+    blocklistsTableEntry: BlocklistsTable,
+    processId?: string,
+    processField?: ProcessFieldBlocklist,
+  ) {
     return blocklistSyncService.refreshBlocklist(blocklistsTableEntry, undefined, processId, processField);
   }
 
-  async deleteBlocklistAlerts(blocklistsTableEntry: BlocklistsTable, processId?: string, processField?: ProcessFieldBlocklistOps) {
+  async deleteBlocklistAlerts(
+    blocklistsTableEntry: BlocklistsTable,
+    processId?: string,
+    processField?: ProcessFieldBlocklistOps,
+  ) {
     return blocklistSyncService.deleteBlocklistAlerts(blocklistsTableEntry, processId, processField);
   }
 
@@ -48,4 +56,3 @@ class DatabaseService {
 }
 
 export const databaseService = new DatabaseService();
-

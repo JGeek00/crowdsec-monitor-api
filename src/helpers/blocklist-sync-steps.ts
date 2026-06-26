@@ -29,7 +29,9 @@ export async function executeSyncStep(
     statusBlocklistService.setBlocklistStepStatus(processId, index, step, 'successful');
     return true;
   } catch (err) {
-    log.error(`  ${step.toUpperCase()} failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`);
+    log.error(
+      `  ${step.toUpperCase()} failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`,
+    );
     statusBlocklistService.setBlocklistStepStatus(processId, index, step, 'failed');
     errors[step].push(blocklist.name);
     await blocklistDbService.updateRefreshMetadata(blocklist, {

@@ -21,7 +21,7 @@ export class WebSocketApp {
 
       if (channel) {
         AuthMiddleware.wsAuth(req, socket, head);
-        
+
         if (socket.writableEnded === false) {
           channel.handleUpgrade(req, socket, head);
         }

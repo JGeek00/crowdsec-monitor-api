@@ -9,14 +9,22 @@ import { errorResponse } from '@/utils/error-response';
 export const handleValidationErrors = <RequestParams, ResponseBody, RequestBody, RequestQuery>(
   req: Request<RequestParams, ResponseBody, RequestBody, RequestQuery>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const errors = validationResult(req as Request);
-  
+
   if (!errors.isEmpty()) {
-    res.status(400).json(errorResponse('Validation error', errors.array().map(err => err.msg).join(', ')));
+    res.status(400).json(
+      errorResponse(
+        'Validation error',
+        errors
+          .array()
+          .map((err) => err.msg)
+          .join(', '),
+      ),
+    );
     return;
   }
-  
+
   next();
 };

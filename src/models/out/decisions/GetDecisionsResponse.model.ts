@@ -1,4 +1,4 @@
-import { Decision, Pagination } from "@/models";
+import { Decision, Pagination } from '@/models';
 
 export interface GetDecisionsResponse {
   filtering: DecisionsFiltering;

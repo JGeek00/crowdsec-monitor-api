@@ -1,6 +1,6 @@
 export default {
   alerts: {
-    originsFetch:['crowdsec', 'cscli', 'console', 'appsec', 'waf'],
+    originsFetch: ['crowdsec', 'cscli', 'console', 'appsec', 'waf'],
   },
   blocklists: {
     scenarioRegex: /^external\/blocklist \((.+)\)$/,
@@ -14,6 +14,5 @@ export default {
     lapiCheck: 'lapi-check',
     blocklistsSync: 'blocklists-sync',
     csBlocklistsSync: 'cs-blocklists-sync',
-    
-  }
-}
+  },
+};

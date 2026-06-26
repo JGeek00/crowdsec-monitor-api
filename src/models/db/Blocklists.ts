@@ -2,7 +2,10 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
 import { Blocklist, BlocklistIpsTable } from '@/models';
 
-export interface BlocklistCreationAttributes extends Optional<Blocklist, 'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh' | 'last_refresh_failed'> {}
+export type BlocklistCreationAttributes = Optional<
+  Blocklist,
+  'id' | 'enabled' | 'last_refresh_attempt' | 'last_successful_refresh' | 'last_refresh_failed'
+>;
 
 class BlocklistsTable extends Model<Blocklist, BlocklistCreationAttributes> implements Blocklist {
   public id!: number;
@@ -75,7 +78,7 @@ BlocklistsTable.init(
     sequelize,
     tableName: 'blocklists',
     timestamps: false,
-  }
+  },
 );
 
 export default BlocklistsTable;

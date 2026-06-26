@@ -4,7 +4,15 @@ import { Op, WhereOptions } from 'sequelize';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';
-import { Alert_EventData, Alert_SourceInfo, Alert, GetAlertsResponse, UnparsedMetaData, ResponseWithError, GetAlertsQueryParams } from '@/models';
+import {
+  Alert_EventData,
+  Alert_SourceInfo,
+  Alert,
+  GetAlertsResponse,
+  UnparsedMetaData,
+  ResponseWithError,
+  GetAlertsQueryParams,
+} from '@/models';
 import { DB_SORTING } from '@/types/database.types';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 
@@ -12,23 +20,36 @@ import { parseAlertMeta } from '@/utils/parse-meta-values';
  * Get all alerts with filtering and pagination
  */
 type Res = ResponseWithError<GetAlertsResponse>;
-export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParams>, res: Response<Res>): Promise<void> {
+export async function getAllAlerts(
+  req: Request<object, object, Res, GetAlertsQueryParams>,
+  res: Response<Res>,
+): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const { limit = 100, offset = 0, unpaged = false, scenario, simulated, ip_address, country, ip_owner, target } = req.query;
+    const {
+      limit = 100,
+      offset = 0,
+      unpaged = false,
+      scenario,
+      simulated,
+      ip_address,
+      country,
+      ip_owner,
+      target,
+    } = req.query;
 
     // From the database some JSON objects come as a string, therefore we use UnparsedMetaData
     // On this controller they get parsed, and when the data is returned we use ParsedMetaData
     const where: WhereOptions<Alert<UnparsedMetaData>> = {};
-    
+
     // Filter by scenario (single or multiple)
     if (scenario) {
       const scenarios = Array.isArray(scenario) ? scenario : [scenario];
       where.scenario = {
-        [Op.or]: scenarios.map(s => ({ [Op.like]: `%${escapeLike(String(s))}%` }))
+        [Op.or]: scenarios.map((s) => ({ [Op.like]: `%${escapeLike(String(s))}%` })),
       };
     }
-    
+
     if (simulated !== undefined) {
       where.simulated = String(simulated) === 'true';
     }
@@ -45,7 +66,7 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
     const ipOwnersSet = new Set<string>();
     const targetsSet = new Set<string>();
 
-    (allAlerts).forEach((alert) => {
+    allAlerts.forEach((alert) => {
       // Extract scenarios
       if (alert.scenario) {
         scenariosSet.add(alert.scenario);
@@ -53,12 +74,12 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
 
       // Extract countries, ipOwners from source
       if (alert.source) {
-        const source = typeof alert.source === 'string' ? JSON.parse(alert.source) as Alert_SourceInfo : alert.source;
-        
+        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
+
         if (source.cn) {
           countriesSet.add(source.cn);
         }
-        
+
         if (source.as_name) {
           ipOwnersSet.add(source.as_name);
         }
@@ -66,8 +87,11 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
 
       // Extract targets from events
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[] : alert.events;
-        
+        const events =
+          typeof alert.events === 'string'
+            ? (JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[])
+            : alert.events;
+
         if (Array.isArray(events)) {
           events.forEach((event) => {
             if (event.meta && Array.isArray(event.meta)) {
@@ -86,7 +110,7 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
     let alerts = await AlertsTable.findAll({
       where,
       attributes: {
-        exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt]
+        exclude: [AlertsTable.col.createdAt, AlertsTable.col.updatedAt],
       },
       order: [[AlertsTable.col.crowdsecCreatedAt, DB_SORTING.DESC]],
     });
@@ -94,40 +118,38 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
     // Filter by IP address in JavaScript (since source is JSON)
     if (ip_address) {
       const ipAddresses = Array.isArray(ip_address) ? ip_address : [ip_address];
-      alerts = alerts.filter(alert => 
-        alert.source && ipAddresses.includes(alert.source.ip)
-      );
+      alerts = alerts.filter((alert) => alert.source && ipAddresses.includes(alert.source.ip));
     }
 
     // Filter by country in JavaScript (since source is JSON)
     if (country) {
       const countries = Array.isArray(country) ? country : [country];
-      const upperCountries = countries.map(c => String(c).toUpperCase());
-      alerts = alerts.filter(alert => 
-        alert.source && alert.source.cn && upperCountries.includes(alert.source.cn.toUpperCase())
+      const upperCountries = countries.map((c) => String(c).toUpperCase());
+      alerts = alerts.filter(
+        (alert) => alert.source && alert.source.cn && upperCountries.includes(alert.source.cn.toUpperCase()),
       );
     }
 
     // Filter by IP owner/organization in JavaScript (since source is JSON)
     if (ip_owner) {
       const owners = Array.isArray(ip_owner) ? ip_owner : [ip_owner];
-      alerts = alerts.filter(alert => 
-        alert.source && alert.source.as_name && 
-        owners.some(owner => alert.source.as_name?.toLowerCase().includes(String(owner).toLowerCase()))
+      alerts = alerts.filter(
+        (alert) =>
+          alert.source &&
+          alert.source.as_name &&
+          owners.some((owner) => alert.source.as_name?.toLowerCase().includes(String(owner).toLowerCase())),
       );
     }
 
     // Filter by target in JavaScript (since events is JSON)
     if (target) {
       const targets = Array.isArray(target) ? target : [target];
-      alerts = alerts.filter(alert => {
+      alerts = alerts.filter((alert) => {
         if (alert.events && Array.isArray(alert.events)) {
           return alert.events.some((event) => {
             if (event.meta && Array.isArray(event.meta)) {
-              return event.meta.some((metaItem) => 
-                metaItem.key === 'target_fqdn' && 
-                metaItem.value && 
-                targets.includes(metaItem.value)
+              return event.meta.some(
+                (metaItem) => metaItem.key === 'target_fqdn' && metaItem.value && targets.includes(metaItem.value),
               );
             }
             return false;
@@ -141,7 +163,14 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
 
     // Validate offset is not greater than total (only when paginated)
     if (!unpaged && (offset as number) > total) {
-      res.status(400).json(errorResponse('Validation error', `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`));
+      res
+        .status(400)
+        .json(
+          errorResponse(
+            'Validation error',
+            `Invalid parameter: offset (${offset}) cannot be greater than total items (${total})`,
+          ),
+        );
       return;
     }
 
@@ -158,9 +187,7 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
         ipOwners: Array.from(ipOwnersSet).sort(),
         targets: Array.from(targetsSet).sort(),
       },
-      items: paginatedAlerts.map(alert =>
-        parseAlertMeta(alert.toJSON() as Alert<UnparsedMetaData>)
-      ),
+      items: paginatedAlerts.map((alert) => parseAlertMeta(alert.toJSON() as Alert<UnparsedMetaData>)),
     };
 
     // Include pagination info only when paginated
@@ -178,7 +205,9 @@ export async function getAllAlerts(req: Request<{}, {}, Res, GetAlertsQueryParam
     res.json(response);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching alerts', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error fetching alerts', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

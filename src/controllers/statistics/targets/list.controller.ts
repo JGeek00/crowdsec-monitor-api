@@ -17,13 +17,16 @@ export async function getTopTargets(req: Request, res: Response<Res>): Promise<v
 
     const targetMap = new Map<string, number>();
 
-    (alerts).forEach((alert) => {
+    alerts.forEach((alert) => {
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[] : alert.events;
-        
+        const events =
+          typeof alert.events === 'string'
+            ? (JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[])
+            : alert.events;
+
         // Collect unique target_fqdn values from this alert's events
         const targetsInAlert = new Set<string>();
-        
+
         if (Array.isArray(events)) {
           events.forEach((event) => {
             if (event.meta && Array.isArray(event.meta)) {
@@ -35,9 +38,9 @@ export async function getTopTargets(req: Request, res: Response<Res>): Promise<v
             }
           });
         }
-        
+
         // Count each unique target only once per alert
-        targetsInAlert.forEach(target => {
+        targetsInAlert.forEach((target) => {
           targetMap.set(target, (targetMap.get(target) || 0) + 1);
         });
       }
@@ -50,7 +53,11 @@ export async function getTopTargets(req: Request, res: Response<Res>): Promise<v
     res.json(targets);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching targets statistics', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(
+        errorResponse('Error fetching targets statistics', error instanceof Error ? error.message : 'Unknown error'),
+      );
   } finally {
     cleanup();
   }

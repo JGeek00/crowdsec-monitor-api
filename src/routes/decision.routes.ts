@@ -10,24 +10,14 @@ const router: Router = Router();
  * @desc    Get all decisions (use ?only_active=true to filter active only)
  * @access  Authentication (configurable)
  */
-router.get(
-  '/',
-  [...paginationValidators, ...decisionQueryValidators],
-  handleValidationErrors,
-  getAllDecisions
-);
+router.get('/', [...paginationValidators, ...decisionQueryValidators], handleValidationErrors, getAllDecisions);
 
 /**
  * @route   POST /api/decisions
  * @desc    Create a decision in CrowdSec LAPI
  * @access  Authentication (configurable)
  */
-router.post(
-  '/',
-  createDecisionValidators,
-  handleValidationErrors,
-  createDecision
-);
+router.post('/', createDecisionValidators, handleValidationErrors, createDecision);
 
 /**
  * @route   GET /api/decisions/stats

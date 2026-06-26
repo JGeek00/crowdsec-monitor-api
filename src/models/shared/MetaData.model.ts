@@ -1,4 +1,4 @@
-export type MetaData = UnparsedMetaData | ParsedMetaData
+export type MetaData = UnparsedMetaData | ParsedMetaData;
 
 export interface UnparsedMetaData {
   key: string;

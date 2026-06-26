@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Migration } from '@/models/db/Migration';
 import { MigrationService } from '@/services/migrations/migration.service';
+import { MigrationTask } from '@/types/migration-task.types';
 import { log } from '@/services/log.service';
 import { config } from '@/config/index';
 import { sequelize } from '@/config/database';
@@ -10,7 +11,7 @@ import { DB_MODE } from '@/types/database.types';
 /**
  * Load and execute a migration file as a TypeScript module
  */
-function loadMigration(filePath: string): any {
+function loadMigration(filePath: string): MigrationTask {
   try {
     const module = require(filePath);
     return module.default || module;
@@ -25,12 +26,10 @@ function loadMigration(filePath: string): any {
  * from the src/migrations/ directory in numeric order.
  */
 export class MigrationRunner {
-  private migrationsCache: Map<string, any> = new Map();
+  private migrationsCache: Map<string, MigrationTask> = new Map();
   private migrationsDir: string;
 
-  constructor(
-    private migrationService: MigrationService,
-  ) {
+  constructor(private migrationService: MigrationService) {
     const projectRoot = path.resolve(__dirname, '../../..');
     this.migrationsDir = path.join(projectRoot, 'dist/migrations');
   }
@@ -54,13 +53,11 @@ export class MigrationRunner {
   private async migrationsTableExists(): Promise<boolean> {
     if (config.database.mode === DB_MODE.POSTGRES) {
       const [result] = await sequelize.query(
-        "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'migrations') AS table_exists"
+        "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'migrations') AS table_exists",
       );
       return (result as { table_exists: boolean }[])[0]?.table_exists ?? false;
     } else {
-      const [result] = await sequelize.query(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'"
-      );
+      const [result] = await sequelize.query("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'");
       return (result as unknown[]).length > 0;
     }
   }
@@ -104,7 +101,9 @@ export class MigrationRunner {
       if (appliedNames.length === 0) {
         // Fresh database: sync() already created the latest schema.
         // Register all migrations as applied without executing them.
-        log.info('Fresh database detected — schema already up to date via sync(). Registering all migrations as applied.');
+        log.info(
+          'Fresh database detected — schema already up to date via sync(). Registering all migrations as applied.',
+        );
         for (const migrationName of migrationNames) {
           await this.migrationService.registerMigration(migrationName);
           log.info(`Migration ${migrationName} registered as applied (skipped)`);

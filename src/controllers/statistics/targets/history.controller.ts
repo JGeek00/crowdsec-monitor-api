@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
-import { Alert_EventData, UnparsedMetaData, GetTargetHistoryParams, TargetHistory, ResponseWithError, AlertsTable } from '@/models';
+import {
+  Alert_EventData,
+  UnparsedMetaData,
+  GetTargetHistoryParams,
+  TargetHistory,
+  ResponseWithError,
+  AlertsTable,
+} from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 
@@ -21,13 +28,16 @@ export async function getTargetHistory(req: Request<GetTargetHistoryParams>, res
     // Filter by target and group by date in JavaScript
     const dateMap = new Map<string, number>();
 
-    (alerts).forEach((alert) => {
+    alerts.forEach((alert) => {
       if (alert.events) {
-        const events = typeof alert.events === 'string' ? JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[] : alert.events;
-        
+        const events =
+          typeof alert.events === 'string'
+            ? (JSON.parse(alert.events) as Alert_EventData<UnparsedMetaData>[])
+            : alert.events;
+
         // Check if this alert contains the target_fqdn we're looking for
         let hasTarget = false;
-        
+
         if (Array.isArray(events)) {
           for (const event of events) {
             if (event.meta && Array.isArray(event.meta)) {
@@ -41,7 +51,7 @@ export async function getTargetHistory(req: Request<GetTargetHistoryParams>, res
             if (hasTarget) break;
           }
         }
-        
+
         // If this alert contains the target, count it for this date
         if (hasTarget) {
           const date = new Date(alert.crowdsec_created_at as Date | string).toISOString().split('T')[0];
@@ -58,7 +68,9 @@ export async function getTargetHistory(req: Request<GetTargetHistoryParams>, res
     res.json(history);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching target history', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error fetching target history', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

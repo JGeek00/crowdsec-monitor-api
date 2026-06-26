@@ -5,7 +5,7 @@ import { StatusSnapshot } from '@/models';
 export const getStatus = async (_: Request, res: Response<StatusSnapshot>) => {
   try {
     res.json(statusService.getCleanSnapshot());
-  } catch (error) {
+  } catch {
     res.status(500).send();
   }
 };

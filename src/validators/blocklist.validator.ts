@@ -6,29 +6,31 @@ import { ipv4Regex, ipv6Regex } from '@/constants/regexps';
  */
 export const createBlocklistValidators: ValidationChain[] = [
   body('url')
-    .isString().withMessage('url must be a string')
+    .isString()
+    .withMessage('url must be a string')
     .trim()
-    .notEmpty().withMessage('url is required')
+    .notEmpty()
+    .withMessage('url is required')
     .isURL({ protocols: ['http', 'https'], require_protocol: true })
     .withMessage('url must be a valid http or https URL')
-    .isLength({ max: 2048 }).withMessage('url must be at most 2048 characters'),
+    .isLength({ max: 2048 })
+    .withMessage('url must be at most 2048 characters'),
 
   body('name')
-    .isString().withMessage('name must be a string')
+    .isString()
+    .withMessage('name must be a string')
     .trim()
-    .notEmpty().withMessage('name is required')
-    .isLength({ max: 100 }).withMessage('name must be at most 100 characters'),
+    .notEmpty()
+    .withMessage('name is required')
+    .isLength({ max: 100 })
+    .withMessage('name must be at most 100 characters'),
 ];
 
 /**
  * Validation rules for checking if IPs are in blocklists (POST /v1/blocklists/check)
  */
 export const checkBlocklistValidators: ValidationChain[] = [
-  body('ips')
-    .isArray()
-    .withMessage('ips must be an array')
-    .notEmpty()
-    .withMessage('ips array cannot be empty'),
+  body('ips').isArray().withMessage('ips must be an array').notEmpty().withMessage('ips array cannot be empty'),
 
   body('ips.*')
     .custom((value) => {
@@ -50,7 +52,7 @@ export const checkDomainBlocklistValidators: ValidationChain[] = [
     .withMessage('domain must be at most 253 characters')
     .custom((value: string) => {
       // Allows hostnames and subdomains: sub.example.com, example.co.uk
-      const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+      const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
       return domainRegex.test(value);
     })
     .withMessage('domain must be a valid domain name (subdomains are allowed)'),

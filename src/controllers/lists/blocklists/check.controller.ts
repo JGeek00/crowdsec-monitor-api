@@ -11,11 +11,13 @@ export async function checkBlocklist(req: Request, res: Response): Promise<void>
     const { ips } = req.body as { ips: string[] };
 
     const blocklistMap = await lookupIpsInBlocklists(ips);
-    const results = ips.map(ip => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
+    const results = ips.map((ip) => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
 
     res.status(200).json({ results });
   } catch (err) {
     log.error('Error checking blocklist:', err);
-    res.status(500).json(errorResponse('Failed to check blocklist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to check blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

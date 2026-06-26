@@ -1,9 +1,24 @@
 import { Request, Response } from 'express';
-import { BLOCKLIST_TYPE, BlocklistIp, BlocklistsTable, BlocklistType, CsBlocklistsTable, GetBlocklistIpsParams, GetBlocklistsQueryParams, GetBlocklistsResponse, GetBlocklistsResponse_Item, ResponseWithError } from '@/models';
+import {
+  BLOCKLIST_TYPE,
+  BlocklistIp,
+  BlocklistsTable,
+  BlocklistType,
+  CsBlocklistsTable,
+  GetBlocklistIpsParams,
+  GetBlocklistsQueryParams,
+  GetBlocklistsResponse,
+  GetBlocklistsResponse_Item,
+  ResponseWithError,
+} from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE, BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE, BLOCKLISTS_IPS_INCLUDE_OPTION } from '@/helpers/blocklists.helper';
+import {
+  BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE,
+  BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE,
+  BLOCKLISTS_IPS_INCLUDE_OPTION,
+} from '@/helpers/blocklists.helper';
 import { DB_SORTING } from '@/types/database.types';
 
 /**
@@ -17,7 +32,10 @@ import { DB_SORTING } from '@/types/database.types';
  *   - get_only=cs_blocklists → return only cs-managed blocklists
  */
 type Res = ResponseWithError<GetBlocklistsResponse>;
-export async function getBlocklists(req: Request<GetBlocklistIpsParams, Res, {}, GetBlocklistsQueryParams>, res: Response<Res>): Promise<void> {
+export async function getBlocklists(
+  req: Request<GetBlocklistIpsParams, Res, object, GetBlocklistsQueryParams>,
+  res: Response<Res>,
+): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { limit = 100, offset = 0, unpaged, include_ips, get_only } = req.query;
@@ -41,16 +59,20 @@ export async function getBlocklists(req: Request<GetBlocklistIpsParams, Res, {},
 
     if (unpaged === true) {
       [apiRows, csRows] = await Promise.all([
-        onlyCs ? Promise.resolve([]) : BlocklistsTable.findAll({
-          attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
-          order: [[BlocklistsTable.col.name, DB_SORTING.ASC]],
-          include: includeOption,
-        }),
-        onlyApi ? Promise.resolve([]) : CsBlocklistsTable.findAll({
-          attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
-          order: [[CsBlocklistsTable.col.name, DB_SORTING.ASC]],
-          include: includeOption,
-        }),
+        onlyCs
+          ? Promise.resolve([])
+          : BlocklistsTable.findAll({
+              attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
+              order: [[BlocklistsTable.col.name, DB_SORTING.ASC]],
+              include: includeOption,
+            }),
+        onlyApi
+          ? Promise.resolve([])
+          : CsBlocklistsTable.findAll({
+              attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
+              order: [[CsBlocklistsTable.col.name, DB_SORTING.ASC]],
+              include: includeOption,
+            }),
       ]);
     } else {
       // api-managed first, cs-managed second
@@ -67,7 +89,9 @@ export async function getBlocklists(req: Request<GetBlocklistIpsParams, Res, {},
               include: includeOption,
               limit: apiLimit,
               offset: apiOffset,
-            }).then((rows) => { apiRows = rows; })
+            }).then((rows) => {
+              apiRows = rows;
+            })
           : Promise.resolve(),
         csLimit > 0
           ? CsBlocklistsTable.findAll({
@@ -76,7 +100,9 @@ export async function getBlocklists(req: Request<GetBlocklistIpsParams, Res, {},
               include: includeOption,
               limit: csLimit,
               offset: csOffset,
-            }).then((rows) => { csRows = rows; })
+            }).then((rows) => {
+              csRows = rows;
+            })
           : Promise.resolve(),
       ]);
     }
@@ -109,9 +135,10 @@ export async function getBlocklists(req: Request<GetBlocklistIpsParams, Res, {},
   } catch (err) {
     if (signal.aborted) return;
     log.error('Error fetching blocklists:', err);
-    res.status(500).json(errorResponse('Failed to fetch blocklists', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to fetch blocklists', err instanceof Error ? err.message : 'Unknown error'));
   } finally {
     cleanup();
   }
 }
-

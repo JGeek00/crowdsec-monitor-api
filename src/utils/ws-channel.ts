@@ -24,7 +24,9 @@ export class WsChannel {
 
     this.wss.on('connection', (ws: WebSocket) => {
       (ws as WsAlive).isAlive = true;
-      ws.on('pong', () => { (ws as WsAlive).isAlive = true; });
+      ws.on('pong', () => {
+        (ws as WsAlive).isAlive = true;
+      });
       this.clients.add(ws);
       this.onConnect?.(ws);
       ws.on('close', () => this.clients.delete(ws));

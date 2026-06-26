@@ -11,7 +11,7 @@ export const statisticsQueryValidators: ValidationChain[] = [
     .custom((value) => {
       const sinceDate = new Date(value);
       sinceDate.setHours(0, 0, 0, 0);
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -25,10 +25,6 @@ export const statisticsQueryValidators: ValidationChain[] = [
 
       return true;
     }),
-  
-  query('amount')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('amount must be a positive integer')
-    .toInt(),
+
+  query('amount').optional().isInt({ min: 1 }).withMessage('amount must be a positive integer').toInt(),
 ];

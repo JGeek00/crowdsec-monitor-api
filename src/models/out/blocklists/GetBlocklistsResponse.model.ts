@@ -1,4 +1,4 @@
-import { BlocklistIp, BlocklistType, Pagination } from "@/models";
+import { BlocklistIp, BlocklistType, Pagination } from '@/models';
 
 export interface GetBlocklistsResponse {
   items: GetBlocklistsResponse_Item[];

@@ -3,7 +3,7 @@ import { statusService } from '@/services/status.service';
 import { log } from '@/services/log.service';
 
 const statusChannel = new WsChannel((ws) => {
-  const route = "/api/v1/status";
+  const route = '/api/v1/status';
 
   log.debug(`WebSocket ${route} client connected`);
 

@@ -29,7 +29,11 @@ export async function getTopScenarios(req: Request, res: Response<Res>): Promise
     res.json(scenarios);
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching scenarios statistics', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(
+        errorResponse('Error fetching scenarios statistics', error instanceof Error ? error.message : 'Unknown error'),
+      );
   } finally {
     cleanup();
   }

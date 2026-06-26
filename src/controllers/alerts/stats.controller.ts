@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AlertsTable, ErrorResponse, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario, ResponseWithError } from '@/models';
+import { AlertsTable, GetAlertsStatsResponse, GetAlertsStatsResponse_TopScenario, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { DB_SORTING } from '@/types/database.types';
@@ -8,14 +8,14 @@ import { DB_SORTING } from '@/types/database.types';
  * Get alerts statistics
  */
 type Res = ResponseWithError<GetAlertsStatsResponse>;
-export async function getAlertStats(req: Request<{}, Res>, res: Response<Res>): Promise<void> {
+export async function getAlertStats(req: Request<object, Res>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const total = await AlertsTable.count() as number;
-    const simulated = await AlertsTable.count({ where: { simulated: true } }) as number;
+    const total = (await AlertsTable.count()) as number;
+    const simulated = (await AlertsTable.count({ where: { simulated: true } })) as number;
     const real = total - simulated;
 
-    const topScenarios = await AlertsTable.findAll({
+    const topScenarios = (await AlertsTable.findAll({
       attributes: [
         AlertsTable.col.scenario,
         [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
@@ -24,7 +24,7 @@ export async function getAlertStats(req: Request<{}, Res>, res: Response<Res>): 
       order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
       limit: 10,
       raw: true,
-    }) as unknown as GetAlertsStatsResponse_TopScenario[];  // Sequelize cannot detect correct type when using "group" and "attributes" params
+    })) as unknown as GetAlertsStatsResponse_TopScenario[]; // Sequelize cannot detect correct type when using "group" and "attributes" params
 
     // Get all alerts with source information for grouping
     const allAlerts = await AlertsTable.findAll({
@@ -35,7 +35,7 @@ export async function getAlertStats(req: Request<{}, Res>, res: Response<Res>): 
     const countryMap = new Map<string, number>();
     const organizationMap = new Map<string, number>();
 
-    allAlerts.forEach(alert => {
+    allAlerts.forEach((alert) => {
       if (alert.source) {
         // Count by country
         const country = alert.source.cn;
@@ -72,7 +72,9 @@ export async function getAlertStats(req: Request<{}, Res>, res: Response<Res>): 
     });
   } catch (error) {
     if (signal.aborted) return;
-    res.status(500).json(errorResponse('Error fetching alert statistics', error instanceof Error ? error.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Error fetching alert statistics', error instanceof Error ? error.message : 'Unknown error'));
   } finally {
     cleanup();
   }

@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
-import { BlocklistIpsTable, BlocklistsTable, DeleteBlocklistParams, DeleteBlocklistResponse, ResponseWithError } from '@/models';
+import {
+  BlocklistIpsTable,
+  BlocklistsTable,
+  DeleteBlocklistParams,
+  DeleteBlocklistResponse,
+  ResponseWithError,
+} from '@/models';
 import { databaseService, statusBlocklistService } from '@/services';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
@@ -14,7 +20,9 @@ type Res = ResponseWithError<DeleteBlocklistResponse>;
 export async function deleteBlocklist(req: Request<DeleteBlocklistParams, Res>, res: Response<Res>): Promise<void> {
   try {
     if (statusBlocklistService.isSyncingBlocklists()) {
-      res.status(503).json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
+      res
+        .status(503)
+        .json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
       return;
     }
 
@@ -27,7 +35,14 @@ export async function deleteBlocklist(req: Request<DeleteBlocklistParams, Res>, 
     }
 
     if (statusBlocklistService.isBlocklistBusy(blocklist.id)) {
-      res.status(409).json(errorResponse('Conflict', 'A process is already running for this blocklist. Wait for it to complete before performing another action.'));
+      res
+        .status(409)
+        .json(
+          errorResponse(
+            'Conflict',
+            'A process is already running for this blocklist. Wait for it to complete before performing another action.',
+          ),
+        );
       return;
     }
 
@@ -38,7 +53,8 @@ export async function deleteBlocklist(req: Request<DeleteBlocklistParams, Res>, 
 
     res.status(202).json({ message: 'BlocklistsTable deletion requested' });
 
-    databaseService.deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DELETE)
+    databaseService
+      .deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DELETE)
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
         statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
@@ -46,6 +62,8 @@ export async function deleteBlocklist(req: Request<DeleteBlocklistParams, Res>, 
       });
   } catch (err) {
     log.error('Error deleting blocklist:', err);
-    res.status(500).json(errorResponse('Failed to delete blocklist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to delete blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

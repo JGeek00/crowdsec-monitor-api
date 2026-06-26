@@ -20,7 +20,7 @@ const parseDbMode = (): DbMode => {
 
   if (mode === 'postgres') {
     const required = ['POSTGRES_HOST', 'POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_DB'];
-    const missing = required.filter(v => !process.env[v]);
+    const missing = required.filter((v) => !process.env[v]);
     if (missing.length > 0) {
       console.error(`ERROR: DB_MODE is postgres but the following variables are not defined: ${missing.join(', ')}`);
       process.exit(1);
@@ -53,7 +53,9 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
 
   const parts = rateLimitStr.split('/');
   if (parts.length !== 2) {
-    console.warn(`ERROR: Invalid RATE_LIMIT format: "${rateLimitStr}". Expected format: <requests>/<minutes> (e.g., "100/15"). Rate limiting disabled.`);
+    console.warn(
+      `ERROR: Invalid RATE_LIMIT format: "${rateLimitStr}". Expected format: <requests>/<minutes> (e.g., "100/15"). Rate limiting disabled.`,
+    );
     return null;
   }
 
@@ -61,7 +63,9 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
   const minutes = parseInt(parts[1], 10);
 
   if (isNaN(max) || isNaN(minutes) || max <= 0 || minutes <= 0) {
-    console.warn(`ERROR: Invalid RATE_LIMIT values: "${rateLimitStr}". Both requests and minutes must be positive numbers. Rate limiting disabled.`);
+    console.warn(
+      `ERROR: Invalid RATE_LIMIT values: "${rateLimitStr}". Both requests and minutes must be positive numbers. Rate limiting disabled.`,
+    );
     return null;
   }
 
@@ -75,7 +79,9 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
 const parseBlocklistsRefreshTime = (raw: string | undefined): number => {
   const value = raw ? parseInt(raw, 10) : NaN;
   if (!isNaN(value) && value >= 3600) return value;
-  console.warn(`WARNING: BLOCKLISTS_REFRESH_TIME must be at least 3600 (1 hour). Using default value ${defaults.intervals.apiBlocklistsRefreshTime} seconds.`);
+  console.warn(
+    `WARNING: BLOCKLISTS_REFRESH_TIME must be at least 3600 (1 hour). Using default value ${defaults.intervals.apiBlocklistsRefreshTime} seconds.`,
+  );
   return defaults.intervals.apiBlocklistsRefreshTime;
 };
 
@@ -84,22 +90,24 @@ const parseWriteChunkSize = (chunkSizeStr: string | undefined): number | null =>
   if (!chunkSizeStr) {
     return defaults.blocklists.writeChunkSize;
   }
-  if (chunkSizeStr == 'none') {
+  if (chunkSizeStr === 'none') {
     return null; // No chunking, write all at once
   }
   const chunkSize = parseInt(chunkSizeStr, 10);
   if (isNaN(chunkSize) || chunkSize <= 0) {
-    console.warn(`ERROR: Invalid BLOCKLISTS_WRITE_CHUNK_SIZE value: "${chunkSizeStr}". Must be a positive integer. Using default value ${defaults.blocklists.writeChunkSize}.`);
+    console.warn(
+      `ERROR: Invalid BLOCKLISTS_WRITE_CHUNK_SIZE value: "${chunkSizeStr}". Must be a positive integer. Using default value ${defaults.blocklists.writeChunkSize}.`,
+    );
     return defaults.blocklists.writeChunkSize;
-  }
-  else if (chunkSize < 100) {
-    console.warn(`WARNING: BLOCKLISTS_WRITE_CHUNK_SIZE value "${chunkSize}" is very low, must be at least 100. Using default value ${defaults.blocklists.writeChunkSize} instead.`);
+  } else if (chunkSize < 100) {
+    console.warn(
+      `WARNING: BLOCKLISTS_WRITE_CHUNK_SIZE value "${chunkSize}" is very low, must be at least 100. Using default value ${defaults.blocklists.writeChunkSize} instead.`,
+    );
     return defaults.blocklists.writeChunkSize;
-  }
-  else {
+  } else {
     return chunkSize;
   }
-}
+};
 
 export const config = {
   server: {
@@ -128,8 +136,8 @@ export const config = {
     })(),
   },
   sync: {
-    intervalSeconds: process.env.SYNC_INTERVAL_SECONDS 
-      ? parseInt(process.env.SYNC_INTERVAL_SECONDS, 10) 
+    intervalSeconds: process.env.SYNC_INTERVAL_SECONDS
+      ? parseInt(process.env.SYNC_INTERVAL_SECONDS, 10)
       : defaults.intervals.alertsSync,
   },
   blocklists: {
@@ -152,14 +160,15 @@ export const config = {
   },
   rateLimit: parseRateLimit(process.env.RATE_LIMIT),
   processes: {
-    finishedRetentionMs: (process.env.PROCESSES_FINISHED_RETENTION_TIME
-      ? parseInt(process.env.PROCESSES_FINISHED_RETENTION_TIME, 10)
-      : defaults.processes.finishedRetentionTime) * 1000,
+    finishedRetentionMs:
+      (process.env.PROCESSES_FINISHED_RETENTION_TIME
+        ? parseInt(process.env.PROCESSES_FINISHED_RETENTION_TIME, 10)
+        : defaults.processes.finishedRetentionTime) * 1000,
   },
   dns: {
     server: (() => {
       const raw = (process.env.DOMAIN_CHECK_DNS_SERVER || defaults.dns.server).trim().toLowerCase();
-      const key = raw === 'opendns' ? 'openDns' : raw as keyof typeof dnsServers;
+      const key = raw === 'opendns' ? 'openDns' : (raw as keyof typeof dnsServers);
       if (!(key in dnsServers)) {
         console.warn(`WARNING: Unknown DOMAIN_CHECK_DNS_SERVER "${raw}". Falling back to "${defaults.dns.server}".`);
         return dnsServers[defaults.dns.server as keyof typeof dnsServers];
@@ -168,14 +177,14 @@ export const config = {
     })(),
   },
   logs: {
-    level: ((() => {
+    level: (() => {
       const raw = (process.env.LOG_LEVEL || defaults.logs.level).trim().toLowerCase();
       if (raw in LOG_LEVELS) return raw;
       console.warn(`WARNING: Invalid LOG_LEVEL "${raw}". Falling back to "${defaults.logs.level}".`);
       return defaults.logs.level;
-    })()),
+    })(),
     httpRequests: process.env.LOG_HTTP_RESPONSES !== 'false',
-  }
+  },
 };
 
 export { defaults } from '@/config/env-defaults';

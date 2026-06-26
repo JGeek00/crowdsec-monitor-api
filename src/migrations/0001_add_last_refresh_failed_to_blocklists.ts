@@ -2,7 +2,7 @@ import { sequelize } from '@/config/database';
 
 /**
  * Migration 0001: Add last_refresh_failed column to blocklists table
- * 
+ *
  * This migration adds the `last_refresh_failed` column to the `blocklists` table
  * to track whether the last refresh attempt failed.
  */
@@ -10,29 +10,37 @@ import { sequelize } from '@/config/database';
 export default {
   name: '0001_add_last_refresh_failed_to_blocklists',
   up: async () => {
-    await sequelize.query(`
+    await sequelize
+      .query(
+        `
       CREATE TABLE IF NOT EXISTS migrations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     try {
       await sequelize.query(`
         ALTER TABLE blocklists 
         ADD COLUMN last_refresh_failed BOOLEAN DEFAULT FALSE
       `);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as {
+        parent?: { errno?: number; code?: string; message?: string };
+        message?: string;
+        code?: string;
+      };
       if (
         // SQLite: duplicate column name
-        (error?.parent?.errno === 1 &&
-          error?.parent?.message?.includes('duplicate column name')) ||
-        error?.message?.includes('duplicate column name') ||
-        error?.code === 'SQLITE_ERROR' ||
+        (err?.parent?.errno === 1 && err?.parent?.message?.includes('duplicate column name')) ||
+        err?.message?.includes('duplicate column name') ||
+        err?.code === 'SQLITE_ERROR' ||
         // PostgreSQL: duplicate column
-        error?.parent?.code === '42701' ||
-        error?.message?.includes('already exists')
+        err?.parent?.code === '42701' ||
+        err?.message?.includes('already exists')
       ) {
         console.log('Columna last_refresh_failed ya existe - saltando migración');
         return;
@@ -41,10 +49,14 @@ export default {
     }
   },
   down: async () => {
-    await sequelize.query(`
+    await sequelize
+      .query(
+        `
       ALTER TABLE blocklists 
       DROP COLUMN last_refresh_failed
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     await sequelize.query('DROP TABLE IF EXISTS migrations').catch(() => {});
   },

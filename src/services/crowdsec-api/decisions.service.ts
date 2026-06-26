@@ -14,10 +14,7 @@ export class DecisionsService {
    * Note: CrowdSec LAPI doesn't have a dedicated decisions endpoint.
    * Decisions are included in the alerts data.
    */
-  async getDecisionsFromAlerts(params?: {
-    since?: string;
-    until?: string;
-  }): Promise<CrowdSecDecision[]> {
+  async getDecisionsFromAlerts(params?: { since?: string; until?: string }): Promise<CrowdSecDecision[]> {
     try {
       const alertList = await this.alerts.getAlerts({ ...params, has_active_decision: true });
 

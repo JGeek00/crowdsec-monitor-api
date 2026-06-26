@@ -1,7 +1,7 @@
 export interface MigrationTask {
   name: string;
-  up: (queryInterface: any) => Promise<void>;
-  down: (queryInterface: any) => Promise<void>;
+  up: (queryInterface: Record<string, unknown>) => Promise<void>;
+  down: (queryInterface: Record<string, unknown>) => Promise<void>;
   timestamp: number;
   checksum?: string;
 }

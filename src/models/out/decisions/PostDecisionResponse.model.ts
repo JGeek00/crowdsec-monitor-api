@@ -6,5 +6,5 @@ export interface PostDecisionResponse {
     type: string;
     duration: string;
     reason: string;
-  },
+  };
 }

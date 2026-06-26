@@ -11,17 +11,16 @@ import { log } from '@/services/log.service';
  * fetching allowlists, downloading blocklists, pushing alerts, and deleting alerts.
  */
 class BlocklistCrowdSecService {
-
   /* ── Allowlist ──────────────────────────────────────────────────── */
 
   /** Fetch allowlist entries from CrowdSec for IP filtering. */
   public async fetchAllowlistEntries(): Promise<string[]> {
     try {
       const allowlists = await crowdSecAPI.allowlists.getAllowlists();
-      const entries = allowlists.flatMap(al => al.items.map(item => item.value));
+      const entries = allowlists.flatMap((al) => al.items.map((item) => item.value));
       log.debug(`  Fetched ${entries.length} allowlist entries from CrowdSec`);
       return entries;
-    } catch (err) {
+    } catch {
       log.warn('Failed to fetch allowlists from CrowdSec. No allowlist filtering will be applied.');
       return [];
     }
@@ -31,10 +30,14 @@ class BlocklistCrowdSecService {
 
   /** Fetch a blocklist URL and return the raw content. */
   public async downloadBlocklist(blocklistUrl: string, blocklistName: string): Promise<{ rawContent: string }> {
-    const response = await axios.get<string>(blocklistUrl, {
-      responseType: 'text',
-      timeout: 30000,
-    }).catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.fetchFailed); });
+    const response = await axios
+      .get<string>(blocklistUrl, {
+        responseType: 'text',
+        timeout: 30000,
+      })
+      .catch(() => {
+        throw new Error(PROCESS_ERRORS.blocklistImport.fetchFailed);
+      });
 
     log.debug(`  Fetched "${blocklistName}": ${response.data.length} bytes`);
     return { rawContent: response.data };
@@ -43,11 +46,7 @@ class BlocklistCrowdSecService {
   /* ── CrowdSec Alert Builder ─────────────────────────────────────── */
 
   /** Build a CrowdSec alert payload for a chunk of IPs. */
-  public buildAlertPayload(
-    chunk: string[],
-    allIps: string[],
-    name: string,
-  ): CrowdSecCreateAlertPayload {
+  public buildAlertPayload(chunk: string[], allIps: string[], name: string): CrowdSecCreateAlertPayload {
     const scenario = `external/blocklist (${name})`;
     return [
       {
@@ -78,11 +77,7 @@ class BlocklistCrowdSecService {
   /* ── CrowdSec Push ──────────────────────────────────────────────── */
 
   /** Push IPs to CrowdSec in batches, creating alert payloads for each. */
-  public async pushIpsToCrowdSec(
-    ips: string[],
-    name: string,
-    onChunk?: (chunkSize: number) => void,
-  ): Promise<number> {
+  public async pushIpsToCrowdSec(ips: string[], name: string, onChunk?: (chunkSize: number) => void): Promise<number> {
     if (ips.length === 0) {
       log.debug(`  No IPs to push for "${name}"`);
       return 0;
@@ -98,12 +93,15 @@ class BlocklistCrowdSecService {
       const chunk = ips.slice(i, i + pushChunkSize);
       const payload = this.buildAlertPayload(chunk, ips, name);
 
-      await crowdSecAPI.alerts.createAlerts(payload)
-        .catch(() => { throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecPushFailed); });
+      await crowdSecAPI.alerts.createAlerts(payload).catch(() => {
+        throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecPushFailed);
+      });
 
       pushed += chunk.length;
       onChunk?.(chunk.length);
-      log.debug(`    Batch ${Math.floor(i / pushChunkSize) + 1}/${batchCount} sent for "${name}" (${chunk.length} decisions)`);
+      log.debug(
+        `    Batch ${Math.floor(i / pushChunkSize) + 1}/${batchCount} sent for "${name}" (${chunk.length} decisions)`,
+      );
     }
 
     return pushed;
@@ -123,10 +121,14 @@ class BlocklistCrowdSecService {
     log.debug(`  Deleting CrowdSec alerts for "${blocklistName}"...`);
 
     const scenario = `external/blocklist (${blocklistName})`;
-    const alerts = await crowdSecAPI.alerts.getAlerts({
-      origin: appDefaults.blocklists.importOrigin,
-      scenario,
-    }).catch(() => { throw new Error(PROCESS_ERRORS.blocklistDisable.crowdSecAlertsFetchFailed); });
+    const alerts = await crowdSecAPI.alerts
+      .getAlerts({
+        origin: appDefaults.blocklists.importOrigin,
+        scenario,
+      })
+      .catch(() => {
+        throw new Error(PROCESS_ERRORS.blocklistDisable.crowdSecAlertsFetchFailed);
+      });
 
     log.debug(`  Found ${alerts.length} alert(s) for "${blocklistName}"`);
     const totalDecisions = alerts.reduce((sum, a) => sum + (a.decisions?.length ?? 0), 0);
@@ -135,8 +137,9 @@ class BlocklistCrowdSecService {
       let processedIps = 0;
       for (const alert of alerts) {
         log.debug(`    Deleting alert ${alert.id} (${alert.decisions?.length || 0} decisions) for "${blocklistName}"`);
-        await crowdSecAPI.alerts.deleteAlert(alert.id)
-          .catch(() => { throw new Error(PROCESS_ERRORS.blocklistDisable.crowdSecAlertDeleteFailed); });
+        await crowdSecAPI.alerts.deleteAlert(alert.id).catch(() => {
+          throw new Error(PROCESS_ERRORS.blocklistDisable.crowdSecAlertDeleteFailed);
+        });
         processedIps += alert.decisions?.length ?? 0;
         onAlertDeleted?.(alert.id, alert.decisions?.length ?? 0, processedIps);
       }

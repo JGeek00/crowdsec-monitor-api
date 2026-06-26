@@ -1,6 +1,15 @@
 import { Request, Response } from 'express';
 import { FindAndCountOptions } from 'sequelize';
-import { BlocklistIp, BlocklistIpsTable, BlocklistsTable, CsBlocklistsTable, GetBlocklistIpsParams, GetBlocklistIpsQueryParams, GetBlocklistIpsResponse, ResponseWithError } from '@/models';
+import {
+  BlocklistIp,
+  BlocklistIpsTable,
+  BlocklistsTable,
+  CsBlocklistsTable,
+  GetBlocklistIpsParams,
+  GetBlocklistIpsQueryParams,
+  GetBlocklistIpsResponse,
+  ResponseWithError,
+} from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
@@ -16,7 +25,10 @@ import { DB_SORTING } from '@/types/database.types';
  *   - unpaged        → return all results without pagination
  */
 type Res = ResponseWithError<GetBlocklistIpsResponse>;
-export async function getBlocklistIps(req: Request<GetBlocklistIpsParams, Res, {}, GetBlocklistIpsQueryParams>, res: Response<Res>): Promise<void> {
+export async function getBlocklistIps(
+  req: Request<GetBlocklistIpsParams, Res, object, GetBlocklistIpsQueryParams>,
+  res: Response<Res>,
+): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { id } = req.params;
@@ -78,7 +90,9 @@ export async function getBlocklistIps(req: Request<GetBlocklistIpsParams, Res, {
   } catch (err) {
     if (signal.aborted) return;
     log.error('Error fetching blocklist IPs:', err);
-    res.status(500).json(errorResponse('Failed to fetch blocklist IPs', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to fetch blocklist IPs', err instanceof Error ? err.message : 'Unknown error'));
   } finally {
     cleanup();
   }

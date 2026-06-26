@@ -7,7 +7,7 @@ export interface MigrationAttributes {
   applied_at: Date;
 }
 
-export interface MigrationCreationAttributes extends Optional<MigrationAttributes, 'id' | 'applied_at'> { }
+export type MigrationCreationAttributes = Optional<MigrationAttributes, 'id' | 'applied_at'>;
 
 export class Migration extends Model<MigrationAttributes, MigrationCreationAttributes> implements MigrationAttributes {
   public id!: number;
@@ -47,7 +47,7 @@ export class Migration extends Model<MigrationAttributes, MigrationCreationAttri
         tableName: 'migrations',
         timestamps: false,
         underscored: true,
-      }
+      },
     );
     this._initialized = true;
   }

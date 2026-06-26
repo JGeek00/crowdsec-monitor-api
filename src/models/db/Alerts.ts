@@ -1,11 +1,11 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
-import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, Decision, DecisionsTable } from '@/models';
+import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, DecisionsTable } from '@/models';
 
 // On database model we use UnparsedMetaData because the JSON object is stored as a string on the table column
 // It gets parsed and converted to ParsedMetaData on the endpoint controller
 
-export interface AlertCreationAttributes extends Optional<Alert<UnparsedMetaData>, 'id' | 'created_at' | 'updated_at'> {}
+export type AlertCreationAttributes = Optional<Alert<UnparsedMetaData>, 'id' | 'created_at' | 'updated_at'>;
 
 class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes> implements Alert<UnparsedMetaData> {
   public id!: number;
@@ -156,7 +156,7 @@ AlertsTable.init(
     underscored: true,
     timestamps: false,
     createdAt: false,
-    updatedAt:false,
+    updatedAt: false,
     indexes: [
       {
         name: 'idx_alerts_scenario',
@@ -175,7 +175,7 @@ AlertsTable.init(
         fields: ['start_at'],
       },
     ],
-  }
+  },
 );
 
 export default AlertsTable;

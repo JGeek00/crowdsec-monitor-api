@@ -25,10 +25,8 @@ export function parseBlocklistContent(content: string): string[] {
       return line;
     })
     .filter((entry: string) => entry.length > 0)
-    .filter((entry: string) =>
-      ipv4Regex.test(entry) ||
-      ipv4CidrRegex.test(entry) ||
-      ipv6Regex.test(entry) ||
-      ipv6CidrRegex.test(entry)
+    .filter(
+      (entry: string) =>
+        ipv4Regex.test(entry) || ipv4CidrRegex.test(entry) || ipv6Regex.test(entry) || ipv6CidrRegex.test(entry),
     );
 }

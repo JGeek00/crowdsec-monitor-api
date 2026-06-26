@@ -1,13 +1,13 @@
 import { ipToInt32 } from '@/utils/ip';
 
 const PRIVATE_IPV4_RANGES: Array<[string, number]> = [
-  ['127.0.0.0', 8],    // loopback
-  ['10.0.0.0', 8],     // private
-  ['172.16.0.0', 12],  // private
+  ['127.0.0.0', 8], // loopback
+  ['10.0.0.0', 8], // private
+  ['172.16.0.0', 12], // private
   ['192.168.0.0', 16], // private
   ['169.254.0.0', 16], // link-local
-  ['0.0.0.0', 8],      // reserved
-  ['100.64.0.0', 10],  // shared address (CGN)
+  ['0.0.0.0', 8], // reserved
+  ['100.64.0.0', 10], // shared address (CGN)
 ];
 
 const IPV4_LITERAL = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;

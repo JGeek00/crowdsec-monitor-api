@@ -17,6 +17,8 @@ export async function checkAllowlist(req: Request, res: Response): Promise<void>
     });
   } catch (err) {
     log.error('Error checking allowlist:', err);
-    res.status(500).json(errorResponse('Failed to check allowlist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to check allowlist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

@@ -12,17 +12,28 @@ import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
  * Body: { url: string, name: string }
  */
 type Res = ResponseWithError<PostBlocklistResponse>;
-export async function createBlocklist(req: Request<{}, Res, PostBlocklistBody>, res: Response<Res>): Promise<void> {
+export async function createBlocklist(req: Request<object, Res, PostBlocklistBody>, res: Response<Res>): Promise<void> {
   try {
     if (statusBlocklistService.isSyncingBlocklists()) {
-      res.status(503).json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
+      res
+        .status(503)
+        .json(errorResponse('Service Unavailable', 'Blocklist refresh is in progress. Please try again later.'));
       return;
     }
 
     await crowdSecAPI.checkBouncerConnection();
     if (!crowdSecAPI.isBouncerConnected()) {
-      log.warn('[Blocklist] Cannot create blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.');
-      res.status(500).json(errorResponse('CrowdSec connection error', 'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.'));
+      log.warn(
+        '[Blocklist] Cannot create blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.',
+      );
+      res
+        .status(500)
+        .json(
+          errorResponse(
+            'CrowdSec connection error',
+            'Unable to reach CrowdSec LAPI with the configured bouncer key. Blocklist operations are unavailable.',
+          ),
+        );
       return;
     }
 
@@ -62,14 +73,19 @@ export async function createBlocklist(req: Request<{}, Res, PostBlocklistBody>, 
 
     // Trigger immediate fetch & CrowdSec push in the background
     const processId = statusBlocklistService.createBlocklistImportProcess(blocklist.id, blocklist.name);
-    databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
+    databaseService
+      .refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
         statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        log.error(`Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+        log.error(
+          `Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`,
+        );
       });
   } catch (err) {
     log.error('Error creating blocklist:', err);
-    res.status(500).json(errorResponse('Failed to create blocklist', err instanceof Error ? err.message : 'Unknown error'));
+    res
+      .status(500)
+      .json(errorResponse('Failed to create blocklist', err instanceof Error ? err.message : 'Unknown error'));
   }
 }

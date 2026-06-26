@@ -10,7 +10,10 @@ import { DecisionsTable, DeleteDecisionParams, DeleteDecisionResponse, ResponseW
  * DELETE /api/v1/decisions/:id
  */
 type Res = ResponseWithError<DeleteDecisionResponse>;
-export const deleteDecision = async (req: Request<DeleteDecisionParams, Res, {}>, res: Response<Res>): Promise<void> => {
+export const deleteDecision = async (
+  req: Request<DeleteDecisionParams, Res, object>,
+  res: Response<Res>,
+): Promise<void> => {
   try {
     const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const id = parseInt(idParam, 10);
@@ -28,27 +31,28 @@ export const deleteDecision = async (req: Request<DeleteDecisionParams, Res, {}>
     }
 
     // Set expiration to current time in local database instead of deleting
-    await DecisionsTable.update(
-      { expiration: new Date(), updated_at: new Date() },
-      { where: { id } }
-    );
+    await DecisionsTable.update({ expiration: new Date(), updated_at: new Date() }, { where: { id } });
 
     // Sync alerts from LAPI after successful deletion
     await databaseService.syncAlerts();
 
     res.json({
       message: 'DecisionsTable deleted successfully',
-      nbDeleted: nbDeleted.toString()
+      nbDeleted: nbDeleted.toString(),
     });
   } catch (err: unknown) {
     const typedErr = err as { message?: string; response?: { status?: number } };
     log.error('Error deleting decision:', typedErr.message);
 
     if (typedErr.response?.status === 404) {
-      res.status(404).json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${req.params.id} was not found`));
+      res
+        .status(404)
+        .json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${req.params.id} was not found`));
       return;
     }
 
-    res.status(typedErr.response?.status || 500).json(errorResponse('Failed to delete decision', typedErr.message ?? 'Unknown error'));
+    res
+      .status(typedErr.response?.status || 500)
+      .json(errorResponse('Failed to delete decision', typedErr.message ?? 'Unknown error'));
   }
 };

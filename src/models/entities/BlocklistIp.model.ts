@@ -2,7 +2,7 @@ export const BLOCKLIST_IP_ORIGIN = {
   BLOCKLIST: 'blocklist',
   CS_BLOCKLIST: 'cs_blocklist',
 } as const;
-export type BlocklistIpOrigin = typeof BLOCKLIST_IP_ORIGIN[keyof typeof BLOCKLIST_IP_ORIGIN];
+export type BlocklistIpOrigin = (typeof BLOCKLIST_IP_ORIGIN)[keyof typeof BLOCKLIST_IP_ORIGIN];
 
 export interface BlocklistIp {
   id: number;

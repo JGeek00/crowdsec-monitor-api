@@ -57,10 +57,7 @@ class CsBlocklistSyncService {
           });
 
           log.debug(`  Creating CS blocklist entry "${name}" (id: crowdsec-${alert.id})`);
-          await CsBlocklistsTable.create(
-            { id: `crowdsec-${alert.id}`, name },
-            { transaction: t }
-          );
+          await CsBlocklistsTable.create({ id: `crowdsec-${alert.id}`, name }, { transaction: t });
 
           const chunkSize = appDefaults.blocklists.csBlocklistDbWriteChunkSize;
           const chunkCount = Math.ceil(decisions.length / chunkSize);

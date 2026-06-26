@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { IncomingMessage } from 'http';
 import { timingSafeEqual } from 'crypto';
+import { Stream } from 'stream';
 import { config } from '@/config';
 import { errorResponse } from '@/utils/error-response';
 
@@ -13,10 +14,10 @@ export interface AuthResult {
 export class AuthMiddleware {
   /**
    * EXPRESS AUTH HANDLER
-   * 
+   *
    * Express middleware that responds with JSON.
    * Uses checkAuth() for authentication logic.
-   * 
+   *
    * @param req - Express Request
    * @param res - Express Response
    * @param next - Express NextFunction
@@ -34,15 +35,15 @@ export class AuthMiddleware {
 
   /**
    * WEBSOCKET AUTH HANDLER
-   * 
+   *
    * WebSocket handler that sends HTTP 401 response.
    * Uses checkAuth() for authentication logic.
-   * 
+   *
    * @param req - IncomingMessage from WebSocket request
    * @param socket - WebSocket socket (Duplex type from Express 5)
    * @param head - Header buffer
    */
-  static wsAuth = (req: IncomingMessage, socket: any, head: Buffer): void => {
+  static wsAuth = (req: IncomingMessage, socket: Stream.Duplex, _: Buffer): void => {
     const authHeader = req.headers.authorization;
     const result = this.checkAuth(authHeader);
 
@@ -54,13 +55,12 @@ export class AuthMiddleware {
     socket.destroy();
   };
 
-
   /**
    * AUTHENTICATION LOGIC
-   * 
+   *
    * This function contains all the token validation logic.
    * It is called by both Express and WebSocket handlers.
-   * 
+   *
    * @param authHeader - The Authorization header from the request
    * @returns AuthResult with the authentication result
    */
@@ -73,7 +73,7 @@ export class AuthMiddleware {
       return {
         isValid: false,
         message: 'Authorization header is required',
-        statusCode: 401
+        statusCode: 401,
       };
     }
 
@@ -82,7 +82,7 @@ export class AuthMiddleware {
       return {
         isValid: false,
         message: 'Authorization header must be in format: Bearer <token>',
-        statusCode: 401
+        statusCode: 401,
       };
     }
 
@@ -93,7 +93,7 @@ export class AuthMiddleware {
       return {
         isValid: false,
         message: 'Invalid credentials',
-        statusCode: 401
+        statusCode: 401,
       };
     }
 
@@ -102,7 +102,7 @@ export class AuthMiddleware {
     return {
       isValid,
       message: !isValid ? 'Invalid credentials' : undefined,
-      statusCode: !isValid ? 401 : undefined
+      statusCode: !isValid ? 401 : undefined,
     };
   };
 }

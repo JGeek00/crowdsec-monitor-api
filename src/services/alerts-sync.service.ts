@@ -13,7 +13,10 @@ class AlertsSyncService {
 
   acquireWriteLock<T>(fn: () => Promise<T>): Promise<T> {
     const next = this.writeLock.then(() => fn());
-    this.writeLock = next.then(() => {}, () => {});
+    this.writeLock = next.then(
+      () => {},
+      () => {},
+    );
     return next;
   }
 
@@ -26,7 +29,9 @@ class AlertsSyncService {
     let alerts: Awaited<ReturnType<typeof crowdSecAPI.alerts.getAlerts>>;
     try {
       log.debug(`Fetching alerts from ${appDefaults.alerts.originsFetch.length} origin(s)...`);
-      const results = await Promise.all(appDefaults.alerts.originsFetch.map(origin => crowdSecAPI.alerts.getAlerts({ origin })));
+      const results = await Promise.all(
+        appDefaults.alerts.originsFetch.map((origin) => crowdSecAPI.alerts.getAlerts({ origin })),
+      );
       alerts = results.flat();
       log.debug(`Fetched ${alerts.length} alerts from LAPI`);
     } catch (err) {
@@ -84,16 +89,22 @@ class AlertsSyncService {
             }
 
             if (alert.decisions && alert.decisions.length > 0) {
-              const lapiDecisionIds = alert.decisions.map(d => d.id);
+              const lapiDecisionIds = alert.decisions.map((d) => d.id);
 
               const staleCount = await DecisionsTable.count({
-                where: { [DecisionsTable.col.alertId]: alertInstance.id, [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds } },
+                where: {
+                  [DecisionsTable.col.alertId]: alertInstance.id,
+                  [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds },
+                },
               });
 
               if (staleCount > 0) {
                 log.debug(`    Removing ${staleCount} stale decisions for alert #${alert.id}`);
                 await DecisionsTable.destroy({
-                  where: { [DecisionsTable.col.alertId]: alertInstance.id, [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds } },
+                  where: {
+                    [DecisionsTable.col.alertId]: alertInstance.id,
+                    [DecisionsTable.col.id]: { [Op.notIn]: lapiDecisionIds },
+                  },
                 });
               }
 
