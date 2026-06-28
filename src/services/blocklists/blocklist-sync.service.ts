@@ -12,9 +12,9 @@ import { config } from '@/config';
 import { DB_MODE } from '@/types/database.types';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 import { log } from '@/services/log.service';
-import { blocklistCrowdSecService } from './blocklist-crowdsec.service';
-import { blocklistDbService } from './blocklist-db.service';
-import { executeSyncStep, importBlocklistToCrowdSec } from '../../helpers/blocklist-sync-steps';
+import { blocklistCrowdSecService } from '@/services/blocklists/blocklist-crowdsec.service';
+import { blocklistDbService } from '@/services/blocklists/blocklist-db.service';
+import { executeSyncStep, importBlocklistToCrowdSec } from '@/helpers/blocklist-sync-steps';
 
 class BlocklistSyncService {
   /**
