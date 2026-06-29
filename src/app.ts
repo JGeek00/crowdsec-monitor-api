@@ -31,11 +31,12 @@ export const createApp = (): Application => {
 
   // Logging middleware
   if (config.logs.httpRequests) {
-    if (config.server.nodeEnv === 'development') {
-      app.use(morgan('dev'));
-    } else {
-      app.use(morgan('combined'));
-    }
+    const format = config.server.nodeEnv === 'development' ? 'dev' : 'combined';
+    app.use(
+      morgan(format, {
+        skip: (req) => req.path === '/health' && config.logs.level !== 'debug',
+      }),
+    );
   }
 
   // Routes
