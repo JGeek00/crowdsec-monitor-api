@@ -261,6 +261,10 @@ class StatusBlocklistService {
     return this.processes.some((p) => p.endDatetime === null && p.blocklistRefresh !== undefined);
   }
 
+  isAnyBlocklistProcessRunning(): boolean {
+    return this.processes.some((p) => p.endDatetime === null);
+  }
+
   /** Returns a deep-cloned snapshot of processes for safe serialization (no proxy involvement). */
   getProcessesSnapshot(): Process[] {
     return JSON.parse(JSON.stringify(this.processes));

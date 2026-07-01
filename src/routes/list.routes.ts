@@ -4,11 +4,19 @@ import allowlistRoutes from '@/routes/allowlist.routes';
 import { handleValidationErrors } from '@/middlewares';
 import { checkBlocklistValidators, checkDomainBlocklistValidators } from '@/validators/blocklist.validator';
 import { checkDomainInList, checkIpsInList } from '@/controllers';
+import { refreshLists } from '@/controllers/lists/refresh.controller';
 
 const router: Router = Router();
 
 router.use('/blocklists', blocklistRoutes);
 router.use('/allowlists', allowlistRoutes);
+
+/**
+ * @route   POST /api/v1/lists/refresh
+ * @desc    Trigger a manual blocklist and allowlist refresh
+ * @access  Authentication (configurable)
+ */
+router.post('/refresh', refreshLists);
 
 /**
  * @route   POST /api/lists/check-ips
