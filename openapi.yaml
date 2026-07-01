@@ -959,6 +959,65 @@ paths:
         '500':
           description: Internal server error
 
+  /blocklists/{id}/refresh:
+    post:
+      tags:
+        - Blocklists
+      summary: Refresh a single blocklist
+      deprecated: true
+      operationId: refreshSingleBlocklist
+      description: |
+        Triggers a refresh for a specific blocklist. The blocklist is fetched from its URL,
+        IPs are parsed and filtered via allowlist, then pushed to CrowdSec. The operation
+        runs asynchronously in the background. Returns immediately without waiting for completion.
+        Fails if a global refresh is in progress or if another process is already running for this blocklist.
+        Deprecated: Use /lists/blocklists/{id}/refresh instead.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The numeric ID of the blocklist to refresh
+          schema:
+            type: integer
+          example: 3
+      responses:
+        '202':
+          description: Refresh started — running in background
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Blocklist refresh started
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Blocklist not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: A process is already running for this blocklist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: A global blocklist refresh is in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /blocklists/{blocklistId}/ips:
     get:
       tags:
@@ -1340,6 +1399,42 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
+
+  /lists/refresh:
+    post:
+      tags:
+        - Lists
+      summary: Trigger a manual blocklist and allowlist refresh
+      operationId: refreshLists
+      description: |
+        Triggers a manual refresh of all blocklists and allowlists. The refresh runs
+        asynchronously in the background. Returns immediately without waiting for completion.
+        Fails if another blocklist operation (create, toggle, delete, or global refresh) is already in progress.
+      responses:
+        '202':
+          description: Refresh started — running in background
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Blocklist refresh started
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: A blocklist operation is already in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /statistics:
     get:

@@ -1545,6 +1545,72 @@ Resolve a domain name via DNS and check if any of the resolved IP addresses are 
 
 ---
 
+### POST `/api/v1/blocklists/{id}/refresh`
+
+**DEPRECATION NOTICE:** This endpoint is deprecated. Use `/api/v1/lists/blocklists/{id}/refresh` instead. Responses include deprecation headers (`Deprecation`, `Link`, `X-Deprecation-Info`).
+
+Refresh a specific blocklist. Fetches the blocklist from its URL, parses IPs, applies allowlist filtering, and pushes to CrowdSec. Runs asynchronously in the background.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**URL Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | The numeric ID of the blocklist to refresh |
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/blocklists/3/refresh"
+```
+
+**Response (202 Accepted):**
+```json
+{
+  "message": "Blocklist refresh started"
+}
+```
+
+**Response (404 Not Found):**
+```json
+{
+  "error": "Not found",
+  "message": "Blocklist not found"
+}
+```
+
+**Response (409 Conflict):**
+```json
+{
+  "error": "Conflict",
+  "message": "A process is already running for this blocklist. Wait for it to complete before performing another action."
+}
+```
+
+**Response (503 Service Unavailable):**
+```json
+{
+  "error": "Service Unavailable",
+  "message": "Blocklist refresh is in progress. Please try again later."
+}
+```
+
+**Response (500 Internal Server Error):**
+```json
+{
+  "error": "Failed to start blocklist refresh",
+  "message": "Error details..."
+}
+```
+
+**Notes:**
+- The refresh runs in the background; check `/api/v1/status` for progress
+- Returns 409 if a process (create, toggle, delete, or refresh) is already running for this specific blocklist
+- Returns 503 if a global blocklist refresh is in progress
+
+---
+
+## Lists Endpoints
+
 ## Lists Endpoints
 
 ### POST `/api/v1/lists/check-ips`
@@ -1605,6 +1671,48 @@ Resolve a domain name via DNS and check if any of the resolved IP addresses are 
 **Notes:**
 - This endpoint replaces `/api/v1/blocklists/check-domain` which is deprecated; responses include deprecation headers when clients call the old route.
 
+---
+
+### POST `/api/v1/lists/refresh`
+
+Trigger a manual refresh of all blocklists and allowlists. The refresh runs asynchronously in the background. Returns immediately without waiting for completion.
+
+**Authentication:** Required if `API_PASSWORD` is set
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/lists/refresh"
+```
+
+**Response (202 Accepted):**
+```json
+{
+  "message": "Blocklist refresh started"
+}
+```
+
+**Response (503 Service Unavailable):**
+```json
+{
+  "error": "Service Unavailable",
+  "message": "A blocklist operation is already in progress. Please try again later."
+}
+```
+
+**Response (500 Internal Server Error):**
+```json
+{
+  "error": "Failed to start blocklist refresh",
+  "message": "Error details..."
+}
+```
+
+**Notes:**
+- The refresh fetches all blocklist URLs, parses IPs, applies allowlist filtering, and pushes to CrowdSec
+- Returns 503 if another blocklist operation (create, toggle, delete, or global refresh) is already in progress
+- The operation runs in the background; check `/api/v1/status` for progress
+
+---
 
 ## Statistics Endpoints
 
