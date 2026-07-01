@@ -352,8 +352,7 @@ jobs:
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
 
-          docker buildx imagetools inspect --format '{{.Digest}}' "${REPO}:${VERSION}"
-          docker buildx imagetools inspect --format '{{.Digest}}' "${REPO}:${CHANNEL}"
+          echo "Published ${VERSION} and ${CHANNEL}"
 
   release:
     name: GitHub Release
