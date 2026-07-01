@@ -324,6 +324,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
 
+      - name: Install regctl
+        run: |
+          REGCTL_VERSION=v0.8.2
+          curl -fsSL \
+            "https://github.com/regclient/regclient/releases/download/${REGCTL_VERSION}/regctl-linux-amd64" \
+            -o regctl
+          chmod +x regctl
+          sudo mv regctl /usr/local/bin/regctl
+          regctl version
+
       - name: Push arch images to GHCR
         run: |
           REPO="ghcr.io/jgeek00/crowdsec-monitor-api"
@@ -348,11 +358,26 @@ jobs:
 
           docker buildx imagetools create \
             -t "${REPO}:${VERSION}" \
-            -t "${REPO}:${CHANNEL}" \
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
 
-          echo "Published ${VERSION} and ${CHANNEL}"
+          regctl image copy \
+            "${REPO}:${VERSION}" \
+            "${REPO}:${CHANNEL}"
+
+          VERSION_DIGEST=$(regctl image digest "${REPO}:${VERSION}")
+          CHANNEL_DIGEST=$(regctl image digest "${REPO}:${CHANNEL}")
+
+          echo "Version digest : ${VERSION_DIGEST}"
+          echo "Channel digest : ${CHANNEL_DIGEST}"
+
+
+          if [ "${VERSION_DIGEST}" != "${CHANNEL_DIGEST}" ]; then
+            echo "ERROR: ${CHANNEL} does not point to ${VERSION}"
+            exit 1
+          fi
+
+          echo "Successfully updated ${CHANNEL}"
 
   release:
     name: GitHub Release
