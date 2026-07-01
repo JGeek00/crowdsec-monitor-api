@@ -351,10 +351,27 @@ jobs:
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
 
-          docker buildx imagetools create \
-            -t "${REPO}:${CHANNEL}" \
-            "${REPO}:${VERSION}-amd64" \
-            "${REPO}:${VERSION}-arm64"
+          DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}" | awk '/Digest:/ {print $2}')
+
+          if [ -z "$DIGEST" ]; then
+            echo "ERROR: Unable to obtain manifest digest"
+            exit 1
+          fi
+
+          echo "Version ${VERSION} manifest digest: ${DIGEST}"
+
+          docker buildx imagetools tag "${REPO}@${DIGEST}" "${REPO}:${CHANNEL}"
+
+          CHANNEL_DIGEST=$(docker buildx imagetools inspect "${REPO}:${CHANNEL}" | awk '/Digest:/ {print $2}')
+
+          if [ "$DIGEST" != "$CHANNEL_DIGEST" ]; then
+            echo "ERROR: ${CHANNEL} was not updated correctly"
+            echo "  Expected: ${DIGEST}"
+            echo "  Got:      ${CHANNEL_DIGEST}"
+            exit 1
+          fi
+
+          echo "Verified ${CHANNEL} -> ${DIGEST}"
 
   release:
     name: GitHub Release
