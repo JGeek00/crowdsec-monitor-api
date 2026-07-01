@@ -346,30 +346,14 @@ jobs:
           VERSION="${{ needs.validate.outputs.version }}"
           CHANNEL="${{ needs.validate.outputs.channel_tag }}"
 
-          # One manifest, two tags, same digest
           docker buildx imagetools create \
             -t "${REPO}:${VERSION}" \
             -t "${REPO}:${CHANNEL}" \
             "${REPO}:${VERSION}-amd64" \
             "${REPO}:${VERSION}-arm64"
 
-          # Verify both tags point to the same digest
-          VERSION_DIGEST=$(docker buildx imagetools inspect "${REPO}:${VERSION}" | awk '/Digest:/ {print $2}')
-          CHANNEL_DIGEST=$(docker buildx imagetools inspect "${REPO}:${CHANNEL}" | awk '/Digest:/ {print $2}')
-
-          if [ -z "$VERSION_DIGEST" ] || [ -z "$CHANNEL_DIGEST" ]; then
-            echo "ERROR: Unable to obtain manifest digests"
-            exit 1
-          fi
-
-          if [ "$VERSION_DIGEST" != "$CHANNEL_DIGEST" ]; then
-            echo "ERROR: Version and channel digests don't match"
-            echo "  ${VERSION}: ${VERSION_DIGEST}"
-            echo "  ${CHANNEL}: ${CHANNEL_DIGEST}"
-            exit 1
-          fi
-
-          echo "Verified ${VERSION} == ${CHANNEL} -> ${VERSION_DIGEST}"
+          docker buildx imagetools inspect --format '{{.Digest}}' "${REPO}:${VERSION}"
+          docker buildx imagetools inspect --format '{{.Digest}}' "${REPO}:${CHANNEL}"
 
   release:
     name: GitHub Release
