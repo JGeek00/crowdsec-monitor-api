@@ -74,6 +74,21 @@ class StatusBlocklistService {
     return id;
   }
 
+  createBlocklistSingleRefreshProcess(blocklistId: number, blocklistName: string): string {
+    const id = crypto.randomUUID();
+    const process: Process = {
+      id,
+      beginDatetime: new Date().toISOString(),
+      endDatetime: null,
+      successful: null,
+      error: null,
+      blocklistSingleRefresh: this.initialProcessBlocklist(blocklistId, blocklistName),
+    };
+    this.processes = [process, ...this.processes];
+    this.syncAndNotify();
+    return id;
+  }
+
   createBlocklistDisableProcess(blocklistIps: number, blocklistId: number, blocklistName: string): string {
     const id = crypto.randomUUID();
     const process: Process = {
@@ -251,6 +266,7 @@ class StatusBlocklistService {
       return (
         p.blocklistImport?.blocklistId === blocklistId ||
         p.blocklistEnable?.blocklistId === blocklistId ||
+        p.blocklistSingleRefresh?.blocklistId === blocklistId ||
         p.blocklistDisable?.blocklistId === blocklistId ||
         p.blocklistDelete?.blocklistId === blocklistId
       );

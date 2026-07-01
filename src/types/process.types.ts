@@ -48,6 +48,7 @@ export interface ProcessBlocklistRefreshEntry {
 export const PROCESS_FIELD_BLOCKLIST = {
   IMPORT: 'blocklistImport',
   ENABLE: 'blocklistEnable',
+  SINGLE_REFRESH: 'blocklistSingleRefresh',
 } as const;
 export type ProcessFieldBlocklist = (typeof PROCESS_FIELD_BLOCKLIST)[keyof typeof PROCESS_FIELD_BLOCKLIST];
 
@@ -96,6 +97,7 @@ export interface Process {
   error: string | null;
   blocklistImport?: ProcessBlocklist;
   blocklistEnable?: ProcessBlocklist;
+  blocklistSingleRefresh?: ProcessBlocklist;
   blocklistDisable?: ProcessBlocklistIps;
   blocklistDelete?: ProcessBlocklistIps;
   blocklistRefresh?: ProcessBlocklistRefresh;

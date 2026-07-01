@@ -6,6 +6,7 @@ import {
   createBlocklist,
   deleteBlocklist,
   toggleBlocklist,
+  refreshSingleBlocklist,
   checkBlocklist,
   checkDomainBlocklist,
 } from '@/controllers';
@@ -76,5 +77,12 @@ router.delete('/:id', deleteBlocklist);
  * @access  Authentication (configurable)
  */
 router.post('/:id/enabled', toggleBlocklist);
+
+/**
+ * @route   POST /api/blocklists/:id/refresh
+ * @desc    Refresh a single blocklist (fetch, parse, push to CrowdSec)
+ * @access  Authentication (configurable)
+ */
+router.post('/:id/refresh', refreshSingleBlocklist);
 
 export default router;
