@@ -10,6 +10,7 @@ export type ProcessBlocklistFieldStatus =
 export const PROCESS_BLOCKLIST_STEP = {
   FETCH: 'fetch',
   PARSE: 'parse',
+  DELETE: 'delete',
   IMPORT: 'import',
 } as const;
 export type ProcessBlocklistStep = (typeof PROCESS_BLOCKLIST_STEP)[keyof typeof PROCESS_BLOCKLIST_STEP];
@@ -78,6 +79,7 @@ export interface ProcessBlocklist extends BlocklistInfo {
   step: ProcessBlocklistStep;
   fetched: ProcessBlocklistFieldStatus;
   parsed: ProcessBlocklistFieldStatus;
+  deleted: ProcessBlocklistFieldStatus;
   imported: ProcessBlocklistFieldStatus;
   processIps: ProcessBlocklistProgress;
 }

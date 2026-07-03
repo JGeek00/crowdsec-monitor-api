@@ -192,9 +192,19 @@ class StatusBlocklistService {
     const bl = p?.[field] as ProcessBlocklist | undefined;
     if (!bl) return;
     bl.parsed = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
+    bl.deleted = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
+    bl.step = PROCESS_BLOCKLIST_STEP.DELETE;
+    bl.processIps.totalIps = totalIps;
+    this.syncAndNotify();
+  }
+
+  markDeleted(id: string, field: ProcessFieldBlocklist): void {
+    const p = this.findProcess(id);
+    const bl = p?.[field] as ProcessBlocklist | undefined;
+    if (!bl) return;
+    bl.deleted = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
     bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
     bl.step = PROCESS_BLOCKLIST_STEP.IMPORT;
-    bl.processIps.totalIps = totalIps;
     this.syncAndNotify();
   }
 
@@ -241,13 +251,25 @@ class StatusBlocklistService {
     p.endDatetime = new Date().toISOString();
     p.successful = successful;
     p.error = error;
-    if (!successful) {
-      for (const field of Object.values(PROCESS_FIELD_BLOCKLIST) as ProcessFieldBlocklist[]) {
-        const bl = p[field] as ProcessBlocklist | undefined;
-        if (!bl) continue;
-        if (bl.fetched === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) bl.fetched = PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
-        if (bl.parsed === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) bl.parsed = PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
-        if (bl.imported === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
+    for (const field of Object.values(PROCESS_FIELD_BLOCKLIST) as ProcessFieldBlocklist[]) {
+      const bl = p[field] as ProcessBlocklist | undefined;
+      if (!bl) continue;
+      for (const key of ['fetched', 'parsed', 'deleted', 'imported'] as const) {
+        if (bl[key] === PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING) {
+          bl[key] = successful ? PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL : PROCESS_BLOCKLIST_FIELD_STATUS.FAILED;
+        }
+      }
+    }
+    const rf = p.blocklistRefresh as ProcessBlocklistRefresh | undefined;
+    if (rf) {
+      for (const entry of rf.blocklists) {
+        for (const key of Object.keys(entry.steps) as ProcessBlocklistRefreshStep[]) {
+          if (entry.steps[key] === PROCESS_BLOCKLIST_STEP_STATUS.RUNNING) {
+            entry.steps[key] = successful
+              ? PROCESS_BLOCKLIST_STEP_STATUS.SUCCESSFUL
+              : PROCESS_BLOCKLIST_STEP_STATUS.FAILED;
+          }
+        }
       }
     }
     this.syncAndNotify();
@@ -302,6 +324,7 @@ class StatusBlocklistService {
       step: PROCESS_BLOCKLIST_STEP.FETCH,
       fetched: PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING,
       parsed: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
+      deleted: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
       imported: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
       processIps: { totalIps: 0, processedIps: 0 },
     };

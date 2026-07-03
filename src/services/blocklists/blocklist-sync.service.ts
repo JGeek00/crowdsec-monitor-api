@@ -85,10 +85,11 @@ class BlocklistSyncService {
       statusBlocklistService.markFetched(processId, field);
     } else if (step === 'parse' && status === PROCESS_BLOCKLIST_STEP_STATUS.RUNNING) {
       // markFetched already sets parsed=running
+    } else if (step === 'delete' && status === PROCESS_BLOCKLIST_STEP_STATUS.SUCCESSFUL) {
+      statusBlocklistService.markDeleted(processId, field);
     } else if (step === 'import' && status === PROCESS_BLOCKLIST_STEP_STATUS.RUNNING) {
-      // markParsed already sets imported=running
+      // markDeleted already sets imported=running
     }
-    // delete step is not tracked in single refresh process
   }
 
   private async syncMultiBlocklists(): Promise<{
