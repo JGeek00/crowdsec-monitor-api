@@ -3,14 +3,9 @@ import { BlocklistsTable, DeleteBlocklistParams, ResponseWithError } from '@/mod
 import { databaseService, statusBlocklistService } from '@/services';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
 
 /**
- * Refresh a single blocklist.
- * POST /api/v1/lists/blocklists/:id/refresh
- *
- * Checks that no global refresh or per-blocklist process is running,
- * then launches refreshBlocklist in the background. Returns immediately.
+ * Accepts a blocklist ID, validates guards, and kicks off an async full refresh via `syncBlocklists`.
  */
 type Res = ResponseWithError<{ message: string }>;
 export async function refreshSingleBlocklist(
@@ -45,17 +40,11 @@ export async function refreshSingleBlocklist(
       return;
     }
 
-    const processId = statusBlocklistService.createBlocklistSingleRefreshProcess(blocklist.id, blocklist.name);
-
     res.status(202).json({ message: 'Blocklist refresh started' });
 
-    databaseService
-      .refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.SINGLE_REFRESH)
-      .then(() => statusBlocklistService.completeProcess(processId, true))
-      .catch((err) => {
-        statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        log.error(`Error refreshing blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
-      });
+    databaseService.syncBlocklists(blocklist).catch((err) => {
+      log.error(`Error refreshing blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+    });
   } catch (err) {
     log.error('Error starting blocklist refresh:', err);
     res

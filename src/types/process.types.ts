@@ -102,3 +102,9 @@ export interface Process {
   blocklistDelete?: ProcessBlocklistIps;
   blocklistRefresh?: ProcessBlocklistRefresh;
 }
+
+export interface SyncOneCallbacks {
+  onStep(step: ProcessBlocklistRefreshStep, status: ProcessBlocklistStepStatus): void;
+  onParsed(totalIps: number): void;
+  onImportProgress(chunkSize: number): void;
+}

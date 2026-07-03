@@ -274,7 +274,9 @@ class StatusBlocklistService {
   }
 
   isSyncingBlocklists(): boolean {
-    return this.processes.some((p) => p.endDatetime === null && p.blocklistRefresh !== undefined);
+    return this.processes.some(
+      (p) => p.endDatetime === null && (p.blocklistRefresh !== undefined || p.blocklistSingleRefresh !== undefined),
+    );
   }
 
   isAnyBlocklistProcessRunning(): boolean {

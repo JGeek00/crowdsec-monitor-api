@@ -1,183 +1,97 @@
 import { BlocklistsTable } from '@/models';
 import { sequelize } from '@/config/database';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
-import { statusService } from '@/services/status.service';
-import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
-import { PROCESS_BLOCKLIST_REFRESH_STEP } from '@/types/process.types';
-import { countIpsInValue } from '@/utils/ip-count';
-import { buildAllowlistMatcher } from '@/utils/ip';
-import { parseBlocklistContent } from '@/utils/parse-blocklist';
+import type { ProcessFieldBlocklist, ProcessBlocklistRefreshStep } from '@/types/process.types';
+import {
+  PROCESS_BLOCKLIST_REFRESH_STEP,
+  PROCESS_BLOCKLIST_STEP_STATUS,
+  PROCESS_FIELD_BLOCKLIST,
+} from '@/types/process.types';
 import { config } from '@/config';
 import { DB_MODE } from '@/types/database.types';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 import { log } from '@/services/log.service';
-import { blocklistCrowdSecService } from '@/services/blocklists/blocklist-crowdsec.service';
+import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
 import { blocklistDbService } from '@/services/blocklists/blocklist-db.service';
-import { executeSyncStep, importBlocklistToCrowdSec } from '@/helpers/blocklist-sync-steps';
+import { blocklistCrowdSecService } from '@/services/blocklists/blocklist-crowdsec.service';
+import { executeSyncStep, syncOneBlocklist } from '@/helpers/blocklist-sync-steps';
 
 class BlocklistSyncService {
   /**
-   * Parse IPs and apply allowlist filter.
+   * Full refresh cycle. If `targetBlocklist` is provided, refreshes only that one.
+   * Otherwise refreshes all enabled blocklists.
    */
-  private async parseIps(ips: string[], blocklistName: string, allowlistEntries: string[]): Promise<string[]> {
-    const isAllowlisted = buildAllowlistMatcher(allowlistEntries);
-    const allowlistFiltered = ips.filter((ip) => !isAllowlisted(ip));
-    const allowlistSkipped = ips.length - allowlistFiltered.length;
-
-    if (allowlistSkipped > 0) {
-      log.debug(
-        `  Allowlist filtering "${blocklistName}": ${allowlistSkipped} skipped (${allowlistEntries.length} allowlist entries)`,
-      );
+  async syncBlocklists(targetBlocklist?: BlocklistsTable): Promise<{
+    refreshed: number;
+    totalIps: number;
+    errors: { fetch: string[]; parse: string[]; delete: string[]; import: string[] };
+  }> {
+    if (targetBlocklist) {
+      return this.syncSingleBlocklists(targetBlocklist);
     }
-
-    return allowlistFiltered;
+    return this.syncMultiBlocklists();
   }
 
-  /* ── Public API ───────────────────────────────────────────────── */
-
-  /**
-   * Fetch a blocklist URL, store IPs in the local DB, and push to CrowdSec.
-   * Deduplicates against active CrowdSec decisions (incremental push).
-   * Used by create/toggle controllers.
-   */
-  async refreshBlocklist(
-    blocklistsTableEntry: BlocklistsTable,
-    allowlistEntries?: string[],
-    processId?: string,
-    processField?: ProcessFieldBlocklist,
-  ): Promise<{ allowlistSkipped: number }> {
-    const name = blocklistsTableEntry.name;
-    log.debug(`Refreshing blocklist "${name}" from ${blocklistsTableEntry.url}...`);
-
-    let allowlistSkipped = 0;
-    let uniqueNewIps: string[] = [];
-    let ips: string[] = [];
-    let success = false;
+  private async syncSingleBlocklists(blocklist: BlocklistsTable): Promise<{
+    refreshed: number;
+    totalIps: number;
+    errors: { fetch: string[]; parse: string[]; delete: string[]; import: string[] };
+  }> {
+    const processId = statusBlocklistService.createBlocklistSingleRefreshProcess(blocklist.id, blocklist.name);
+    const field = PROCESS_FIELD_BLOCKLIST.SINGLE_REFRESH;
 
     try {
-      // ── Download ──────────────────────────────────────────────
-      const { rawContent } = await blocklistCrowdSecService.downloadBlocklist(blocklistsTableEntry.url, name);
-      ips = parseBlocklistContent(rawContent);
-
-      if (processId && processField) {
-        statusBlocklistService.markFetched(processId, processField);
+      if (!(await blocklistOpsService.verifyConnection())) {
+        statusBlocklistService.completeProcess(
+          processId,
+          false,
+          PROCESS_ERRORS.blocklistSingleRefresh.crowdSecUnavailable,
+        );
+        return { refreshed: 0, totalIps: 0, errors: { fetch: [], parse: [], delete: [], import: [] } };
       }
 
-      // ── Filter by allowlist ───────────────────────────────────
-      const entries = allowlistEntries ?? (await blocklistCrowdSecService.fetchAllowlistEntries());
-      const filteredIps = await this.parseIps(ips, name, entries);
-      allowlistSkipped = ips.length - filteredIps.length;
+      const allowlistEntries = await blocklistCrowdSecService.fetchAllowlistEntries();
 
-      // ── Deduplicate against active CrowdSec decisions ─────────
-      let activeDecisions: Set<string>;
-      try {
-        activeDecisions = await crowdSecAPI.decisions.getActiveDecisions();
-        crowdSecAPI.setBouncerConnected(true);
-        statusService.updateBouncerStatus(true);
-        log.debug(`  Fetched ${activeDecisions.size} active decisions from CrowdSec`);
-      } catch {
-        log.error(`Failed to fetch active decisions from CrowdSec. Aborting blocklist import for "${name}".`);
-        crowdSecAPI.setBouncerConnected(false);
-        statusService.updateBouncerStatus(false);
-        throw new Error(PROCESS_ERRORS.blocklistImport.crowdSecDecisionsFailed);
-      }
+      const { pushed } = await syncOneBlocklist(blocklist, allowlistEntries, {
+        onStep: (step, status) => {
+          this.trackSingleStep(processId, field, step, status);
+        },
+        onParsed: (totalIps) => {
+          statusBlocklistService.markParsed(processId, field, totalIps);
+        },
+        onImportProgress: (chunkSize) => {
+          statusBlocklistService.addImportedIps(processId, field, chunkSize);
+        },
+      });
 
-      uniqueNewIps = [...new Set(filteredIps.filter((ip) => !activeDecisions.has(ip)))];
-      const alreadyBlocked = filteredIps.length - uniqueNewIps.length;
+      statusBlocklistService.markBlocklistOpComplete(processId, field);
+      statusBlocklistService.completeProcess(processId, true);
 
-      if (alreadyBlocked > 0) {
-        log.debug(`  "${name}": ${alreadyBlocked} IPs already blocked in CrowdSec`);
-      }
-      log.debug(`  "${name}": ${uniqueNewIps.length} new IPs ready to push`);
-
-      if (processId && processField) {
-        statusBlocklistService.markParsed(processId, processField, uniqueNewIps.length);
-      }
-
-      // ── Write all IPs to DB (full list, not just unique) ──────
-      await blocklistDbService.writeIpsToDb(blocklistsTableEntry, ips);
-
-      // ── Push only unique new IPs to CrowdSec ──────────────────
-      if (uniqueNewIps.length > 0) {
-        await blocklistCrowdSecService.pushIpsToCrowdSec(uniqueNewIps, name, (chunkLength) => {
-          if (processId && processField) {
-            statusBlocklistService.addImportedIps(processId, processField, chunkLength);
-          }
-        });
-      } else {
-        log.debug(`  No new IPs to push for "${name}" (all already blocked in CrowdSec)`);
-      }
-
-      if (processId && processField) {
-        statusBlocklistService.markBlocklistOpComplete(processId, processField);
-      }
-
-      success = true;
-    } finally {
-      const updatePayload: {
-        last_refresh_attempt: Date;
-        last_successful_refresh?: Date;
-        last_refresh_failed: boolean;
-      } = {
-        last_refresh_attempt: new Date(),
-        last_refresh_failed: !success,
-      };
-
-      if (success) {
-        updatePayload.last_successful_refresh = new Date();
-        const alreadyBlocked = ips.length - uniqueNewIps.length;
-        const parts = [
-          `${uniqueNewIps.length} pushed to CrowdSec`,
-          alreadyBlocked > 0 ? `${alreadyBlocked} already blocked` : null,
-          allowlistSkipped > 0 ? `${allowlistSkipped} in allowlist` : null,
-        ]
-          .filter(Boolean)
-          .join(', ');
-        log.info(`Refreshed "${name}": ${ips.length} IPs in list — ${parts}`);
-      }
-
-      await blocklistDbService.updateRefreshMetadata(blocklistsTableEntry, updatePayload);
+      return { refreshed: 1, totalIps: pushed, errors: { fetch: [], parse: [], delete: [], import: [] } };
+    } catch (err) {
+      log.error(`Single refresh failed for "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+      statusBlocklistService.completeProcess(processId, false, PROCESS_ERRORS.blocklistSingleRefresh.failed);
+      return { refreshed: 0, totalIps: 0, errors: { fetch: [], parse: [], delete: [], import: [] } };
     }
-
-    return { allowlistSkipped };
   }
 
-  /**
-   * Delete all CrowdSec alerts for a blocklist and wipe its local IPs.
-   * Used by disable/delete controllers.
-   */
-  async deleteBlocklistAlerts(
-    blocklist: BlocklistsTable,
-    processId?: string,
-    processField?: ProcessFieldBlocklistOps,
-  ): Promise<void> {
-    const name = blocklist.name;
-    log.debug(`Deleting blocklist "${name}" alerts from CrowdSec...`);
-
-    const { totalDecisions } = await blocklistCrowdSecService.deleteBlocklistAlerts(
-      name,
-      (alertId, decisionsCount, processedIps) => {
-        if (processId && processField) {
-          statusBlocklistService.setDeletedIps(processId, processField, processedIps);
-        }
-      },
-    );
-
-    if (processId && processField) {
-      statusBlocklistService.setIpsToDelete(processId, processField, totalDecisions);
+  private trackSingleStep(
+    processId: string,
+    field: ProcessFieldBlocklist,
+    step: ProcessBlocklistRefreshStep,
+    status: string,
+  ): void {
+    if (step === 'fetch' && status === PROCESS_BLOCKLIST_STEP_STATUS.SUCCESSFUL) {
+      statusBlocklistService.markFetched(processId, field);
+    } else if (step === 'parse' && status === PROCESS_BLOCKLIST_STEP_STATUS.RUNNING) {
+      // markFetched already sets parsed=running
+    } else if (step === 'import' && status === PROCESS_BLOCKLIST_STEP_STATUS.RUNNING) {
+      // markParsed already sets imported=running
     }
-
-    await blocklistDbService.deleteBlocklistIps(blocklist);
-
-    log.info(`Deleted alerts and IPs for blocklist "${name}"`);
+    // delete step is not tracked in single refresh process
   }
 
-  /**
-   * Full refresh of all enabled blocklists: fetch → parse → delete old CrowdSec alerts → import new.
-   * Replaces all IPs in both CrowdSec and DB for each blocklist (no merge).
-   */
-  async syncBlocklists(): Promise<{
+  private async syncMultiBlocklists(): Promise<{
     refreshed: number;
     totalIps: number;
     errors: { fetch: string[]; parse: string[]; delete: string[]; import: string[] };
@@ -189,21 +103,11 @@ class BlocklistSyncService {
       return { refreshed: 0, totalIps: 0, errors: { fetch: [], parse: [], delete: [], import: [] } };
     }
 
-    // Create process FIRST to activate sync lock immediately (prevents race with controllers)
     const processId = statusBlocklistService.createBlocklistRefreshProcess(
       blocklists.map((bl, idx) => ({ number: idx + 1, name: bl.name })),
     );
 
-    // Verify CrowdSec API + bouncer connection before starting
-    try {
-      await blocklistCrowdSecService.verifyConnection();
-      crowdSecAPI.setBouncerConnected(true);
-      statusService.updateBouncerStatus(true);
-      log.debug('CrowdSec API connection verified');
-    } catch {
-      log.error('Cannot connect to CrowdSec API. Aborting blocklist sync.');
-      crowdSecAPI.setBouncerConnected(false);
-      statusService.updateBouncerStatus(false);
+    if (!(await blocklistOpsService.verifyConnection())) {
       for (const blocklist of blocklists) {
         await blocklistDbService.updateRefreshMetadata(blocklist, {
           last_refresh_failed: true,
@@ -214,13 +118,8 @@ class BlocklistSyncService {
       return { refreshed: 0, totalIps: 0, errors: { fetch: [], parse: [], delete: [], import: [] } };
     }
 
-    // Fetch allowlist entries once for all blocklists
     const allowlistEntries = await blocklistCrowdSecService.fetchAllowlistEntries();
     log.debug(`Using ${allowlistEntries.length} allowlist entries for filtering`);
-
-    // Content cache: blocklist name → IPs (persist step results)
-    const fetchedIpsCache = new Map<string, string[]>();
-    const parsedIpsCache = new Map<string, string[]>();
 
     const errors = {
       fetch: [] as string[],
@@ -235,59 +134,41 @@ class BlocklistSyncService {
       log.debug(`Processing blocklist ${i + 1}/${blocklists.length}: "${blocklist.name}"`);
       statusBlocklistService.setCurrentBlocklist(processId, i + 1);
 
-      // ── FETCH ────────────────────────────────────────────────
-      if (
-        !(await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.FETCH, blocklist, errors, async () => {
-          const { rawContent } = await blocklistCrowdSecService.downloadBlocklist(blocklist.url, blocklist.name);
-          fetchedIpsCache.set(blocklist.name, parseBlocklistContent(rawContent));
-        }))
-      )
-        continue;
+      let failedStep: ProcessBlocklistRefreshStep | null = null;
 
-      // ── PARSE ────────────────────────────────────────────────
-      if (
-        !(await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.PARSE, blocklist, errors, async () => {
-          const ips = fetchedIpsCache.get(blocklist.name) ?? [];
-          const filteredIps = await this.parseIps(ips, blocklist.name, allowlistEntries);
-          parsedIpsCache.set(blocklist.name, filteredIps);
-        }))
-      )
-        continue;
-
-      // ── DELETE old CrowdSec alerts ───────────────────────────
-      if (
-        !(await executeSyncStep(processId, i, PROCESS_BLOCKLIST_REFRESH_STEP.DELETE, blocklist, errors, async () => {
-          await blocklistCrowdSecService.deleteBlocklistAlerts(blocklist.name);
-        }))
-      )
-        continue;
-
-      // ── IMPORT to CrowdSec ───────────────────────────────────
-      const importSuccess = await executeSyncStep(
+      const success = await executeSyncStep(
         processId,
         i,
         PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT,
         blocklist,
         errors,
         async () => {
-          const filteredIps = parsedIpsCache.get(blocklist.name) ?? [];
-          const { ipsInDb, pushed } = await importBlocklistToCrowdSec(blocklist, filteredIps);
-          statusBlocklistService.addBlocklistIps(processId, ipsInDb);
-
-          const totalIpCount = filteredIps.reduce((sum: number, v: string) => sum + countIpsInValue(v), 0);
-          log.info(
-            `Refreshed "${blocklist.name}": ${filteredIps.length} lines, ${totalIpCount} IPs — ${pushed} pushed to CrowdSec`,
-          );
+          const { pushed } = await syncOneBlocklist(blocklist, allowlistEntries, {
+            onStep: (step, status) => {
+              statusBlocklistService.setBlocklistStepStatus(processId, i, step, status);
+              if (status === PROCESS_BLOCKLIST_STEP_STATUS.FAILED) {
+                failedStep = step;
+              }
+            },
+            onParsed: () => {},
+            onImportProgress: () => {},
+          });
+          statusBlocklistService.addBlocklistIps(processId, pushed);
         },
       );
 
-      if (importSuccess) {
+      if (success) {
         await blocklistDbService.updateRefreshMetadata(blocklist, {
           last_successful_refresh: new Date(),
           last_refresh_failed: false,
           last_refresh_attempt: new Date(),
         });
         refreshed++;
+      } else if (failedStep) {
+        // executeSyncStep defaults to 'import' error; correct it
+        errors.import = errors.import.filter((n) => n !== blocklist.name);
+        const stepKey = failedStep as keyof typeof errors;
+        errors[stepKey].push(blocklist.name);
       }
     }
 
@@ -303,7 +184,6 @@ class BlocklistSyncService {
       await sequelize.query('PRAGMA wal_checkpoint(PASSIVE);');
     }
 
-    // Read totalIps from process state
     const process = statusBlocklistService.getProcessById(processId);
     const totalIps = process?.blocklistRefresh?.totalIps ?? 0;
 

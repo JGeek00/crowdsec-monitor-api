@@ -1,5 +1,6 @@
 import { BlocklistsTable } from '@/models';
 import { alertsSyncService } from '@/services/alerts-sync.service';
+import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
 import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
 import { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
@@ -35,7 +36,7 @@ class DatabaseService {
     processId?: string,
     processField?: ProcessFieldBlocklist,
   ) {
-    return blocklistSyncService.refreshBlocklist(blocklistsTableEntry, undefined, processId, processField);
+    return blocklistOpsService.refreshBlocklist(blocklistsTableEntry, undefined, processId, processField);
   }
 
   async deleteBlocklistAlerts(
@@ -43,11 +44,11 @@ class DatabaseService {
     processId?: string,
     processField?: ProcessFieldBlocklistOps,
   ) {
-    return blocklistSyncService.deleteBlocklistAlerts(blocklistsTableEntry, processId, processField);
+    return blocklistOpsService.deleteBlocklistAlerts(blocklistsTableEntry, processId, processField);
   }
 
-  async syncBlocklists() {
-    return blocklistSyncService.syncBlocklists();
+  async syncBlocklists(targetBlocklist?: BlocklistsTable) {
+    return blocklistSyncService.syncBlocklists(targetBlocklist);
   }
 
   async syncCsBlocklists() {
