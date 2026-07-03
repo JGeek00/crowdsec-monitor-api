@@ -3,7 +3,6 @@ import { sequelize } from '@/config/database';
 import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
 import type { ProcessFieldBlocklist, ProcessBlocklistRefreshStep } from '@/types/process.types';
 import {
-  PROCESS_BLOCKLIST_REFRESH_STEP,
   PROCESS_BLOCKLIST_STEP_STATUS,
   PROCESS_FIELD_BLOCKLIST,
 } from '@/types/process.types';
@@ -14,7 +13,7 @@ import { log } from '@/services/log.service';
 import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
 import { blocklistDbService } from '@/services/blocklists/blocklist-db.service';
 import { blocklistCrowdSecService } from '@/services/blocklists/blocklist-crowdsec.service';
-import { executeSyncStep, syncOneBlocklist } from '@/helpers/blocklist-sync-steps';
+import { syncOneBlocklist } from '@/helpers/blocklist-sync-steps';
 
 class BlocklistSyncService {
   /**
@@ -137,39 +136,38 @@ class BlocklistSyncService {
 
       let failedStep: ProcessBlocklistRefreshStep | null = null;
 
-      const success = await executeSyncStep(
-        processId,
-        i,
-        PROCESS_BLOCKLIST_REFRESH_STEP.IMPORT,
-        blocklist,
-        errors,
-        async () => {
-          const { pushed } = await syncOneBlocklist(blocklist, allowlistEntries, {
-            onStep: (step, status) => {
-              statusBlocklistService.setBlocklistStepStatus(processId, i, step, status);
-              if (status === PROCESS_BLOCKLIST_STEP_STATUS.FAILED) {
-                failedStep = step;
-              }
-            },
-            onParsed: () => {},
-            onImportProgress: () => {},
-          });
-          statusBlocklistService.addBlocklistIps(processId, pushed);
-        },
-      );
-
-      if (success) {
+      try {
+        const { pushed } = await syncOneBlocklist(blocklist, allowlistEntries, {
+          onStep: (step, status) => {
+            statusBlocklistService.setBlocklistStepStatus(processId, i, step, status);
+            if (status === PROCESS_BLOCKLIST_STEP_STATUS.FAILED) {
+              failedStep = step;
+            }
+          },
+          onParsed: () => {},
+          onImportProgress: () => {},
+        });
+        statusBlocklistService.addBlocklistIps(processId, pushed);
         await blocklistDbService.updateRefreshMetadata(blocklist, {
           last_successful_refresh: new Date(),
           last_refresh_failed: false,
           last_refresh_attempt: new Date(),
         });
         refreshed++;
-      } else if (failedStep) {
-        // executeSyncStep defaults to 'import' error; correct it
-        errors.import = errors.import.filter((n) => n !== blocklist.name);
-        const stepKey = failedStep as keyof typeof errors;
-        errors[stepKey].push(blocklist.name);
+      } catch (err) {
+        log.error(
+          `  Sync failed for "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`,
+        );
+        await blocklistDbService.updateRefreshMetadata(blocklist, {
+          last_refresh_failed: true,
+          last_refresh_attempt: new Date(),
+        });
+        if (failedStep) {
+          const stepKey = failedStep as keyof typeof errors;
+          errors[stepKey].push(blocklist.name);
+        } else {
+          errors.import.push(blocklist.name);
+        }
       }
     }
 
