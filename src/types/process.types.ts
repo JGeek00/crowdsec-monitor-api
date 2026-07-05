@@ -71,7 +71,7 @@ export interface ProcessBlocklist extends BlocklistInfo {
   step: ProcessBlocklistStep;
   fetched: ProcessBlocklistFieldStatus;
   parsed: ProcessBlocklistFieldStatus;
-  deleted: ProcessBlocklistFieldStatus;
+  deleted?: ProcessBlocklistFieldStatus | null;
   imported: ProcessBlocklistFieldStatus;
   processIps: ProcessBlocklistProgress;
 }

@@ -53,7 +53,7 @@ class StatusBlocklistService {
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistImport: this.initialProcessBlocklist(blocklistId, blocklistName),
+      blocklistImport: this.initialProcessBlocklist(blocklistId, blocklistName, { skipDelete: true }),
     };
     this.processes = [process, ...this.processes];
     this.syncAndNotify();
@@ -68,7 +68,7 @@ class StatusBlocklistService {
       endDatetime: null,
       successful: null,
       error: null,
-      blocklistEnable: this.initialProcessBlocklist(blocklistId, blocklistName),
+      blocklistEnable: this.initialProcessBlocklist(blocklistId, blocklistName, { skipDelete: true }),
     };
     this.processes = [process, ...this.processes];
     this.syncAndNotify();
@@ -193,16 +193,23 @@ class StatusBlocklistService {
     const bl = p?.[field] as ProcessBlocklist | undefined;
     if (!bl) return;
     bl.parsed = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
-    bl.deleted = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
-    bl.step = PROCESS_BLOCKLIST_STEP.DELETE;
     bl.processIps.totalIps = totalIps;
+
+    const skipDelete = field === PROCESS_FIELD_BLOCKLIST.IMPORT || field === PROCESS_FIELD_BLOCKLIST.ENABLE;
+    if (skipDelete) {
+      bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
+      bl.step = PROCESS_BLOCKLIST_STEP.IMPORT;
+    } else {
+      bl.deleted = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
+      bl.step = PROCESS_BLOCKLIST_STEP.DELETE;
+    }
     this.syncAndNotify();
   }
 
   markDeleted(id: string, field: ProcessFieldBlocklist): void {
     const p = this.findProcess(id);
     const bl = p?.[field] as ProcessBlocklist | undefined;
-    if (!bl) return;
+    if (!bl || bl.deleted === undefined) return;
     bl.deleted = PROCESS_BLOCKLIST_FIELD_STATUS.SUCCESSFUL;
     bl.imported = PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING;
     bl.step = PROCESS_BLOCKLIST_STEP.IMPORT;
@@ -318,17 +325,24 @@ class StatusBlocklistService {
 
   // ─── Internals ───────────────────────────────────────────────────────────────
 
-  private initialProcessBlocklist(blocklistId: number, blocklistName: string): ProcessBlocklist {
-    return {
+  private initialProcessBlocklist(
+    blocklistId: number,
+    blocklistName: string,
+    { skipDelete }: { skipDelete?: boolean } = {},
+  ): ProcessBlocklist {
+    const result: ProcessBlocklist = {
       blocklistId,
       blocklistName,
       step: PROCESS_BLOCKLIST_STEP.FETCH,
       fetched: PROCESS_BLOCKLIST_FIELD_STATUS.RUNNING,
       parsed: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
-      deleted: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
       imported: PROCESS_BLOCKLIST_FIELD_STATUS.PENDING,
       processIps: { totalIps: 0, processedIps: 0 },
     };
+    if (!skipDelete) {
+      result.deleted = PROCESS_BLOCKLIST_FIELD_STATUS.PENDING;
+    }
+    return result;
   }
 }
 
