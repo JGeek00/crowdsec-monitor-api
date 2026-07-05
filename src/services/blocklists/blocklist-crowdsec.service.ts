@@ -116,6 +116,7 @@ class BlocklistCrowdSecService {
    */
   public async deleteBlocklistAlerts(
     blocklistName: string,
+    onTotalDecisions?: (total: number) => void,
     onAlertDeleted?: (alertId: number, decisionsCount: number, totalProcessed: number) => void,
   ): Promise<{ alertsCount: number; totalDecisions: number }> {
     log.debug(`  Deleting CrowdSec alerts for "${blocklistName}"...`);
@@ -132,6 +133,7 @@ class BlocklistCrowdSecService {
 
     log.debug(`  Found ${alerts.length} alert(s) for "${blocklistName}"`);
     const totalDecisions = alerts.reduce((sum, a) => sum + (a.decisions?.length ?? 0), 0);
+    onTotalDecisions?.(totalDecisions);
 
     if (alerts.length > 0) {
       let processedIps = 0;

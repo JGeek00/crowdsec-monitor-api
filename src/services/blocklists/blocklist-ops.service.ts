@@ -122,18 +122,19 @@ class BlocklistOpsService {
     const name = blocklist.name;
     log.debug(`Deleting blocklist "${name}" alerts from CrowdSec...`);
 
-    const { totalDecisions } = await blocklistCrowdSecService.deleteBlocklistAlerts(
+    await blocklistCrowdSecService.deleteBlocklistAlerts(
       name,
+      (totalDecisions) => {
+        if (processId && processField) {
+          statusBlocklistService.setIpsToDelete(processId, processField, totalDecisions);
+        }
+      },
       (_alertId, _decisionsCount, processedIps) => {
         if (processId && processField) {
           statusBlocklistService.setDeletedIps(processId, processField, processedIps);
         }
       },
     );
-
-    if (processId && processField) {
-      statusBlocklistService.setIpsToDelete(processId, processField, totalDecisions);
-    }
 
     await blocklistDbService.deleteBlocklistIps(blocklist);
 
