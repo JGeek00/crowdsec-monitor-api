@@ -4,7 +4,7 @@ import { defaults } from '@/config/env-defaults';
 import appDefaults from '@/constants/app-defaults';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 import { log } from '@/services/log.service';
-import { AsyncWriteLock } from '../../helpers/blocklist-sync-lock';
+import { AsyncWriteLock } from '@/helpers/blocklists/blocklist-sync-lock';
 
 const lock = new AsyncWriteLock();
 

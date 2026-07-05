@@ -83,7 +83,7 @@ export async function toggleBlocklist(req: Request<PostToggleBlocklistParams, Re
 
     if (enabled) {
       processId = statusBlocklistService.createBlocklistEnableProcess(blocklist.id, blocklist.name);
-      crowdsecOp = databaseService.refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
+      crowdsecOp = databaseService.activateBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
     } else {
       const totalIps = await BlocklistIpsTable.count({ where: { [BlocklistIpsTable.col.blocklistId]: blocklist.id } });
       processId = statusBlocklistService.createBlocklistDisableProcess(totalIps, blocklist.id, blocklist.name);

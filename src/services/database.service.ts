@@ -1,12 +1,12 @@
 import { BlocklistsTable } from '@/models';
 import { alertsSyncService } from '@/services/alerts-sync.service';
 import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
-import { blocklistSyncService } from '@/services/blocklists/blocklist-sync.service';
+
 import { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 
 /**
- * Facade that delegates to AlertsSyncService and BlocklistSyncService.
+ * Facade that delegates to AlertsSyncService and BlocklistRefreshService.
  * Preserves the existing public API so all callers remain unchanged.
  */
 class DatabaseService {
@@ -31,12 +31,12 @@ class DatabaseService {
     return alertsSyncService.syncAll();
   }
 
-  async refreshBlocklist(
+  async activateBlocklist(
     blocklistsTableEntry: BlocklistsTable,
     processId?: string,
     processField?: ProcessFieldBlocklist,
   ) {
-    return blocklistOpsService.refreshBlocklist(blocklistsTableEntry, undefined, processId, processField);
+    return blocklistOpsService.activateBlocklist(blocklistsTableEntry, undefined, processId, processField);
   }
 
   async deleteBlocklistAlerts(
@@ -47,8 +47,8 @@ class DatabaseService {
     return blocklistOpsService.deleteBlocklistAlerts(blocklistsTableEntry, processId, processField);
   }
 
-  async syncBlocklists(targetBlocklist?: BlocklistsTable) {
-    return blocklistSyncService.syncBlocklists(targetBlocklist);
+  async refreshBlocklists(targetBlocklist?: BlocklistsTable) {
+    return blocklistOpsService.refreshBlocklists(targetBlocklist);
   }
 
   async syncCsBlocklists() {

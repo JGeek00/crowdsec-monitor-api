@@ -141,7 +141,7 @@ const startServer = async (): Promise<void> => {
           log.warn('Blocklists sync skipped: a refresh is already in progress');
           return;
         }
-        await databaseService.syncBlocklists();
+        await databaseService.refreshBlocklists();
       },
       { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true },
     );

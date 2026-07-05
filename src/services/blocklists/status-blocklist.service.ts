@@ -1,3 +1,4 @@
+import type { BlocklistRefreshReporter } from '@/helpers/blocklists/blocklists-refresh-pipeline';
 import type {
   Process,
   ProcessBlocklist,
@@ -332,3 +333,60 @@ class StatusBlocklistService {
 }
 
 export const statusBlocklistService = new StatusBlocklistService(statusService);
+
+// ─── Refresh process reporters ─────────────────────────────────────────────────
+
+export class SingleRefreshReporter implements BlocklistRefreshReporter {
+  constructor(
+    private readonly processId: string,
+    private readonly field: ProcessFieldBlocklist = PROCESS_FIELD_BLOCKLIST.SINGLE_REFRESH,
+  ) {}
+
+  onStep(step: ProcessBlocklistRefreshStep, status: ProcessBlocklistStepStatus): void {
+    if (step === 'fetch' && status === PROCESS_BLOCKLIST_STEP_STATUS.SUCCESSFUL) {
+      statusBlocklistService.markFetched(this.processId, this.field);
+    } else if (step === 'delete' && status === PROCESS_BLOCKLIST_STEP_STATUS.SUCCESSFUL) {
+      statusBlocklistService.markDeleted(this.processId, this.field);
+    }
+  }
+
+  onParsed(totalIps: number): void {
+    statusBlocklistService.markParsed(this.processId, this.field, totalIps);
+  }
+
+  onImportProgress(chunkSize: number): void {
+    statusBlocklistService.addImportedIps(this.processId, this.field, chunkSize);
+  }
+
+  markComplete(): void {
+    statusBlocklistService.markBlocklistOpComplete(this.processId, this.field);
+  }
+}
+
+export class BulkRefreshReporter implements BlocklistRefreshReporter {
+  private failedStep: ProcessBlocklistRefreshStep | null = null;
+
+  constructor(
+    private readonly processId: string,
+    private readonly blocklistIndex: number,
+  ) {}
+
+  onStep(step: ProcessBlocklistRefreshStep, status: ProcessBlocklistStepStatus): void {
+    statusBlocklistService.setBlocklistStepStatus(this.processId, this.blocklistIndex, step, status);
+    if (status === PROCESS_BLOCKLIST_STEP_STATUS.FAILED) {
+      this.failedStep = step;
+    }
+  }
+
+  onParsed(): void {}
+
+  onImportProgress(): void {}
+
+  getFailedStep(): ProcessBlocklistRefreshStep | null {
+    return this.failedStep;
+  }
+
+  recordSuccess(pushed: number): void {
+    statusBlocklistService.addBlocklistIps(this.processId, pushed);
+  }
+}

@@ -5,7 +5,7 @@ import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 
 /**
- * Accepts a blocklist ID, validates guards, and kicks off an async full refresh via `syncBlocklists`.
+ * Accepts a blocklist ID, validates guards, and kicks off an async full refresh via `refreshBlocklists`.
  */
 type Res = ResponseWithError<{ message: string }>;
 export async function refreshSingleBlocklist(
@@ -42,7 +42,7 @@ export async function refreshSingleBlocklist(
 
     res.status(202).json({ message: 'Blocklist refresh started' });
 
-    databaseService.syncBlocklists(blocklist).catch((err) => {
+    databaseService.refreshBlocklists(blocklist).catch((err) => {
       log.error(`Error refreshing blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
     });
   } catch (err) {

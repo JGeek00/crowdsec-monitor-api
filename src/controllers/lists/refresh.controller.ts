@@ -8,7 +8,7 @@ import { errorResponse } from '@/utils/error-response';
  * Trigger a manual blocklist & allowlist refresh.
  * POST /api/v1/lists/refresh
  *
- * Checks that no other blocklist process is running, then launches syncBlocklists
+ * Checks that no other blocklist process is running, then launches refreshBlocklists
  * in the background. Returns immediately without waiting for completion.
  */
 type Res = ResponseWithError<{ message: string }>;
@@ -23,7 +23,7 @@ export async function refreshLists(_req: Request<object, Res>, res: Response<Res
       return;
     }
 
-    databaseService.syncBlocklists().catch((err) => {
+    databaseService.refreshBlocklists().catch((err) => {
       log.error('Background blocklist refresh failed:', err);
     });
 

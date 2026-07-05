@@ -14,15 +14,7 @@ export const PROCESS_BLOCKLIST_STEP = {
   IMPORT: 'import',
 } as const;
 export type ProcessBlocklistStep = (typeof PROCESS_BLOCKLIST_STEP)[keyof typeof PROCESS_BLOCKLIST_STEP];
-
-export const PROCESS_BLOCKLIST_REFRESH_STEP = {
-  FETCH: 'fetch',
-  PARSE: 'parse',
-  DELETE: 'delete',
-  IMPORT: 'import',
-} as const;
-export type ProcessBlocklistRefreshStep =
-  (typeof PROCESS_BLOCKLIST_REFRESH_STEP)[keyof typeof PROCESS_BLOCKLIST_REFRESH_STEP];
+export type ProcessBlocklistRefreshStep = ProcessBlocklistStep;
 
 export const PROCESS_BLOCKLIST_STEP_STATUS = {
   PENDING: 'pending',
@@ -103,10 +95,4 @@ export interface Process {
   blocklistDisable?: ProcessBlocklistIps;
   blocklistDelete?: ProcessBlocklistIps;
   blocklistRefresh?: ProcessBlocklistRefresh;
-}
-
-export interface SyncOneCallbacks {
-  onStep(step: ProcessBlocklistRefreshStep, status: ProcessBlocklistStepStatus): void;
-  onParsed(totalIps: number): void;
-  onImportProgress(chunkSize: number): void;
 }

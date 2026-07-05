@@ -74,12 +74,12 @@ export async function createBlocklist(req: Request<object, Res, PostBlocklistBod
     // Trigger immediate fetch & CrowdSec push in the background
     const processId = statusBlocklistService.createBlocklistImportProcess(blocklist.id, blocklist.name);
     databaseService
-      .refreshBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
+      .activateBlocklist(blocklist, processId, PROCESS_FIELD_BLOCKLIST.IMPORT)
       .then(() => statusBlocklistService.completeProcess(processId, true))
       .catch((err) => {
         statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
         log.error(
-          `Error during initial refresh of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`,
+          `Error during initial activation of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`,
         );
       });
   } catch (err) {

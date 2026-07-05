@@ -14,12 +14,12 @@ import {
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
+import { DB_SORTING } from '@/types/database.types';
 import {
+  BLOCKLISTS_IPS_INCLUDE_OPTION,
   BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE,
   BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE,
-  BLOCKLISTS_IPS_INCLUDE_OPTION,
-} from '@/helpers/blocklists.helper';
-import { DB_SORTING } from '@/types/database.types';
+} from '@/helpers/blocklists/blocklists-db-queries';
 
 /**
  * Get all blocklists (api-managed first, then cs-managed).
