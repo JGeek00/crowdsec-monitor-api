@@ -199,7 +199,8 @@ export class CrowdSecBaseClient {
       if (axiosError.response) {
         log.error(`Error ${action}: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
       } else if (axiosError.request) {
-        log.error(`No response received when ${action}`);
+        const code = axiosError.code || 'unknown';
+        log.error(`No response received when ${action}: ${code} (${axiosError.message})`);
       } else {
         log.error(`Error setting up request when ${action}: ${axiosError.message}`);
       }
