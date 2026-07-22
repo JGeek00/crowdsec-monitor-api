@@ -34,7 +34,8 @@ export async function getDecisionByIp(req: Request<GetDecisionByIpParams, Res>, 
     });
     const plainRows = rows.map((r) => r.toJSON() as Decision & { alert?: Alert<UnparsedMetaData> });
 
-    const groups = groupDecisionsByIp(plainRows, undefined, true);
+    const onlyActive = String(req.query.only_active) === 'true';
+    const groups = groupDecisionsByIp(plainRows, onlyActive || undefined, true);
     const group = groups[0];
     if (!group) {
       res.status(404).json(errorResponse('Not found', `No decisions for IP ${ip}`));
