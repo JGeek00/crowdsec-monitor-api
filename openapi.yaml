@@ -600,6 +600,142 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /decisions/by-ip:
+    get:
+      tags:
+        - Decisions
+      summary: List decisions grouped by IP
+      operationId: listDecisionsByIp
+      description: |
+        Retrieve all decisions grouped by source IP address, with filtering and pagination.
+        By default returns groups with counts only. Use `include_decisions=true` to include
+        full decision objects with alert details.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Unpaged'
+        - name: include_decisions
+          in: query
+          description: When true, includes full decision objects with alert detail in each group
+          schema:
+            type: boolean
+            default: false
+        - name: only_active
+          in: query
+          description: Filter only active decisions (expiration date is in the future)
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          description: Filter by decision type
+          schema:
+            type: string
+            enum: [ban, captcha, throttle, allow]
+        - name: scope
+          in: query
+          description: Filter by scope
+          schema:
+            type: string
+            example: Ip
+        - name: value
+          in: query
+          description: Filter by value (IP address, range, etc.)
+          schema:
+            type: string
+        - name: simulated
+          in: query
+          description: Filter by simulated status
+          schema:
+            type: boolean
+        - name: scenario
+          in: query
+          description: Filter by scenario name (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+        - name: ip_address
+          in: query
+          description: Filter by IP address (accepts multiple IPv4/IPv6 addresses)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+        - name: country
+          in: query
+          description: Filter by country from related alert (2-letter ISO code, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+        - name: ip_owner
+          in: query
+          description: Filter by IP owner from related alert (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+      responses:
+        '200':
+          description: List of decision groups by IP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionsByIpListResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /decisions/by-ip/{ip}:
+    get:
+      tags:
+        - Decisions
+      summary: Get decisions for a specific IP
+      operationId: getDecisionByIp
+      description: |
+        Retrieve decision details for a specific IP address, including the full list of
+        decisions with associated alert information (parsed meta values).
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          description: IPv4 or IPv6 address
+          schema:
+            type: string
+          example: 192.168.1.100
+        - name: only_active
+          in: query
+          description: When true, returns only active (non-expired) decisions
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Decision details for the IP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionsByIpDetailResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: No decisions found for this IP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /allowlists:
     get:
       tags:
@@ -2041,6 +2177,170 @@ components:
               count:
                 type: integer
                 example: 70
+
+    DecisionGroup:
+      type: object
+      description: A group of decisions for a single source IP address
+      properties:
+        ip:
+          type: string
+          description: Source IP address
+          example: 192.168.1.100
+        country:
+          type: string
+          description: 2-letter ISO country code
+          example: US
+        owner:
+          type: string
+          description: AS/ISP name
+          example: ISP Name
+        as_number:
+          type: string
+          description: AS number
+          example: "12345"
+        latitude:
+          type: number
+          description: Approximate latitude
+          example: 40.7128
+        longitude:
+          type: number
+          description: Approximate longitude
+          example: -74.0060
+        range:
+          type: string
+          description: IP range (CIDR)
+          example: 192.168.1.0/24
+        active_decisions:
+          type: integer
+          description: Number of non-expired decisions for this IP
+          example: 2
+        total_decisions:
+          type: integer
+          description: Total number of decisions for this IP
+          example: 3
+        decisions:
+          type: array
+          description: Present only when include_decisions=true. Full decision objects with alert detail
+          items:
+            $ref: '#/components/schemas/Decision'
+
+    DecisionsByIpFiltering:
+      type: object
+      description: Available filtering options for decisions by IP
+      properties:
+        countries:
+          type: array
+          description: Unique country codes available
+          items:
+            type: string
+          example: ["CN", "ES", "RU", "US"]
+        ipOwners:
+          type: array
+          description: Unique IP owners/organizations available
+          items:
+            type: string
+          example: ["Amazon.com, Inc.", "Google LLC", "MICROSOFT-CORP-MSN-AS-BLOCK"]
+
+    DecisionsByIpListResponse:
+      type: object
+      description: Response for GET /decisions/by-ip (paginated)
+      properties:
+        filtering:
+          $ref: '#/components/schemas/DecisionsByIpFiltering'
+        groups:
+          type: array
+          description: Groups of decisions by source IP
+          items:
+            $ref: '#/components/schemas/DecisionGroup'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              description: Current page number
+            amount:
+              type: integer
+              description: Number of groups in current response
+            total:
+              type: integer
+              description: Total number of groups available
+        total:
+          type: integer
+          description: Total number of groups (present when unpaged=true)
+
+    DecisionSummary:
+      type: object
+      description: A decision with associated alert details (parsed meta)
+      allOf:
+        - $ref: '#/components/schemas/Decision'
+        - type: object
+          properties:
+            alert:
+              type: object
+              properties:
+                id:
+                  type: integer
+                uuid:
+                  type: string
+                  format: uuid
+                scenario:
+                  type: string
+                scenario_version:
+                  type: string
+                scenario_hash:
+                  type: string
+                message:
+                  type: string
+                capacity:
+                  type: integer
+                leakspeed:
+                  type: string
+                simulated:
+                  type: boolean
+                remediation:
+                  type: boolean
+                events_count:
+                  type: integer
+                machine_id:
+                  type: string
+                labels:
+                  type: array
+                  items:
+                    type: string
+                meta:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      value:
+                        type: array
+                        items:
+                          type: string
+                events:
+                  type: array
+                crowdsec_created_at:
+                  type: string
+                  format: date-time
+                start_at:
+                  type: string
+                  format: date-time
+                stop_at:
+                  type: string
+                  format: date-time
+
+    DecisionsByIpDetailResponse:
+      type: object
+      description: Response for GET /decisions/by-ip/{ip}
+      allOf:
+        - $ref: '#/components/schemas/DecisionGroup'
+        - type: object
+          properties:
+            decisions:
+              type: array
+              items:
+                $ref: '#/components/schemas/DecisionSummary'
 
     ComprehensiveStatistics:
       type: object

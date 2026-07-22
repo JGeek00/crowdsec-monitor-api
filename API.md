@@ -831,6 +831,250 @@ curl -X DELETE "http://localhost:3000/api/v1/decisions/456"
 
 ---
 
+### GET `/api/v1/decisions/by-ip`
+
+Retrieve all decisions grouped by source IP address, with filtering and pagination.
+
+By default, returns groups with counts only. Use `?include_decisions=true` to include full decision objects with alert details.
+
+**Query Parameters:**
+
+Inherits all filters from [GET `/api/v1/decisions`](#get-apiv1decisions) (limit, offset, unpaged, type, scope, value, simulated, scenario, ip_address, country, ip_owner, only_active), plus:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `include_decisions` | boolean | No | false | When `true`, includes full decision objects with alert detail in each group |
+
+**Example Request:**
+```bash
+# Groups with counts only (default)
+curl "http://localhost:3000/api/v1/decisions/by-ip"
+
+# Groups with full decision details
+curl "http://localhost:3000/api/v1/decisions/by-ip?include_decisions=true"
+
+# With filtering
+curl "http://localhost:3000/api/v1/decisions/by-ip?type=ban&only_active=true&limit=20"
+```
+
+**Example Response (paginated):**
+```json
+{
+  "filtering": {
+    "countries": ["CN", "ES", "RU", "US"],
+    "ipOwners": [
+      "Amazon.com, Inc.",
+      "DigitalOcean, LLC",
+      "Google LLC"
+    ]
+  },
+  "groups": [
+    {
+      "ip": "192.168.1.100",
+      "country": "US",
+      "owner": "ISP Name",
+      "as_number": "12345",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "range": "192.168.1.0/24",
+      "active_decisions": 2,
+      "total_decisions": 3
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "amount": 20,
+    "total": 50
+  }
+}
+```
+
+**Example Response with `include_decisions=true`:**
+```json
+{
+  "filtering": {
+    "countries": ["CN", "ES", "RU", "US"],
+    "ipOwners": [
+      "Amazon.com, Inc.",
+      "DigitalOcean, LLC"
+    ]
+  },
+  "groups": [
+    {
+      "ip": "192.168.1.100",
+      "country": "US",
+      "owner": "ISP Name",
+      "as_number": "12345",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "range": "192.168.1.0/24",
+      "active_decisions": 2,
+      "total_decisions": 3,
+      "decisions": [
+        {
+          "id": 98765,
+          "alert_id": 1,
+          "origin": "cscli",
+          "type": "ban",
+          "scope": "Ip",
+          "value": "192.168.1.100",
+          "expiration": "2026-02-13T14:25:30.123Z",
+          "scenario": "crowdsecurity/ssh-bf",
+          "simulated": false,
+          "crowdsec_created_at": "2026-02-13T10:20:30.123Z",
+          "alert": {
+            "id": 1,
+            "uuid": "abc-123-def",
+            "scenario": "crowdsecurity/ssh-bf",
+            "scenario_version": "0.1",
+            "scenario_hash": "abc123",
+            "message": "Ip 192.168.1.100 performed ssh-bf attack",
+            "capacity": 5,
+            "leakspeed": "10s",
+            "simulated": false,
+            "remediation": true,
+            "events_count": 6,
+            "machine_id": "machine-123",
+            "labels": ["manual"],
+            "meta": [
+              {
+                "key": "http_status",
+                "value": ["308", "200"]
+              }
+            ],
+            "events": [],
+            "crowdsec_created_at": "2026-02-13T10:20:30.123Z",
+            "start_at": "2026-02-13T10:15:00.000Z",
+            "stop_at": "2026-02-13T10:20:30.000Z"
+          }
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "amount": 20,
+    "total": 50
+  }
+}
+```
+
+**Response Fields (per group):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ip` | string | Source IP address |
+| `country` | string | 2-letter ISO country code |
+| `owner` | string | AS/ISP name |
+| `as_number` | string | AS number |
+| `latitude` | number | Approximate latitude |
+| `longitude` | number | Approximate longitude |
+| `range` | string | IP range (CIDR) |
+| `active_decisions` | number | Number of non-expired decisions for this IP |
+| `total_decisions` | number | Total number of decisions for this IP |
+| `decisions` | array | Present only when `include_decisions=true`. Full decision objects with alert detail |
+
+**Validation:**
+- All parameters share the same validation as `GET /api/v1/decisions`
+- `offset` cannot be greater than total items
+
+---
+
+### GET `/api/v1/decisions/by-ip/:ip`
+
+Retrieve decision details for a specific IP address, including the full list of decisions with alert information.
+
+**Path Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ip` | string | Yes | IPv4 or IPv6 address |
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `only_active` | boolean | No | false | When `true`, returns only active (non-expired) decisions |
+
+**Example Request:**
+```bash
+# All decisions for an IP
+curl "http://localhost:3000/api/v1/decisions/by-ip/192.168.1.100"
+
+# Only active decisions
+curl "http://localhost:3000/api/v1/decisions/by-ip/192.168.1.100?only_active=true"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "ip": "192.168.1.100",
+  "country": "US",
+  "owner": "ISP Name",
+  "as_number": "12345",
+  "latitude": 40.7128,
+  "longitude": -74.0060,
+  "range": "192.168.1.0/24",
+  "active_decisions": 2,
+  "total_decisions": 3,
+  "decisions": [
+    {
+      "id": 98765,
+      "alert_id": 1,
+      "origin": "cscli",
+      "type": "ban",
+      "scope": "Ip",
+      "value": "192.168.1.100",
+      "expiration": "2026-02-13T14:25:30.123Z",
+      "scenario": "crowdsecurity/ssh-bf",
+      "simulated": false,
+      "crowdsec_created_at": "2026-02-13T10:20:30.123Z",
+      "alert": {
+        "id": 1,
+        "uuid": "abc-123-def",
+        "scenario": "crowdsecurity/ssh-bf",
+        "scenario_version": "0.1",
+        "message": "Ip 192.168.1.100 performed ssh-bf attack",
+        "capacity": 5,
+        "leakspeed": "10s",
+        "simulated": false,
+        "remediation": true,
+        "events_count": 6,
+        "machine_id": "machine-123",
+        "labels": ["manual"],
+        "meta": [
+          {
+            "key": "http_status",
+            "value": ["308", "200"]
+          }
+        ],
+        "crowdsec_created_at": "2026-02-13T10:20:30.123Z",
+        "start_at": "2026-02-13T10:15:00.000Z",
+        "stop_at": "2026-02-13T10:20:30.000Z"
+      }
+    }
+  ]
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "error": "Not found",
+  "message": "No decisions for IP 192.168.1.100"
+}
+```
+
+**Validation:**
+- The `ip` parameter must be a valid IPv4 or IPv6 address
+- `only_active` is optional boolean
+
+**Notes:**
+- Always returns full decision objects with associated alert details (parsed meta values)
+- The `source` and `alert.source` fields are stripped from individual decision objects (already available at group level)
+
+---
+
 ## Allowlists Endpoints
 
 ### GET `/api/v1/allowlists`
