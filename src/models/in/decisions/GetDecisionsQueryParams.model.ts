@@ -11,5 +11,4 @@ export interface GetDecisionsQueryParams {
   country?: string;
   ip_owner?: string;
   only_active?: boolean;
-  group?: 'ip' | 'ip_with_decisions';
 }

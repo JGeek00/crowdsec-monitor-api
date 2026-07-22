@@ -3,6 +3,7 @@ import {
   getAllDecisions,
   getDecisionById,
   getDecisionByIp,
+  listDecisionsByIp,
   getDecisionStats,
   createDecision,
   deleteDecision,
@@ -37,6 +38,13 @@ router.post('/', createDecisionValidators, handleValidationErrors, createDecisio
  * @access  Authentication (configurable)
  */
 router.get('/stats', getDecisionStats);
+
+/**
+ * @route   GET /api/decisions/by-ip
+ * @desc    Get all decisions grouped by IP (use ?include_decisions=true for full decisions)
+ * @access  Authentication (configurable)
+ */
+router.get('/by-ip', [...paginationValidators, ...decisionQueryValidators], handleValidationErrors, listDecisionsByIp);
 
 /**
  * @route   GET /api/decisions/by-ip/:ip
