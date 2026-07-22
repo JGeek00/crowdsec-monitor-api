@@ -5,6 +5,7 @@ export * from '@/models/in/decisions/GetDecisionsQueryParams.model';
 export * from '@/models/in/decisions/DeleteDecisionParams.model';
 export * from '@/models/in/decisions/GetDecisionParams.model';
 export * from '@/models/in/decisions/PostDecisionBody.model';
+export * from '@/models/in/decisions/GetDecisionByIpParams.model';
 export * from '@/models/in/blocklists/PostBlocklistBody.model';
 export * from '@/models/in/blocklists/DeleteBlocklistParams.model';
 export * from '@/models/in/blocklists/GetBlocklistsQueryParams.model';

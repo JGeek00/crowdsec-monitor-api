@@ -145,8 +145,5 @@ export const decisionQueryValidators: ValidationChain[] = [
 
   query('only_active').optional().isBoolean().withMessage('only_active must be a boolean (true or false)').toBoolean(),
 
-  query('group')
-    .optional()
-    .isIn(['ip', 'ip_with_decisions'])
-    .withMessage('group must be "ip" or "ip_with_decisions"'),
+  query('group').optional().isIn(['ip', 'ip_with_decisions']).withMessage('group must be "ip" or "ip_with_decisions"'),
 ];

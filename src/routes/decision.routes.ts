@@ -1,6 +1,18 @@
 import { Router } from 'express';
-import { getAllDecisions, getDecisionById, getDecisionStats, createDecision, deleteDecision } from '@/controllers';
-import { paginationValidators, decisionQueryValidators, createDecisionValidators } from '@/validators';
+import {
+  getAllDecisions,
+  getDecisionById,
+  getDecisionByIp,
+  getDecisionStats,
+  createDecision,
+  deleteDecision,
+} from '@/controllers';
+import {
+  paginationValidators,
+  decisionQueryValidators,
+  createDecisionValidators,
+  ipParamValidators,
+} from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
 
 const router: Router = Router();
@@ -25,6 +37,13 @@ router.post('/', createDecisionValidators, handleValidationErrors, createDecisio
  * @access  Authentication (configurable)
  */
 router.get('/stats', getDecisionStats);
+
+/**
+ * @route   GET /api/decisions/by-ip/:ip
+ * @desc    Get decision detail by IP address (common info + decisions)
+ * @access  Authentication (configurable)
+ */
+router.get('/by-ip/:ip', ipParamValidators, handleValidationErrors, getDecisionByIp);
 
 /**
  * @route   GET /api/decisions/:id

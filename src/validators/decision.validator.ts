@@ -1,4 +1,5 @@
-import { body, ValidationChain } from 'express-validator';
+import { body, param, ValidationChain } from 'express-validator';
+import { ipv4Regex, ipv6Regex } from '@/constants/regexps';
 import { DECISION_TYPE } from '@/models';
 
 /**
@@ -34,4 +35,13 @@ export const createDecisionValidators: ValidationChain[] = [
     .withMessage('type is required')
     .isIn(Object.values(DECISION_TYPE))
     .withMessage(`type must be one of: ${Object.values(DECISION_TYPE).join(', ')}`),
+];
+
+/**
+ * Validation rules for the IP parameter in /decisions/by-ip/:ip
+ */
+export const ipParamValidators: ValidationChain[] = [
+  param('ip')
+    .custom((value) => ipv4Regex.test(value) || ipv6Regex.test(value))
+    .withMessage('ip must be a valid IPv4 or IPv6 address'),
 ];

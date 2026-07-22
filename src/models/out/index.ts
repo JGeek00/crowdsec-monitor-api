@@ -7,6 +7,7 @@ export * from '@/models/out/decisions/DeleteDecisionResponse.model';
 export * from '@/models/out/decisions/GetDecisionResponse.model';
 export * from '@/models/out/decisions/GetDecisionsStatsResponse.model';
 export * from '@/models/out/decisions/PostDecisionResponse.model';
+export * from '@/models/out/decisions/GetDecisionByIpResponse.model';
 export * from '@/models/out/blocklists/PostBlocklistResponse.model';
 export * from '@/models/out/blocklists/DeleteBlocklistResponse.model';
 export * from '@/models/out/blocklists/GetBlocklistsResponse.model';
