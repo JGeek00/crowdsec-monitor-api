@@ -5,6 +5,7 @@ import { errorResponse } from '@/utils/error-response';
 import {
   buildDecisionsWhere,
   buildPaginatedResponse,
+  fetchFilteringOptions,
   PaginationError,
   DECISIONS_QUERY,
 } from '@/helpers/decisions/list.helpers';
@@ -23,7 +24,10 @@ export async function getAllDecisions(
 
     const where = buildDecisionsWhere(req.query, false);
 
-    const decisions = await DecisionsTable.findAll({ where, ...DECISIONS_QUERY });
+    const [filtering, decisions] = await Promise.all([
+      fetchFilteringOptions(),
+      DecisionsTable.findAll({ where, ...DECISIONS_QUERY }),
+    ]);
 
     const { items, pagination, total } = buildPaginatedResponse(
       decisions,
@@ -32,7 +36,7 @@ export async function getAllDecisions(
       unpaged!,
     );
 
-    res.json({ items, pagination, total } as GetDecisionsResponse);
+    res.json({ filtering, items, pagination, total } as GetDecisionsResponse);
   } catch (error) {
     if (signal.aborted) return;
     if (error instanceof PaginationError) {

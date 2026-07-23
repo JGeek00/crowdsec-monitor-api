@@ -1,7 +1,13 @@
 import { Decision, Pagination } from '@/models';
 
+export interface DecisionsFiltering {
+  countries: string[];
+  ipOwners: string[];
+}
+
 export interface GetDecisionsResponse {
-  items?: Decision[];
+  filtering: DecisionsFiltering;
+  items: Decision[];
   pagination?: Pagination;
   total?: number;
 }
