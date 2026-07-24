@@ -7,11 +7,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@tests': path.resolve(__dirname, 'tests'),
     },
   },
   test: {
     environment: 'node',
-    include: ['src/**/__tests__/**/*.test.ts'],
+    include: ['tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],
     coverage: {
       provider: 'v8',
@@ -27,8 +28,8 @@ export default defineConfig({
         'src/models/entities/**',
         'src/migrations/**',
         'src/server.ts',
-        'src/__tests__/lapi-mock.ts',
-        'src/__tests__/openapi-validator.ts',
+        'tests/lapi-mock.ts',
+        'tests/openapi-validator.ts',
       ],
       thresholds: {
         lines: 80,

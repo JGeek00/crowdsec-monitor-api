@@ -1,6 +1,8 @@
 allowBuilds:
   esbuild: true
   sqlite3: true
+onlyBuiltDependencies:
+  - esbuild
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
 saveExact: true
