@@ -18,7 +18,7 @@ import packageJson from '../package.json';
 /**
  * Validate required environment variables
  */
-const validateEnvironment = (): void => {
+export const validateEnvironment = (): void => {
   const requiredVars = [
     { name: 'CROWDSEC_LAPI_URL', value: config.crowdsec.lapiUrl },
     { name: 'CROWDSEC_USER', value: config.crowdsec.user },
@@ -49,13 +49,13 @@ const validateEnvironment = (): void => {
   }
 };
 
-const formatInterval = (seconds: number): string => {
+export const formatInterval = (seconds: number): string => {
   if (seconds >= 3600 && seconds % 3600 === 0) return `${seconds / 3600}h`;
   if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60}m`;
   return `${seconds}s`;
 };
 
-const step = (label: string, status: '✓' | '⚠' | '✗', detail?: string): void => {
+export const step = (label: string, status: '✓' | '⚠' | '✗', detail?: string): void => {
   const paddedLabel = label.padEnd(36, '.');
   const suffix = detail ? ` (${detail})` : '';
   log.info(`  ${paddedLabel} ${status}${suffix}`);

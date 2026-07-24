@@ -1,6 +1,7 @@
-minimumReleaseAge: 1440
 allowBuilds:
+  esbuild: true
   sqlite3: true
-saveExact: true
 blockExoticSubdeps: true
+minimumReleaseAge: 1440
+saveExact: true
 trustPolicy: "no-downgrade"
