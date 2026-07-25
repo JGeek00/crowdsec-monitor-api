@@ -40,6 +40,22 @@ const obfuscationOptions = {
 };
 
 /**
+ * Check if a file path is a test file
+ */
+function isTestFile(filePath) {
+  const basename = path.basename(filePath);
+  return basename.endsWith('.test.js') || basename.endsWith('.spec.js');
+}
+
+/**
+ * Check if a file is inside a test directory
+ */
+function isInTestDir(filePath) {
+  const parts = filePath.split(path.sep);
+  return parts.some(p => p === '__tests__' || p === 'tests');
+}
+
+/**
  * Recursively get all .js files in a directory
  */
 function getAllJsFiles(dir, fileList = []) {
@@ -50,8 +66,10 @@ function getAllJsFiles(dir, fileList = []) {
     const stat = fs.statSync(filePath);
     
     if (stat.isDirectory()) {
+      // Skip test directories entirely
+      if (file === '__tests__' || file === 'tests') return;
       getAllJsFiles(filePath, fileList);
-    } else if (file.endsWith('.js')) {
+    } else if (file.endsWith('.js') && !isTestFile(filePath)) {
       fileList.push(filePath);
     }
   });
