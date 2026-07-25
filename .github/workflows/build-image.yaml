@@ -108,7 +108,7 @@ jobs:
       - name: Install dependencies
         run: |
           corepack enable
-          corepack prepare pnpm@10.33.0 --activate
+          corepack prepare pnpm@11.17.0 --activate
           pnpm install --frozen-lockfile
 
       - name: Dependency security audit
@@ -145,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: |
           corepack enable
-          corepack prepare pnpm@10.33.0 --activate
+          corepack prepare pnpm@11.17.0 --activate
           pnpm install --frozen-lockfile
 
       - name: Production build

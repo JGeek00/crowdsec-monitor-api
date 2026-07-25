@@ -3,6 +3,8 @@
 #################
 FROM node:24-alpine AS builder
 
+ARG PNPM_VERSION=11.17.0
+
 WORKDIR /app
 
 # Copy package files
@@ -10,9 +12,11 @@ COPY package*.json ./
 COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 COPY tsconfig.json ./
+COPY tsconfig.app.json ./
+COPY tsconfig.base.json ./
 
 # Install pnpm
-RUN npm install -g pnpm@latest-10
+RUN npm install -g pnpm@${PNPM_VERSION}
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -34,7 +38,7 @@ FROM node:24-alpine
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm@latest-10
+RUN npm install -g pnpm@${PNPM_VERSION}
 
 # Install production dependencies only
 COPY package*.json ./
