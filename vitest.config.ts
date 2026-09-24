@@ -28,6 +28,14 @@ export default defineConfig({
         'src/models/entities/**',
         'src/migrations/**',
         'src/server.ts',
+        // Covered by the integration/e2e suites (api-tests spec, FR-007):
+        // excluded from the unit-coverage scope because they require a DB/app bootstrap.
+        'src/controllers/**', // tests/controllers
+        'src/routes/**', // tests/routes
+        'src/sockets/**', // tests/sockets + tests/e2e-*
+        'src/middlewares/**', // tests/middlewares
+        'src/helpers/**', // exercised via tests/controllers + tests/routes
+        'src/app.ts', // tests/app.test.ts
         'tests/lapi-mock.ts',
         'tests/openapi-validator.ts',
       ],
