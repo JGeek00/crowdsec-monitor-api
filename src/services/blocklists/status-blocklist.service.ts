@@ -17,6 +17,7 @@ import {
   PROCESS_FIELD_BLOCKLIST,
 } from '@/types/process.types';
 import { config } from '@/config';
+import { toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
 import { type StatusService, statusService } from '@/services/status.service';
 
 const PROCESS_RETENTION_MS = config.processes.finishedRetentionMs;
@@ -49,7 +50,7 @@ class StatusBlocklistService {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
-      beginDatetime: new Date().toISOString(),
+      beginDatetime: toCanonicalTimestampFromDate(new Date()),
       endDatetime: null,
       successful: null,
       error: null,
@@ -64,7 +65,7 @@ class StatusBlocklistService {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
-      beginDatetime: new Date().toISOString(),
+      beginDatetime: toCanonicalTimestampFromDate(new Date()),
       endDatetime: null,
       successful: null,
       error: null,
@@ -79,7 +80,7 @@ class StatusBlocklistService {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
-      beginDatetime: new Date().toISOString(),
+      beginDatetime: toCanonicalTimestampFromDate(new Date()),
       endDatetime: null,
       successful: null,
       error: null,
@@ -94,7 +95,7 @@ class StatusBlocklistService {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
-      beginDatetime: new Date().toISOString(),
+      beginDatetime: toCanonicalTimestampFromDate(new Date()),
       endDatetime: null,
       successful: null,
       error: null,
@@ -109,7 +110,7 @@ class StatusBlocklistService {
     const id = crypto.randomUUID();
     const process: Process = {
       id,
-      beginDatetime: new Date().toISOString(),
+      beginDatetime: toCanonicalTimestampFromDate(new Date()),
       endDatetime: null,
       successful: null,
       error: null,
@@ -129,7 +130,7 @@ class StatusBlocklistService {
     }));
     const process: Process = {
       id,
-      beginDatetime: new Date().toISOString(),
+      beginDatetime: toCanonicalTimestampFromDate(new Date()),
       endDatetime: null,
       successful: null,
       error: null,
@@ -256,7 +257,7 @@ class StatusBlocklistService {
   completeProcess(id: string, successful: boolean, error: string | null = null): void {
     const p = this.findProcess(id);
     if (!p) return;
-    p.endDatetime = new Date().toISOString();
+    p.endDatetime = toCanonicalTimestampFromDate(new Date());
     p.successful = successful;
     p.error = error;
     for (const field of Object.values(PROCESS_FIELD_BLOCKLIST) as ProcessFieldBlocklist[]) {

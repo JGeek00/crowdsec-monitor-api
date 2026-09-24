@@ -5,16 +5,22 @@ import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
+import { toCanonicalTimestamp } from '@/utils/timestamp-format';
 
 /**
- * Sanitize allowlist items by converting invalid expiration dates to null
+ * Sanitize allowlist items by converting invalid expiration dates to null and
+ * rendering every timestamp in the canonical format (upstream-sourced values
+ * keep the offset returned by the CrowdSec LAPI).
  */
 function sanitizeAllowlist(allowlist: CrowdSecAllowlist): CrowdSecAllowlist {
   return {
     ...allowlist,
+    created_at: toCanonicalTimestamp(allowlist.created_at) ?? allowlist.created_at,
+    updated_at: toCanonicalTimestamp(allowlist.updated_at) ?? allowlist.updated_at,
     items: allowlist.items.map((item) => ({
       ...item,
-      expiration: isValidDate(item.expiration) ? item.expiration : null,
+      created_at: toCanonicalTimestamp(item.created_at) ?? item.created_at,
+      expiration: isValidDate(item.expiration) ? toCanonicalTimestamp(item.expiration) : null,
     })),
   };
 }

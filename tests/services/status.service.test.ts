@@ -14,7 +14,7 @@ describe('StatusService', () => {
     statusService.updateLapiStatus(true, '2026-07-23T00:00:00Z');
     const snapshot = statusService.getStatusSnapshot();
     expect(snapshot.csLapi.lapiConnected).toBe(true);
-    expect(snapshot.csLapi.lastSuccessfulSync).toBe('2026-07-23T00:00:00Z');
+    expect(snapshot.csLapi.lastSuccessfulSync).toBe('2026-07-23 00:00:00 +0000 +0000');
   });
 
   it('updates bouncer status', async () => {
@@ -57,5 +57,18 @@ describe('StatusService', () => {
     statusService.notifyChange();
     await new Promise(process.nextTick);
     expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('delivers canonical timestamps in the snapshot (source of the realtime channel)', async () => {
+    const { statusService } = await import('@/services/status.service');
+    statusService.updateLapiStatus(true, null);
+    const snapshot = statusService.getStatusSnapshot();
+    expect(snapshot.csLapi.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
+  });
+
+  it('keeps lastSuccessfulSync null when never synced', async () => {
+    const { statusService } = await import('@/services/status.service');
+    statusService.updateLapiStatus(true, null);
+    expect(statusService.getStatusSnapshot().csLapi.lastSuccessfulSync).toBeNull();
   });
 });

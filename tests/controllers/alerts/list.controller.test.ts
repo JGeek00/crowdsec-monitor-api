@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeAlert } from '@tests/factories';
+import { NAMED_ABBREVIATION, NAMED_ABBREVIATION_CANONICAL } from '@tests/helpers/timestamp-fixtures';
+
+const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/;
 
 describe('getAllAlerts', () => {
   let app: TestApp;
@@ -32,8 +35,7 @@ describe('getAllAlerts', () => {
     const alerts = Array.from({ length: 5 }, (_, i) => makeAlert({ id: i + 1 }));
     await app.seedDb({ alerts });
     const res = await app.request.get('/api/v1/alerts?limit=2&offset=0');
-    expect(res.status).toBe(200);
-    expect(res.body.pagination).toBeDefined();
+    expect(res.status).toBe(200);    expect(res.body.pagination).toBeDefined();
     expect(res.body.pagination.page).toBe(1);
     expect(res.body.pagination.total).toBe(5);
     expect(res.body.pagination.amount).toBe(2);
@@ -78,5 +80,22 @@ describe('getAllAlerts', () => {
     expect(res.status).toBe(200);
     expect(res.body.pagination).toBeUndefined();
     expect(res.body.total).toBe(1);
+  });
+
+  it('returns every timestamp field in canonical format (events and date-typed fields)', async () => {
+    await app.seedDb({
+      alerts: [
+        makeAlert({
+          id: 9,
+          events: [{ timestamp: NAMED_ABBREVIATION, meta: [] }],
+        }),
+      ],
+    });
+    const res = await app.request.get('/api/v1/alerts');
+    expect(res.status).toBe(200);
+    expect(res.body.items[0].events[0].timestamp).toBe(NAMED_ABBREVIATION_CANONICAL);
+    expect(res.body.items[0].crowdsec_created_at).toMatch(CANONICAL_PATTERN);
+    expect(res.body.items[0].start_at).toMatch(CANONICAL_PATTERN);
+    expect(res.body.items[0].stop_at).toMatch(CANONICAL_PATTERN);
   });
 });

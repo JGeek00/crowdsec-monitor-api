@@ -14,6 +14,7 @@ import {
 } from '@/models';
 import { errorResponse } from '@/utils/error-response';
 import { createRequestSignal } from '@/utils/request-signal';
+import { canonicalizeFields } from '@/utils/timestamp-format';
 import { log } from '@/services/log.service';
 import { DB_SORTING } from '@/types/database.types';
 import {
@@ -63,12 +64,20 @@ export async function getBlocklistById(
       const result = csBlocklist.toJSON() as CsBlocklist & {
         type: BlocklistType;
         blocklistIps?: BlocklistIp[] | string[];
+        added_date?: Date | null;
+        last_refresh_attempt?: Date | null;
+        last_successful_refresh?: Date | null;
       };
       result.type = 'cs';
+      const canonical = canonicalizeFields(result, [
+        'added_date',
+        'last_refresh_attempt',
+        'last_successful_refresh',
+      ] as const);
       if (ips !== null) {
-        result.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
+        canonical.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
       }
-      res.status(200).json({ data: result });
+      res.status(200).json({ data: canonical });
       return;
     }
 
@@ -97,10 +106,15 @@ export async function getBlocklistById(
     };
     result.id = String(result.id) as unknown as number;
     result.type = 'api';
+    const canonicalApi = canonicalizeFields(result, [
+      'added_date',
+      'last_refresh_attempt',
+      'last_successful_refresh',
+    ] as const);
     if (ips !== null) {
-      result.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
+      canonicalApi.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
     }
-    res.status(200).json({ data: result });
+    res.status(200).json({ data: canonicalApi });
   } catch (err) {
     if (signal.aborted) return;
     log.error('Error fetching blocklist:', err);

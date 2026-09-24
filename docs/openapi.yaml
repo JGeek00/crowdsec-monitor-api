@@ -76,8 +76,8 @@ paths:
                     example: API is running
                   timestamp:
                     type: string
-                    format: date-time
-                    example: '2026-02-14T10:30:45.123Z'
+                    pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
+                    example: '2026-02-14 10:30:45 +0000 +0000'
 
   /status:
     get:
@@ -107,13 +107,13 @@ paths:
                         example: true
                       lastSuccessfulSync:
                         type: string
-                        format: date-time
+                        pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
                         nullable: true
-                        example: '2026-02-14T10:25:30.123Z'
+                        example: '2026-02-14 10:25:30 +0000 +0000'
                       timestamp:
                         type: string
-                        format: date-time
-                        example: '2026-02-14T10:30:45.123Z'
+                        pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
+                        example: '2026-02-14 10:30:45 +0000 +0000'
                   csBouncer:
                     type: object
                     properties:
@@ -161,8 +161,8 @@ paths:
                     example: Credentials are valid
                   timestamp:
                     type: string
-                    format: date-time
-                    example: '2026-02-14T10:30:45.123Z'
+                    pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
+                    example: '2026-02-14 10:30:45 +0000 +0000'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -1893,15 +1893,33 @@ components:
           type: array
           items:
             type: object
+            properties:
+              timestamp:
+                type: string
+                pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
+                nullable: true
+                description: Event timestamp in canonical format (`YYYY-MM-DD HH:MM:SS ±ZZZZ ZZZ`); null when the stored value cannot be interpreted
+              meta:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: array
+                      items:
+                        type: string
+                      description: Array of string values (always returned as array, even for single values)
         crowdsec_created_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
         start_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
         stop_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
 
     SourceInfo:
       type: object
@@ -1945,7 +1963,7 @@ components:
           type: string
         expiration:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
         scenario:
           type: string
         simulated:
@@ -1954,7 +1972,7 @@ components:
           $ref: '#/components/schemas/SourceInfo'
         crowdsec_created_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           description: Creation timestamp from CrowdSec
 
     AlertListPaginated:
@@ -2320,15 +2338,34 @@ components:
                           type: string
                 events:
                   type: array
+                  items:
+                    type: object
+                    properties:
+                      timestamp:
+                        type: string
+                        pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
+                        nullable: true
+                        description: Event timestamp in canonical format (`YYYY-MM-DD HH:MM:SS ±ZZZZ ZZZ`); null when the stored value cannot be interpreted
+                      meta:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: array
+                              items:
+                                type: string
                 crowdsec_created_at:
                   type: string
-                  format: date-time
+                  pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
                 start_at:
                   type: string
-                  format: date-time
+                  pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
                 stop_at:
                   type: string
-                  format: date-time
+                  pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
 
     DecisionsByIpDetailResponse:
       type: object
@@ -2447,14 +2484,14 @@ components:
       properties:
         created_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           description: Item creation timestamp
-          example: '2026-03-02T19:45:00.435Z'
+          example: '2026-03-02 19:45:00 +0000 +0000'
         expiration:
           type: string
-          format: date-time
-          description: Item expiration timestamp (0001-01-01T00:00:00.000Z means never expires)
-          example: '0001-01-01T00:00:00.000Z'
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
+          description: Item expiration timestamp (0001-01-01 00:00:00 +0000 +0000 means never expires)
+          example: '0001-01-01 00:00:00 +0000 +0000'
         value:
           type: string
           description: The allowlist item value (IP address, range, etc.)
@@ -2496,21 +2533,21 @@ components:
           example: true
         added_date:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           description: "Date the blocklist was added (only present for `type: api` blocklists)"
-          example: '2026-03-01T10:00:00.000Z'
+          example: '2026-03-01 10:00:00 +0000 +0000'
         last_refresh_attempt:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           nullable: true
           description: "Last refresh attempt timestamp (only present for `type: api` blocklists)"
-          example: '2026-03-08T19:52:14.000Z'
+          example: '2026-03-08 19:52:14 +0000 +0000'
         last_successful_refresh:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           nullable: true
           description: "Last successful refresh timestamp (only present for `type: api` blocklists)"
-          example: '2026-03-08T19:52:14.000Z'
+          example: '2026-03-08 19:52:14 +0000 +0000'
 
     BlocklistWithIps:
       allOf:
@@ -2577,9 +2614,9 @@ components:
       properties:
         created_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           description: Allowlist creation timestamp
-          example: '2026-03-02T19:44:58.246Z'
+          example: '2026-03-02 19:44:58 +0000 +0000'
         description:
           type: string
           description: Allowlist description
@@ -2595,9 +2632,9 @@ components:
           example: 'known_ips'
         updated_at:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           description: Last update timestamp
-          example: '2026-03-02T19:45:02.611Z'
+          example: '2026-03-02 19:45:02 +0000 +0000'
 
     ProcessBlocklistProgress:
       type: object
@@ -2665,12 +2702,12 @@ components:
           example: '3f1a2b4c-0000-0000-0000-000000000001'
         beginDatetime:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           description: Timestamp when the process started
-          example: '2026-04-08T10:00:00.000Z'
+          example: '2026-04-08 10:00:00 +0000 +0000'
         endDatetime:
           type: string
-          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$'
           nullable: true
           description: Timestamp when the process finished. Null if still running
           example: null

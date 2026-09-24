@@ -9,7 +9,10 @@ describe('checkCredentials', () => {
     const res = { json: jsonSpy } as unknown as Response;
     checkCredentials(req, res);
     expect(jsonSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'Credentials are valid', timestamp: expect.any(String) }),
+      expect.objectContaining({
+        message: 'Credentials are valid',
+        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/),
+      }),
     );
   });
 });

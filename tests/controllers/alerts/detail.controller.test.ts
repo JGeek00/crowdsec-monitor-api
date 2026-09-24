@@ -1,6 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeAlert, makeDecision } from '@tests/factories';
+import {
+  NAMED_ABBREVIATION,
+  NAMED_ABBREVIATION_CANONICAL,
+  DUPLICATED_OFFSET,
+  UNPARSEABLE,
+} from '@tests/helpers/timestamp-fixtures';
 
 describe('getAlertById', () => {
   let app: TestApp;
@@ -37,5 +43,59 @@ describe('getAlertById', () => {
     expect(res.status).toBe(200);
     expect(res.body.decisions).toBeDefined();
     expect(res.body.decisions).toHaveLength(1);
+  });
+
+  it('returns every event timestamp in canonical format, preserving original offsets', async () => {
+    await app.seedDb({
+      alerts: [
+        makeAlert({
+          id: 1,
+          events_count: 3,
+          events: [
+            { timestamp: NAMED_ABBREVIATION, meta: [] },
+            { timestamp: DUPLICATED_OFFSET, meta: [] },
+            { timestamp: UNPARSEABLE, meta: [] },
+          ],
+        }),
+      ],
+    });
+    const res = await app.request.get('/api/v1/alerts/1');
+    expect(res.status).toBe(200);
+    expect(res.body.events).toHaveLength(3);
+    expect(res.body.events[0].timestamp).toBe(NAMED_ABBREVIATION_CANONICAL);
+    expect(res.body.events[1].timestamp).toBe(DUPLICATED_OFFSET);
+    expect(res.body.events[2].timestamp).toBeNull();
+  });
+
+  it('renders alert Date-typed fields in canonical format', async () => {
+    await app.seedDb({ alerts: [makeAlert({ id: 2 })] });
+    const res = await app.request.get('/api/v1/alerts/2');
+    expect(res.status).toBe(200);
+    expect(res.body.crowdsec_created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
+    expect(res.body.start_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
+    expect(res.body.stop_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
+  });
+
+  it('logs the conversion failure identifying the alert and the original value', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      await app.seedDb({
+        alerts: [
+          makeAlert({
+            id: 3,
+            events: [{ timestamp: UNPARSEABLE, meta: [] }],
+          }),
+        ],
+      });
+      const res = await app.request.get('/api/v1/alerts/3');
+      expect(res.status).toBe(200);
+      expect(res.body.events[0].timestamp).toBeNull();
+      const output = warnSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(output).toContain('alert');
+      expect(output).toContain('3');
+      expect(output).toContain(UNPARSEABLE);
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

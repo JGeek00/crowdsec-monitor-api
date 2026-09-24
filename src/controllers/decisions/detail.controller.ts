@@ -12,6 +12,7 @@ import {
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { canonicalizeFields } from '@/utils/timestamp-format';
 
 /**
  * Get decision by ID with associated alert
@@ -43,7 +44,10 @@ export async function getDecisionById(req: Request<GetDecisionParams, Res>, res:
 
     const rawDecision = decision.toJSON() as Decision & { alert?: Alert<UnparsedMetaData> };
     const plainDecision: GetDecisionResponse = {
-      ...rawDecision,
+      ...canonicalizeFields(rawDecision, ['expiration', 'crowdsec_created_at'], {
+        kind: 'decision',
+        id: rawDecision.id,
+      }),
       alert: rawDecision.alert ? parseAlertMeta(rawDecision.alert) : undefined,
     };
 

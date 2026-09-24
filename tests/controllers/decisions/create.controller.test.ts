@@ -49,4 +49,12 @@ describe('createDecision', () => {
     await createDecision(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });
+
+  it('sends RFC 3339 ISO timestamps to the CrowdSec LAPI (upstream contract stays ISO)', async () => {
+    mockCreateAlerts.mockResolvedValue([1]);
+    await createDecision(req as Request, res as Response);
+    const payload = mockCreateAlerts.mock.calls[0][0];
+    expect(payload[0].start_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/);
+    expect(payload[0].stop_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/);
+  });
 });

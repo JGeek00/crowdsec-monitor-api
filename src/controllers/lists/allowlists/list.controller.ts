@@ -4,17 +4,18 @@ import { isValidDate } from '@/utils/date-validator';
 import { CrowdSecAllowlist } from '@/types/crowdsec.types';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
+import { toCanonicalTimestamp } from '@/utils/timestamp-format';
 import { GetAllowlistsResponse, ResponseWithError } from '@/models';
 
 /**
- * Sanitize allowlist items by converting invalid expiration dates to null
+ * Sanitize allowlist items by converting invalid expiration dates to null and rendering timestamps canonically
  */
 function sanitizeAllowlists(allowlists: CrowdSecAllowlist[]): CrowdSecAllowlist[] {
   return allowlists.map((allowlist) => ({
     ...allowlist,
     items: allowlist.items.map((item) => ({
       ...item,
-      expiration: isValidDate(item.expiration) ? item.expiration : null,
+      expiration: isValidDate(item.expiration) ? toCanonicalTimestamp(item.expiration) : null,
     })),
   }));
 }

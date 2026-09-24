@@ -1,3 +1,5 @@
+import { toCanonicalFromUnknown } from '@/utils/timestamp-format';
+import type { AlertDelivery } from '@/models';
 import { Alert, ParsedMetaData, UnparsedMetaData } from '@/models';
 
 /**
@@ -38,7 +40,20 @@ function parseMetaValues(meta: UnparsedMetaData[]): ParsedMetaData[] {
   });
 }
 
-export function parseAlertMeta(raw: Alert<UnparsedMetaData>): Alert<ParsedMetaData> {
+/**
+ * Alert as delivered in API responses: event timestamps and date-typed fields
+ * rendered in the canonical timestamp format (events[].timestamp is nullable
+ * when the stored value cannot be interpreted as an instant).
+ * See `AlertDelivery` in `@/models/out/alerts/AlertDelivery.model.ts`.
+ */
+
+/**
+ * Reshape a raw alert for delivery: parse meta values, convert every event
+ * timestamp to the canonical format (passthrough when already canonical, null
+ * + failure log when unconvertible) and render date-typed fields canonically.
+ */
+export function parseAlertMeta(raw: Alert<UnparsedMetaData>): AlertDelivery {
+  const context = { kind: 'alert' as const, id: raw.id };
   return {
     ...raw,
     meta: Array.isArray(raw.meta) ? parseMetaValues(raw.meta) : [],
@@ -46,7 +61,11 @@ export function parseAlertMeta(raw: Alert<UnparsedMetaData>): Alert<ParsedMetaDa
       ? raw.events.map((event) => ({
           ...event,
           meta: Array.isArray(event.meta) ? parseMetaValues(event.meta) : [],
+          timestamp: toCanonicalFromUnknown(event.timestamp, context),
         }))
       : [],
+    crowdsec_created_at: toCanonicalFromUnknown(raw.crowdsec_created_at, context),
+    start_at: toCanonicalFromUnknown(raw.start_at, context),
+    stop_at: toCanonicalFromUnknown(raw.stop_at, context),
   };
 }

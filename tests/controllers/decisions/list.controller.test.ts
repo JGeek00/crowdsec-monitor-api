@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeDecision, makeAlert } from '@tests/factories';
 
+
+const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/;
 describe('getAllDecisions', () => {
   let app: TestApp;
   beforeAll(async () => {
@@ -71,5 +73,13 @@ describe('getAllDecisions', () => {
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(1);
     expect(res.body.pagination).toBeUndefined();
+  });
+
+  it('returns decision timestamps in canonical format', async () => {
+    await app.seedDb({ alerts: [makeAlert()], decisions: [makeDecision({ alert_id: 1 })] });
+    const res = await app.request.get('/api/v1/decisions');
+    expect(res.status).toBe(200);
+    expect(res.body.items[0].expiration).toMatch(CANONICAL_PATTERN);
+    expect(res.body.items[0].crowdsec_created_at).toMatch(CANONICAL_PATTERN);
   });
 });

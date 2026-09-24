@@ -9,7 +9,10 @@ describe('healthCheck', () => {
     const res = { json: jsonSpy } as unknown as Response;
     healthCheck(req, res);
     expect(jsonSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'API is running', timestamp: expect.any(String) }),
+      expect.objectContaining({
+        message: 'API is running',
+        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/),
+      }),
     );
   });
 });

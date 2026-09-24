@@ -13,6 +13,7 @@ import {
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { canonicalizeFields } from '@/utils/timestamp-format';
 import {
   buildDecisionsWhere,
   fetchFilteringOptions,
@@ -69,9 +70,13 @@ export async function listDecisionsByIp(
         ...group,
         decisions: ((group.decisions ?? []) as (Decision & { alert?: Alert<UnparsedMetaData> })[]).map((decision) => {
           const { source: _ds, alert: rawAlert, ...rest } = decision;
-          if (!rawAlert) return { ...rest, alert: undefined };
+          const canonicalRest = canonicalizeFields(rest, ['expiration', 'crowdsec_created_at'], {
+            kind: 'decision',
+            id: rest.id,
+          });
+          if (!rawAlert) return { ...canonicalRest, alert: undefined };
           const { source: _as, ...alertRest } = parseAlertMeta(rawAlert);
-          return { ...rest, alert: alertRest };
+          return { ...canonicalRest, alert: alertRest };
         }),
       })) as unknown as DecisionGroup[];
     }

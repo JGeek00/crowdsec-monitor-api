@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import { Alert, AlertsTable, Decision, DecisionsTable, UnparsedMetaData } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
+import { toCanonicalTimestamp } from '@/utils/timestamp-format';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
 import { log } from '@/services/log.service';
@@ -69,7 +70,12 @@ class AlertsSyncService {
               source: alert.source,
               labels: alert.labels,
               meta: alert.meta || [],
-              events: alert.events || [],
+              // Persist event timestamps in canonical format (REQ-007); unparseable
+              // values are stored as received rather than dropping the record.
+              events: (alert.events || []).map((event) => ({
+                ...event,
+                timestamp: toCanonicalTimestamp(event.timestamp) ?? event.timestamp,
+              })),
               crowdsec_created_at: new Date(alert.created_at),
               start_at: new Date(alert.start_at),
               stop_at: new Date(alert.stop_at),

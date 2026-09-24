@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { DecisionsTable, GetDecisionsQueryParams, GetDecisionsResponse, ResponseWithError } from '@/models';
+import { DecisionsTable, Decision, GetDecisionsQueryParams, GetDecisionsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { canonicalizeFields } from '@/utils/timestamp-format';
 import {
   buildDecisionsWhere,
   buildPaginatedResponse,
@@ -36,7 +37,12 @@ export async function getAllDecisions(
       unpaged!,
     );
 
-    res.json({ filtering, items, pagination, total } as GetDecisionsResponse);
+    const delivery = items.map((item) => {
+      const plain = item.toJSON() as Decision;
+      return canonicalizeFields(plain, ['expiration', 'crowdsec_created_at'], { kind: 'decision', id: plain.id });
+    });
+
+    res.json({ filtering, items: delivery, pagination, total } as GetDecisionsResponse);
   } catch (error) {
     if (signal.aborted) return;
     if (error instanceof PaginationError) {

@@ -1,4 +1,4 @@
-import { Decision, Pagination } from '@/models';
+import { Decision, DecisionDelivery, Pagination } from '@/models';
 
 export interface DecisionsFiltering {
   countries: string[];
@@ -7,7 +7,7 @@ export interface DecisionsFiltering {
 
 export interface GetDecisionsResponse {
   filtering: DecisionsFiltering;
-  items: Decision[];
+  items: DecisionDelivery[];
   pagination?: Pagination;
   total?: number;
 }
@@ -22,5 +22,8 @@ export interface DecisionGroup {
   range?: string;
   active_decisions: number;
   total_decisions: number;
+  // Grouping helper works on raw Decision rows; when decisions are delivered,
+  // controllers canonicalize them into DecisionSummary (timestamp fields as
+  // canonical strings) before the response is built.
   decisions?: Decision[];
 }

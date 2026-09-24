@@ -1,9 +1,8 @@
-import { Alert, ParsedMetaData } from '@/models';
-import { Pagination } from '@/models';
+import { AlertDelivery, Pagination } from '@/models';
 
 export interface GetAlertsResponse {
   filtering: AlertsFiltering;
-  items: Alert<ParsedMetaData>[];
+  items: AlertDelivery[];
   pagination?: Pagination;
   total?: number;
 }

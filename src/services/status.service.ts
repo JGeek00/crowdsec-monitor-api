@@ -1,5 +1,6 @@
 import { StatusSnapshot } from '@/models';
 import { makeReactive } from '@/utils/make-reactive';
+import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
 import packageJson from '../../package.json';
 
 export class StatusService {
@@ -10,7 +11,7 @@ export class StatusService {
       csLapi: {
         lapiConnected: false,
         lastSuccessfulSync: null,
-        timestamp: new Date().toISOString(),
+        timestamp: toCanonicalTimestampFromDate(new Date()),
       },
       csBouncer: { available: false },
       csMonitorApi: {
@@ -28,8 +29,9 @@ export class StatusService {
 
   updateLapiStatus(lapiConnected: boolean, lastSuccessfulSync: string | null): void {
     this.state.csLapi.lapiConnected = lapiConnected;
-    this.state.csLapi.lastSuccessfulSync = lastSuccessfulSync;
-    this.state.csLapi.timestamp = new Date().toISOString();
+    // lastSuccessfulSync arrives as RFC 3339 from the sync service; deliver canonical
+    this.state.csLapi.lastSuccessfulSync = lastSuccessfulSync ? toCanonicalTimestamp(lastSuccessfulSync) : null;
+    this.state.csLapi.timestamp = toCanonicalTimestampFromDate(new Date());
   }
 
   updateBouncerStatus(available: boolean): void {

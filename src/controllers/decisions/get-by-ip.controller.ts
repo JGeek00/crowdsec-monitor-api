@@ -13,6 +13,7 @@ import {
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { canonicalizeFields } from '@/utils/timestamp-format';
 import { groupDecisionsByIp, DECISIONS_QUERY } from '@/helpers/decisions/list.helpers';
 
 type Res = ResponseWithError<GetDecisionByIpResponse>;
@@ -46,9 +47,13 @@ export async function getDecisionByIp(req: Request<GetDecisionByIpParams, Res>, 
       ...group,
       decisions: ((group.decisions ?? []) as (Decision & { alert?: Alert<UnparsedMetaData> })[]).map((decision) => {
         const { source: _ds, alert: rawAlert, ...rest } = decision;
-        if (!rawAlert) return { ...rest, alert: undefined } as DecisionSummary;
+        const canonicalRest = canonicalizeFields(rest, ['expiration', 'crowdsec_created_at'], {
+          kind: 'decision',
+          id: rest.id,
+        });
+        if (!rawAlert) return { ...canonicalRest, alert: undefined } as DecisionSummary;
         const { source: _as, ...alertRest } = parseAlertMeta(rawAlert);
-        return { ...rest, alert: alertRest } as DecisionSummary;
+        return { ...canonicalRest, alert: alertRest } as DecisionSummary;
       }),
     };
 

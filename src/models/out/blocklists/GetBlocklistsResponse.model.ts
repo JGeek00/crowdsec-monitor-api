@@ -12,9 +12,9 @@ export interface GetBlocklistsResponse_Item {
   type: BlocklistType;
   enabled?: boolean;
   url?: string;
-  added_date?: Date;
-  last_refresh_attempt?: Date | null;
-  last_successful_refresh?: Date | null;
+  added_date?: string | null;
+  last_refresh_attempt?: string | null;
+  last_successful_refresh?: string | null;
   last_refresh_failed?: boolean | null;
   count_ips?: number | string;
   blocklistIps?: BlocklistIp[] | string[];

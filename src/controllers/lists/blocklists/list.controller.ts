@@ -12,6 +12,7 @@ import {
   ResponseWithError,
 } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
+import { canonicalizeFields } from '@/utils/timestamp-format';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
 import { DB_SORTING } from '@/types/database.types';
@@ -111,10 +112,11 @@ export async function getBlocklists(
       const obj = item.toJSON() as GetBlocklistsResponse_Item;
       obj.id = String(obj.id);
       obj.type = type;
-      if (onlyIps && Array.isArray(obj.blocklistIps)) {
-        obj.blocklistIps = (obj.blocklistIps as BlocklistIp[]).map((ip) => ip.value);
+      const canonical = canonicalizeFields(obj, ['added_date', 'last_refresh_attempt', 'last_successful_refresh']);
+      if (onlyIps && Array.isArray(canonical.blocklistIps)) {
+        canonical.blocklistIps = (canonical.blocklistIps as BlocklistIp[]).map((ip) => ip.value);
       }
-      return obj;
+      return canonical;
     };
 
     const items = [

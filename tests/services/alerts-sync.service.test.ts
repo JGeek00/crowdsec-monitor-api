@@ -37,6 +37,13 @@ vi.mock('@/constants/app-defaults', () => ({
   default: { alerts: { originsFetch: ['crowdsec'] } },
 }));
 
+import {
+  NAMED_ABBREVIATION,
+  NAMED_ABBREVIATION_CANONICAL,
+  DUPLICATED_OFFSET,
+  UNPARSEABLE,
+} from '@tests/helpers/timestamp-fixtures';
+
 describe('AlertsSyncService', () => {
   afterEach(() => {
     vi.resetModules();
@@ -126,6 +133,89 @@ describe('AlertsSyncService', () => {
     const { alertsSyncService } = await import('@/services/alerts-sync.service');
     const result = await alertsSyncService.syncAll();
     expect(result).toHaveProperty('alerts');
+  });
+
+  it('normalizes event timestamps to canonical format before persisting (REQ-007)', async () => {
+    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
+      {
+        id: 2,
+        uuid: 'u-2',
+        scenario: 'ssh-bf',
+        scenario_version: '0.1',
+        scenario_hash: 'h',
+        message: 'msg',
+        capacity: 1,
+        leakspeed: '0',
+        simulated: false,
+        remediation: true,
+        events_count: 3,
+        machine_id: 'm1',
+        source: { ip: '1.2.3.4', scope: 'Ip', value: '1.2.3.4' },
+        labels: null,
+        meta: [],
+        events: [
+          { timestamp: NAMED_ABBREVIATION, meta: [] },
+          { timestamp: DUPLICATED_OFFSET, meta: [] },
+          { timestamp: UNPARSEABLE, meta: [] },
+        ],
+        decisions: [],
+        created_at: new Date().toISOString(),
+        start_at: new Date().toISOString(),
+        stop_at: new Date().toISOString(),
+      },
+    ] as any);
+    const { AlertsTable } = await import('@/models');
+    vi.mocked(AlertsTable.findByPk).mockResolvedValue(null);
+    vi.mocked(AlertsTable.create).mockResolvedValue({ id: 2 } as any);
+
+    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const result = await alertsSyncService.syncAlerts();
+
+    expect(result.synced).toBe(1);
+    const calls = vi.mocked(AlertsTable.create).mock.calls;
+    const created = calls[calls.length - 1][0] as any;
+    expect(created.events[0].timestamp).toBe(NAMED_ABBREVIATION_CANONICAL);
+    expect(created.events[1].timestamp).toBe(DUPLICATED_OFFSET); // already canonical: unchanged
+    expect(created.events[2].timestamp).toBe(UNPARSEABLE); // unparseable: stored as received, record not dropped
+  });
+
+  it('canonicalizes event timestamps when updating an existing alert (REQ-007)', async () => {
+    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
+      {
+        id: 3,
+        uuid: 'u-3',
+        scenario: 'ssh-bf',
+        scenario_version: '0.1',
+        scenario_hash: 'h',
+        message: 'msg',
+        capacity: 1,
+        leakspeed: '0',
+        simulated: false,
+        remediation: true,
+        events_count: 1,
+        machine_id: 'm1',
+        source: { ip: '1.2.3.4', scope: 'Ip', value: '1.2.3.4' },
+        labels: null,
+        meta: [],
+        events: [{ timestamp: NAMED_ABBREVIATION, meta: [] }],
+        decisions: [],
+        created_at: new Date().toISOString(),
+        start_at: new Date().toISOString(),
+        stop_at: new Date().toISOString(),
+      },
+    ] as any);
+    const { AlertsTable } = await import('@/models');
+    const updateMock = vi.fn().mockResolvedValue({});
+    vi.mocked(AlertsTable.findByPk).mockResolvedValue({ id: 3, update: updateMock } as any);
+
+    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    await alertsSyncService.syncAlerts();
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    const updated = updateMock.mock.calls[0][0] as any;
+    expect(updated.events[0].timestamp).toBe(NAMED_ABBREVIATION_CANONICAL);
   });
 
   it('getLastSuccessfulSync returns null initially', async () => {
