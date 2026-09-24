@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios', () => {
   const mockAxios: any = () => {};
   mockAxios.get = vi.fn();
-  mockAxios.create = vi.fn(() => ({ get: vi.fn(), post: vi.fn(), delete: vi.fn() }));
+  mockAxios.create = vi.fn(function () {
+    return { get: vi.fn(), post: vi.fn(), delete: vi.fn() };
+  });
   mockAxios.isAxiosError = vi.fn(() => false);
   return { default: mockAxios };
 });

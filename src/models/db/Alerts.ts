@@ -1,5 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
+import { Optional } from '@/types/database.types';
 import { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData, DecisionsTable } from '@/models';
 
 // On database model we use UnparsedMetaData because the JSON object is stored as a string on the table column

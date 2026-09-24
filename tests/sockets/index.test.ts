@@ -1,17 +1,26 @@
 vi.mock('@/config/database', () => {
-  const { Sequelize } = require('sequelize');
-  const seq = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false });
+  const { Sequelize } = require('@sequelize/core');
+  const { SqliteDialect } = require('@sequelize/sqlite3');
+  const seq = new Sequelize({
+    dialect: SqliteDialect,
+    storage: ':memory:',
+    logging: false,
+    // BD temporal: Sequelize v7 exige pool de 1 conexión que nunca se recicle.
+    pool: { max: 1, min: 0, idle: Infinity, maxUses: Infinity },
+  });
   return { sequelize: seq, initDatabase: vi.fn().mockResolvedValue(undefined) };
 });
 
 vi.mock('@/services/status.service', () => ({
   statusService: {
-    getCleanSnapshot: vi.fn(() => ({
-      csLapi: { lapiConnected: false, lastSuccessfulSync: null, timestamp: new Date().toISOString() },
-      csBouncer: { available: false },
-      csMonitorApi: { version: '0.0.0', newVersionAvailable: null },
-      processes: [],
-    })),
+    getCleanSnapshot: vi.fn(function () {
+      return {
+        csLapi: { lapiConnected: false, lastSuccessfulSync: null, timestamp: new Date().toISOString() },
+        csBouncer: { available: false },
+        csMonitorApi: { version: '0.0.0', newVersionAvailable: null },
+        processes: [],
+      };
+    }),
     registerStateChangeCallback: vi.fn(),
     updateVersionInfo: vi.fn(),
     updateBouncerStatus: vi.fn(),

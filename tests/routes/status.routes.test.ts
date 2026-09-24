@@ -3,12 +3,14 @@ import { setupApp, type TestApp } from '@tests/setup-app';
 
 vi.mock('@/services/status.service', () => ({
   statusService: {
-    getCleanSnapshot: vi.fn(() => ({
-      csLapi: { lapiConnected: false, lastSuccessfulSync: null, timestamp: new Date().toISOString() },
-      csBouncer: { available: false },
-      csMonitorApi: { version: '0.0.0', newVersionAvailable: null },
-      processes: [],
-    })),
+    getCleanSnapshot: vi.fn(function () {
+      return {
+        csLapi: { lapiConnected: false, lastSuccessfulSync: null, timestamp: new Date().toISOString() },
+        csBouncer: { available: false },
+        csMonitorApi: { version: '0.0.0', newVersionAvailable: null },
+        processes: [],
+      };
+    }),
   },
 }));
 

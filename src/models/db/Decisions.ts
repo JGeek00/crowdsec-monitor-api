@@ -1,5 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
+import { Optional } from '@/types/database.types';
 import type { Alert_SourceInfo, Alert, UnparsedMetaData, Decision } from '@/models';
 
 export type DecisionCreationAttributes = Optional<Decision, 'id' | 'created_at' | 'updated_at'>;
@@ -51,7 +52,7 @@ DecisionsTable.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'alerts',
+        table: 'alerts',
         key: 'id',
       },
       onUpdate: 'CASCADE',

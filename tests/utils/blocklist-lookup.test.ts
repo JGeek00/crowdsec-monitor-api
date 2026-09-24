@@ -8,7 +8,7 @@ vi.mock('@/models', () => ({
 }));
 
 // We need to mock Op separately because it's a Sequelize import
-vi.mock('sequelize', () => ({
+vi.mock('@sequelize/core', () => ({
   Op: { or: 'OR', like: 'LIKE' },
 }));
 

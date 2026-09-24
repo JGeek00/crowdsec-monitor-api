@@ -1,18 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/services/migrations/migration.service', () => ({
-  MigrationService: vi.fn().mockImplementation(() => ({
-    isMigrationApplied: vi.fn(),
-    registerMigration: vi.fn(),
-    getAppliedMigrations: vi.fn(),
-    getPendingMigrations: vi.fn(),
-  })),
+  MigrationService: vi.fn().mockImplementation(function () {
+    return {
+      isMigrationApplied: vi.fn(),
+      registerMigration: vi.fn(),
+      getAppliedMigrations: vi.fn(),
+      getPendingMigrations: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('@/services/migrations/migration-runner.service', () => ({
-  MigrationRunner: vi.fn().mockImplementation(() => ({
-    run: vi.fn().mockResolvedValue(undefined),
-  })),
+  MigrationRunner: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockResolvedValue(undefined),
+    };
+  }),
 }));
 
 describe('database config', () => {
@@ -35,7 +39,7 @@ describe('database config', () => {
 
   it('sequelize is an instance of Sequelize', async () => {
     const { sequelize } = await import('@/config/database');
-    const { Sequelize } = await import('sequelize');
+    const { Sequelize } = await import('@sequelize/core');
     expect(sequelize).toBeInstanceOf(Sequelize);
   });
 

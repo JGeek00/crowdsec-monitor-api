@@ -29,36 +29,44 @@ const mockClient = {
 };
 
 vi.mock('@/services/crowdsec-api/base-client.service', () => ({
-  CrowdSecBaseClient: vi.fn().mockImplementation(() => ({
-    client: mockClient,
-    login: mockLogin,
-    isTokenValid: mockIsTokenValid,
-    ensureAuthenticated: mockEnsureAuthenticated,
-    testConnection: mockTestConnection,
-    checkStatus: mockCheckStatus,
-    checkBouncerConnection: mockCheckBouncerConnection,
-    isBouncerConnected: mockIsBouncerConnected,
-    setBouncerConnected: mockSetBouncerConnected,
-    getLastLapiConnected: mockGetLastLapiConnected,
-    getAuthHeaders: mockGetAuthHeaders,
-    handleError: mockHandleError,
-  })),
-  AlertsService: vi.fn().mockImplementation(() => ({
-    getAlerts: vi.fn(),
-    getAlertById: vi.fn(),
-    createAlerts: vi.fn(),
-    deleteAlert: vi.fn(),
-  })),
-  DecisionsService: vi.fn().mockImplementation(() => ({
-    getDecisionsFromAlerts: vi.fn(),
-    deleteDecision: vi.fn(),
-    getActiveDecisions: vi.fn(),
-  })),
-  AllowlistsService: vi.fn().mockImplementation(() => ({
-    getAllowlists: vi.fn(),
-    getAllowlistByName: vi.fn(),
-    checkAllowlist: vi.fn(),
-  })),
+  CrowdSecBaseClient: vi.fn().mockImplementation(function () {
+    return {
+      client: mockClient,
+      login: mockLogin,
+      isTokenValid: mockIsTokenValid,
+      ensureAuthenticated: mockEnsureAuthenticated,
+      testConnection: mockTestConnection,
+      checkStatus: mockCheckStatus,
+      checkBouncerConnection: mockCheckBouncerConnection,
+      isBouncerConnected: mockIsBouncerConnected,
+      setBouncerConnected: mockSetBouncerConnected,
+      getLastLapiConnected: mockGetLastLapiConnected,
+      getAuthHeaders: mockGetAuthHeaders,
+      handleError: mockHandleError,
+    };
+  }),
+  AlertsService: vi.fn().mockImplementation(function () {
+    return {
+      getAlerts: vi.fn(),
+      getAlertById: vi.fn(),
+      createAlerts: vi.fn(),
+      deleteAlert: vi.fn(),
+    };
+  }),
+  DecisionsService: vi.fn().mockImplementation(function () {
+    return {
+      getDecisionsFromAlerts: vi.fn(),
+      deleteDecision: vi.fn(),
+      getActiveDecisions: vi.fn(),
+    };
+  }),
+  AllowlistsService: vi.fn().mockImplementation(function () {
+    return {
+      getAllowlists: vi.fn(),
+      getAllowlistByName: vi.fn(),
+      checkAllowlist: vi.fn(),
+    };
+  }),
 }));
 
 describe('CrowdSecAPIService', () => {

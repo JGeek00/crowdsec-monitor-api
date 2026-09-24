@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op } from '@sequelize/core';
 import { Alert, AlertsTable, Decision, DecisionsTable, UnparsedMetaData } from '@/models';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';

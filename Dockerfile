@@ -1,11 +1,15 @@
 #################
 ## BUILD STAGE ##
 #################
-FROM node:24-alpine AS builder
+FROM node:24-slim AS builder
 
-ARG PNPM_VERSION=11.17.0
+ARG PNPM_VERSION=12.6.0
 
 WORKDIR /app
+
+# Build dependencies: node-gyp toolchain for native modules (@vscode/sqlite3)
+# and libatomic for the pnpm native binary
+RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -28,26 +32,26 @@ COPY scripts ./scripts
 # Build application
 RUN pnpm run build:prod
 
+# Prune to production-only dependencies (the production stage copies
+# node_modules directly, so it doesn't need pnpm or the build toolchain)
+RUN pnpm prune --prod
+
 
 
 ######################
 ## PRODUCTION STAGE ##
 ######################
-FROM node:24-alpine
+FROM node:24-slim AS production
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@${PNPM_VERSION}
+# libatomic: required by the native SQLite binding at runtime
+RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 && rm -rf /var/lib/apt/lists/*
 
-# Install production dependencies only
-COPY package*.json ./
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
-RUN pnpm install --prod --frozen-lockfile
-
-# Copy built files from builder
+# Copy built files and production dependencies from the builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
 
 # Create database directory
 RUN mkdir -p /app/database

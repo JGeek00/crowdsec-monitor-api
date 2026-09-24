@@ -35,7 +35,8 @@ describe('getAllAlerts', () => {
     const alerts = Array.from({ length: 5 }, (_, i) => makeAlert({ id: i + 1 }));
     await app.seedDb({ alerts });
     const res = await app.request.get('/api/v1/alerts?limit=2&offset=0');
-    expect(res.status).toBe(200);    expect(res.body.pagination).toBeDefined();
+    expect(res.status).toBe(200);
+    expect(res.body.pagination).toBeDefined();
     expect(res.body.pagination.page).toBe(1);
     expect(res.body.pagination.total).toBe(5);
     expect(res.body.pagination.amount).toBe(2);

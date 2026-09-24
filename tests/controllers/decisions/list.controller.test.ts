@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeDecision, makeAlert } from '@tests/factories';
 
-
 const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/;
 describe('getAllDecisions', () => {
   let app: TestApp;

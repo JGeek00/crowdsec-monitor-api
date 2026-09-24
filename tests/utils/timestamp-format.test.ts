@@ -158,7 +158,8 @@ describe('toCanonicalTimestampFromDate', () => {
     if (!match) return;
     const [, y, mo, d, h, mi, s, sign, oh, om] = match;
     const offsetMinutes = (Number(oh) * 60 + Number(om)) * (sign === '-' ? -1 : 1);
-    const instantFromResult = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s)) - offsetMinutes * 60_000;
+    const instantFromResult =
+      Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s)) - offsetMinutes * 60_000;
     expect(instantFromResult).toBe(date.getTime());
   });
 

@@ -1,4 +1,4 @@
-import { literal } from 'sequelize';
+import { literal } from '@sequelize/core';
 import { BlocklistIpsTable } from '@/models';
 
 export const BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE: [ReturnType<typeof literal>, string] = [

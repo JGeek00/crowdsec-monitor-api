@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { QueryTypes } from 'sequelize';
+import { QueryTypes } from '@sequelize/core';
 import { AlertsTable, GetScenarioHistoryParams, ResponseWithError, ScenarioHistory } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';

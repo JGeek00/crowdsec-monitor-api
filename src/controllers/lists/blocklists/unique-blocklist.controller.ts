@@ -56,7 +56,6 @@ export async function getBlocklistById(
         ? await BlocklistIpsTable.findAll({
             where: { [BlocklistIpsTable.col.csBlocklistId]: id as string },
             order: [['id', DB_SORTING.ASC]],
-            attributes: { exclude: ['created_at', 'updated_at'] },
             raw: true,
           })
         : null;
@@ -95,7 +94,6 @@ export async function getBlocklistById(
       ? await BlocklistIpsTable.findAll({
           where: { [BlocklistIpsTable.col.blocklistId]: numId },
           order: [['id', DB_SORTING.ASC]],
-          attributes: { exclude: ['created_at', 'updated_at'] },
           raw: true,
         })
       : null;

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AlertsTable } from '@/models/db';
-import { Op, WhereOptions } from 'sequelize';
+import { Op, WhereOptions } from '@sequelize/core';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { escapeLike } from '@/utils/sql';

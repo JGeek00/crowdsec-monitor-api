@@ -10,12 +10,14 @@ vi.mock('@/models', () => ({
   GetScenarioHistoryParams: {} as any,
 }));
 vi.mock('@/utils/request-signal', () => ({
-  createRequestSignal: vi.fn(() => ({ signal: { aborted: false }, cleanup: vi.fn() })),
+  createRequestSignal: vi.fn(function () {
+    return { signal: { aborted: false }, cleanup: vi.fn() };
+  }),
 }));
 vi.mock('@/utils/error-response', () => ({
   errorResponse: vi.fn((e, m) => ({ error: e, message: m })),
 }));
-vi.mock('sequelize', () => ({ QueryTypes: { SELECT: 'SELECT' } }));
+vi.mock('@sequelize/core', () => ({ QueryTypes: { SELECT: 'SELECT' } }));
 
 import { Request, Response } from 'express';
 import { getScenarioHistory } from '@/controllers/statistics/scenarios/history.controller';

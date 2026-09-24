@@ -1,4 +1,6 @@
-import { Sequelize } from 'sequelize';
+import { Sequelize } from '@sequelize/core';
+import { SqliteDialect } from '@sequelize/sqlite3';
+import { PostgresDialect } from '@sequelize/postgres';
 import { config } from '@/config/index';
 import { DB_MODE } from '@/types/database.types';
 import { MigrationService } from '@/services/migrations/migration.service';
@@ -7,10 +9,10 @@ import { MigrationRunner } from '@/services/migrations/migration-runner.service'
 function createSequelize(): Sequelize {
   if (config.database.mode === DB_MODE.POSTGRES) {
     return new Sequelize({
-      dialect: 'postgres',
+      dialect: PostgresDialect,
       host: config.database.postgres.host,
       port: config.database.postgres.port,
-      username: config.database.postgres.user,
+      user: config.database.postgres.user,
       password: config.database.postgres.password,
       database: config.database.postgres.database,
       logging: false,
@@ -28,23 +30,25 @@ function createSequelize(): Sequelize {
   }
 
   // SQLite
+  // Con una BD temporal (':memory:') Sequelize v7 exige un pool de una sola
+  // conexión que nunca cierre ni recicle conexiones (perdería los datos).
+  const isTemporaryDb = config.database.path === ':memory:';
   return new Sequelize({
-    dialect: 'sqlite',
+    dialect: SqliteDialect,
     storage: config.database.path,
     logging: false,
     define: {
       timestamps: true,
       underscored: true,
     },
-    pool: {
-      max: 5,
-      min: 1,
-      acquire: 30000,
-      idle: 10000,
-    },
-    dialectOptions: {
-      busyTimeout: 30000,
-    },
+    pool: isTemporaryDb
+      ? { max: 1, min: 0, idle: Infinity, maxUses: Infinity }
+      : {
+          max: 5,
+          min: 1,
+          acquire: 30000,
+          idle: 10000,
+        },
   });
 }
 

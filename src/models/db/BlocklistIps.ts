@@ -1,5 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
+import { Optional } from '@/types/database.types';
 import type { CsBlocklist, BlocklistsTable, BlocklistIp, BlocklistIpOrigin } from '@/models';
 
 export type BlocklistIpCreationAttributes = Optional<BlocklistIp, 'id' | 'blocklist_id' | 'cs_blocklist_id'>;
@@ -39,7 +40,7 @@ BlocklistIpsTable.init(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'blocklists',
+        table: 'blocklists',
         key: 'id',
       },
       onUpdate: 'CASCADE',
@@ -49,7 +50,7 @@ BlocklistIpsTable.init(
       type: DataTypes.STRING(50),
       allowNull: true,
       references: {
-        model: 'cs_blocklists',
+        table: 'cs_blocklists',
         key: 'id',
       },
       onUpdate: 'CASCADE',

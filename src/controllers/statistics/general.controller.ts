@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Op } from 'sequelize';
+import { Op } from '@sequelize/core';
 import {
   AlertsTable,
   DecisionsTable,

@@ -1,4 +1,4 @@
-import { Op, WhereOptions } from 'sequelize';
+import { Op, WhereOptions } from '@sequelize/core';
 import {
   Alert_SourceInfo,
   Decision,

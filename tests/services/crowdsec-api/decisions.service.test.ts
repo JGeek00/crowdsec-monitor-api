@@ -8,17 +8,21 @@ const mockClient = {
 };
 
 vi.mock('@/services/crowdsec-api/base-client.service', () => ({
-  CrowdSecBaseClient: vi.fn().mockImplementation(() => ({
-    client: mockClient,
-    getAuthHeaders: mockGetAuthHeaders,
-    handleError: mockHandleError,
-  })),
+  CrowdSecBaseClient: vi.fn().mockImplementation(function () {
+    return {
+      client: mockClient,
+      getAuthHeaders: mockGetAuthHeaders,
+      handleError: mockHandleError,
+    };
+  }),
 }));
 
 vi.mock('@/services/crowdsec-api/alerts.service', () => ({
-  AlertsService: vi.fn().mockImplementation(() => ({
-    getAlerts: vi.fn(),
-  })),
+  AlertsService: vi.fn().mockImplementation(function () {
+    return {
+      getAlerts: vi.fn(),
+    };
+  }),
 }));
 
 describe('DecisionsService', () => {
@@ -28,14 +32,16 @@ describe('DecisionsService', () => {
 
   it('getDecisionsFromAlerts extracts decisions from alerts', async () => {
     const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    vi.mocked(AlertsService).mockImplementation(() => ({
-      getAlerts: vi
-        .fn()
-        .mockResolvedValue([
-          { decisions: [{ id: 1, value: '1.2.3.4' }] },
-          { decisions: [{ id: 2, value: '5.5.5.5' }] },
-        ]),
-    }));
+    vi.mocked(AlertsService).mockImplementation(function () {
+      return {
+        getAlerts: vi
+          .fn()
+          .mockResolvedValue([
+            { decisions: [{ id: 1, value: '1.2.3.4' }] },
+            { decisions: [{ id: 2, value: '5.5.5.5' }] },
+          ]),
+      };
+    });
 
     const { DecisionsService } = await import('@/services/crowdsec-api/decisions.service');
     const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
@@ -48,9 +54,11 @@ describe('DecisionsService', () => {
 
   it('getDecisionsFromAlerts returns empty on error', async () => {
     const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    vi.mocked(AlertsService).mockImplementation(() => ({
-      getAlerts: vi.fn().mockRejectedValue(new Error('timeout')),
-    }));
+    vi.mocked(AlertsService).mockImplementation(function () {
+      return {
+        getAlerts: vi.fn().mockRejectedValue(new Error('timeout')),
+      };
+    });
 
     const { DecisionsService } = await import('@/services/crowdsec-api/decisions.service');
     const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');

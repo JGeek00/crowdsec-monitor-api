@@ -9,11 +9,13 @@ const mockClient = {
 };
 
 vi.mock('@/services/crowdsec-api/base-client.service', () => ({
-  CrowdSecBaseClient: vi.fn().mockImplementation(() => ({
-    client: mockClient,
-    getAuthHeaders: mockGetAuthHeaders,
-    handleError: mockHandleError,
-  })),
+  CrowdSecBaseClient: vi.fn().mockImplementation(function () {
+    return {
+      client: mockClient,
+      getAuthHeaders: mockGetAuthHeaders,
+      handleError: mockHandleError,
+    };
+  }),
 }));
 
 describe('AlertsService', () => {

@@ -11,7 +11,9 @@ vi.mock('@/models', () => ({
   ResponseWithError: {} as any,
 }));
 vi.mock('@/utils/request-signal', () => ({
-  createRequestSignal: vi.fn(() => ({ signal: { aborted: false }, cleanup: vi.fn() })),
+  createRequestSignal: vi.fn(function () {
+    return { signal: { aborted: false }, cleanup: vi.fn() };
+  }),
 }));
 vi.mock('@/utils/error-response', () => ({
   errorResponse: vi.fn((e, m) => ({ error: e, message: m })),

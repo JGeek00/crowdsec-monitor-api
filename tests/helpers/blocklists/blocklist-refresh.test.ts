@@ -16,10 +16,12 @@ vi.mock('@/services/blocklists/status-blocklist.service', () => {
   const mockSetCurrentBlocklist = vi.fn();
   const mockRecordSuccess = vi.fn();
   const mockGetFailedStep = vi.fn();
-  const BulkRefreshReporter = vi.fn().mockImplementation(() => ({
-    recordSuccess: mockRecordSuccess,
-    getFailedStep: mockGetFailedStep,
-  }));
+  const BulkRefreshReporter = vi.fn().mockImplementation(function () {
+    return {
+      recordSuccess: mockRecordSuccess,
+      getFailedStep: mockGetFailedStep,
+    };
+  });
   return {
     statusBlocklistService: { setCurrentBlocklist: mockSetCurrentBlocklist },
     BulkRefreshReporter,

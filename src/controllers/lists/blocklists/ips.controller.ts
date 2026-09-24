@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { FindAndCountOptions } from 'sequelize';
+import { FindAndCountOptions } from '@sequelize/core';
 import {
   BlocklistIp,
   BlocklistIpsTable,
@@ -57,7 +57,7 @@ export async function getBlocklistIps(
     const queryOptions: FindAndCountOptions<BlocklistIp> = {
       where: whereClause,
       order: [['id', DB_SORTING.ASC]],
-      attributes: onlyStrings ? ['value'] : { exclude: ['created_at', 'updated_at'] },
+      attributes: onlyStrings ? ['value'] : undefined,
     };
 
     if (unpaged !== true) {

@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import type { Application } from 'express';
 import type { SuperTest, Test } from 'supertest';
 import supertest from 'supertest';
-import type { Sequelize } from 'sequelize';
+import type { Sequelize } from '@sequelize/core';
 import type { Alert, Decision, Blocklist, BlocklistIp, CsBlocklist, UnparsedMetaData } from '@/models';
 
 export interface TestApp {
@@ -23,11 +23,14 @@ export interface TestApp {
 const sequelizeRef = vi.hoisted(() => ({ current: null as any }));
 
 vi.mock('@/config/database', () => {
-  const { Sequelize } = require('sequelize');
+  const { Sequelize } = require('@sequelize/core');
+  const { SqliteDialect } = require('@sequelize/sqlite3');
   const seq = new Sequelize({
-    dialect: 'sqlite',
+    dialect: SqliteDialect,
     storage: ':memory:',
     logging: false,
+    // BD temporal: Sequelize v7 exige pool de 1 conexión que nunca se recicle.
+    pool: { max: 1, min: 0, idle: Infinity, maxUses: Infinity },
     define: {
       timestamps: true,
       underscored: true,
@@ -42,33 +45,37 @@ vi.mock('@/config/database', () => {
 
 // ponytail: mock base-client so CS API calls return empty arrays without network
 vi.mock('@/services/crowdsec-api/base-client.service', () => {
-  const MockBaseClient = vi.fn().mockImplementation(() => ({
-    client: {
-      get: vi.fn().mockResolvedValue({ data: [] }),
-      post: vi.fn().mockResolvedValue({ data: {} }),
-      delete: vi.fn().mockResolvedValue({ data: {} }),
-      interceptors: {
-        request: { use: vi.fn(), eject: vi.fn() },
-        response: { use: vi.fn(), eject: vi.fn() },
+  // NOTE: la implementación debe ser una función normal (no arrow) porque
+  // vitest 5 lanza "is not a constructor" al hacer `new` sobre una arrow.
+  const MockBaseClient = vi.fn(function MockBaseClient(this: unknown) {
+    return {
+      client: {
+        get: vi.fn().mockResolvedValue({ data: [] }),
+        post: vi.fn().mockResolvedValue({ data: {} }),
+        delete: vi.fn().mockResolvedValue({ data: {} }),
+        interceptors: {
+          request: { use: vi.fn(), eject: vi.fn() },
+          response: { use: vi.fn(), eject: vi.fn() },
+        },
       },
-    },
-    token: 'mock-token',
-    tokenExpiration: null,
-    loginPromise: null,
-    bouncerConnected: true,
-    lastLapiConnected: true,
-    login: vi.fn().mockResolvedValue(true),
-    isTokenValid: vi.fn().mockReturnValue(true),
-    ensureAuthenticated: vi.fn().mockResolvedValue(true),
-    getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer mock-token' }),
-    testConnection: vi.fn().mockResolvedValue(true),
-    checkStatus: vi.fn().mockResolvedValue(true),
-    checkBouncerConnection: vi.fn().mockResolvedValue(undefined),
-    isBouncerConnected: vi.fn().mockReturnValue(true),
-    setBouncerConnected: vi.fn(),
-    getLastLapiConnected: vi.fn().mockReturnValue(true),
-    handleError: vi.fn(),
-  }));
+      token: 'mock-token',
+      tokenExpiration: null,
+      loginPromise: null,
+      bouncerConnected: true,
+      lastLapiConnected: true,
+      login: vi.fn().mockResolvedValue(true),
+      isTokenValid: vi.fn().mockReturnValue(true),
+      ensureAuthenticated: vi.fn().mockResolvedValue(true),
+      getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer mock-token' }),
+      testConnection: vi.fn().mockResolvedValue(true),
+      checkStatus: vi.fn().mockResolvedValue(true),
+      checkBouncerConnection: vi.fn().mockResolvedValue(undefined),
+      isBouncerConnected: vi.fn().mockReturnValue(true),
+      setBouncerConnected: vi.fn(),
+      getLastLapiConnected: vi.fn().mockReturnValue(true),
+      handleError: vi.fn(),
+    };
+  });
 
   return { CrowdSecBaseClient: MockBaseClient };
 });

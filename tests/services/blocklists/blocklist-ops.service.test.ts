@@ -71,12 +71,14 @@ vi.mock('@/services/blocklists/status-blocklist.service', () => ({
     isSyncingBlocklists: vi.fn(),
     isAnyBlocklistProcessRunning: vi.fn(),
   },
-  SingleRefreshReporter: vi.fn().mockImplementation(() => ({
-    onStep: vi.fn(),
-    onParsed: vi.fn(),
-    onImportProgress: vi.fn(),
-    markComplete: vi.fn(),
-  })),
+  SingleRefreshReporter: vi.fn().mockImplementation(function () {
+    return {
+      onStep: vi.fn(),
+      onParsed: vi.fn(),
+      onImportProgress: vi.fn(),
+      markComplete: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('@/helpers/blocklists/blocklist-activation', () => ({
