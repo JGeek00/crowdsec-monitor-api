@@ -27,6 +27,12 @@ export const NAMED_ABBREVIATION_CANONICAL = '2026-09-23T12:31:28Z';
 /** Legacy duplicated-offset input (no longer a pass-through value). */
 export const DUPLICATED_OFFSET = '2026-05-02 20:26:24 +0200 +0200';
 
+/** CrowdSec "never expires" sentinel: a legacy row with a year below 100. */
+export const NEVER_EXPIRES_SENTINEL = '0001-01-01 00:00:00 +0000 +0000';
+
+/** Expected RFC 3339 UTC result of converting NEVER_EXPIRES_SENTINEL (year must stay 0001, not 1901). */
+export const NEVER_EXPIRES_SENTINEL_UTC = '0001-01-01T00:00:00Z';
+
 /** Expected RFC 3339 UTC result of converting DUPLICATED_OFFSET. */
 export const DUPLICATED_OFFSET_CANONICAL = '2026-05-02T18:26:24Z';
 

@@ -47,6 +47,37 @@ function parseIsoOffset(group: string): number | null {
   return parseOffset(group.replace(':', ''));
 }
 
+/**
+ * Compute the UTC instant for wall-clock components, assigning the year literally.
+ * `Date.UTC` maps years 0-99 to 1900+year, so years below 100 (e.g. the CrowdSec
+ * "never expires" sentinel `0001-01-01`) would silently shift to 1901+; `setUTCFullYear`
+ * assigns the requested year as-is. Returns null when the components roll over into a
+ * different calendar date (out-of-range or non-existent dates).
+ */
+function utcInstant(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+): number | null {
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, 0);
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day ||
+    date.getUTCHours() !== hour ||
+    date.getUTCMinutes() !== minute ||
+    date.getUTCSeconds() !== second
+  ) {
+    return null;
+  }
+  return date.getTime();
+}
+
 function buildParsed(match: RegExpMatchArray, offsetMinutes: number | null): ParsedTimestamp | null {
   if (offsetMinutes === null) return null;
   const parsed: ParsedTimestamp = {
@@ -58,17 +89,8 @@ function buildParsed(match: RegExpMatchArray, offsetMinutes: number | null): Par
     second: Number(match[6]),
     offsetMinutes,
   };
-  // Reject out-of-range and non-existent calendar dates via UTC round-trip
-  const instant = Date.UTC(parsed.year, parsed.month - 1, parsed.day, parsed.hour, parsed.minute, parsed.second);
-  const roundTrip = new Date(instant);
-  if (
-    roundTrip.getUTCFullYear() !== parsed.year ||
-    roundTrip.getUTCMonth() !== parsed.month - 1 ||
-    roundTrip.getUTCDate() !== parsed.day ||
-    roundTrip.getUTCHours() !== parsed.hour ||
-    roundTrip.getUTCMinutes() !== parsed.minute ||
-    roundTrip.getUTCSeconds() !== parsed.second
-  ) {
+  // Reject out-of-range and non-existent calendar dates via component round-trip
+  if (utcInstant(parsed.year, parsed.month, parsed.day, parsed.hour, parsed.minute, parsed.second) === null) {
     return null;
   }
   return parsed;
@@ -101,10 +123,11 @@ function pad(value: number, length = 2): string {
  * RFC 3339 UTC string (`YYYY-MM-DDTHH:MM:SSZ`).
  */
 function render(parsed: ParsedTimestamp): string {
-  const instant =
-    Date.UTC(parsed.year, parsed.month - 1, parsed.day, parsed.hour, parsed.minute, parsed.second) -
-    parsed.offsetMinutes * 60_000;
-  const utc = new Date(instant);
+  const base = utcInstant(parsed.year, parsed.month, parsed.day, parsed.hour, parsed.minute, parsed.second);
+  if (base === null) {
+    throw new Error(`Invalid timestamp components: ${JSON.stringify(parsed)}`);
+  }
+  const utc = new Date(base - parsed.offsetMinutes * 60_000);
   return (
     `${pad(utc.getUTCFullYear(), 4)}-${pad(utc.getUTCMonth() + 1)}-${pad(utc.getUTCDate())}` +
     `T${pad(utc.getUTCHours())}:${pad(utc.getUTCMinutes())}:${pad(utc.getUTCSeconds())}Z`

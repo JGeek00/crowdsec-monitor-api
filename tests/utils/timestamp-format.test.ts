@@ -15,6 +15,8 @@ import {
   NAMED_ABBREVIATION_CANONICAL,
   DUPLICATED_OFFSET,
   DUPLICATED_OFFSET_CANONICAL,
+  NEVER_EXPIRES_SENTINEL,
+  NEVER_EXPIRES_SENTINEL_UTC,
   FRACTIONAL_SECONDS,
   FRACTIONAL_SECONDS_CANONICAL,
   UNPARSEABLE,
@@ -74,6 +76,14 @@ describe('toCanonicalTimestamp', () => {
 
   it('does not apply a double offset shift to the duplicated-offset variant', () => {
     expect(toCanonicalTimestamp(DUPLICATED_OFFSET)).toBe(DUPLICATED_OFFSET_CANONICAL);
+  });
+
+  it('keeps years below 100 literal (no Date.UTC 1900+year shift) for the never-expires sentinel', () => {
+    expect(toCanonicalTimestamp(NEVER_EXPIRES_SENTINEL)).toBe(NEVER_EXPIRES_SENTINEL_UTC);
+  });
+
+  it('returns null for a non-existent calendar date (rollover guard)', () => {
+    expect(toCanonicalTimestamp('2026-02-30 16:19:29 +0200 +0200')).toBeNull();
   });
 
   it('truncates fractional seconds to whole seconds preserving the instant', () => {
