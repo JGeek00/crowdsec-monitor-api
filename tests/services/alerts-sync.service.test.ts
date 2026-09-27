@@ -41,6 +41,7 @@ import {
   NAMED_ABBREVIATION,
   NAMED_ABBREVIATION_CANONICAL,
   DUPLICATED_OFFSET,
+  DUPLICATED_OFFSET_CANONICAL,
   UNPARSEABLE,
 } from '@tests/helpers/timestamp-fixtures';
 
@@ -176,7 +177,7 @@ describe('AlertsSyncService', () => {
     const calls = vi.mocked(AlertsTable.create).mock.calls;
     const created = calls[calls.length - 1][0] as any;
     expect(created.events[0].timestamp).toBe(NAMED_ABBREVIATION_CANONICAL);
-    expect(created.events[1].timestamp).toBe(DUPLICATED_OFFSET); // already canonical: unchanged
+    expect(created.events[1].timestamp).toBe(DUPLICATED_OFFSET_CANONICAL); // legacy duplicated-offset: re-rendered to UTC
     expect(created.events[2].timestamp).toBe(UNPARSEABLE); // unparseable: stored as received, record not dropped
   });
 

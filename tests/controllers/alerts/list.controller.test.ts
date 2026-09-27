@@ -3,7 +3,7 @@ import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeAlert } from '@tests/factories';
 import { NAMED_ABBREVIATION, NAMED_ABBREVIATION_CANONICAL } from '@tests/helpers/timestamp-fixtures';
 
-const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/;
+const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
 describe('getAllAlerts', () => {
   let app: TestApp;

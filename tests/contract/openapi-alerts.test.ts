@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import type { OpenAPIV3 } from 'openapi-types';
 
-const CANONICAL_PATTERN = String.raw`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$`;
+const CANONICAL_PATTERN = String.raw`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`;
 
 describe('openapi contract — alert events timestamp', () => {
   let spec: OpenAPIV3.Document;

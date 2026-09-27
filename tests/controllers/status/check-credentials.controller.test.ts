@@ -11,7 +11,7 @@ describe('checkCredentials', () => {
     expect(jsonSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Credentials are valid',
-        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/),
+        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/),
       }),
     );
   });
