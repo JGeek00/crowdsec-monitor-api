@@ -1,11 +1,12 @@
 import { log } from '@/services/log.service';
 
 /**
- * Canonical timestamp format: `YYYY-MM-DD HH:MM:SS ±ZZZZ ZZZ` — second precision,
- * numeric UTC offset repeated as the zone field (e.g. `2026-09-24 16:19:29 +0200 +0200`).
- * See specs/006-fix-timestamp-format/contracts/timestamp-format.md.
+ * Canonical timestamp format: RFC 3339 UTC — `2026-09-27T10:40:36Z` — second
+ * precision, `Z` designator. All delivered timestamps are normalized to UTC so
+ * any standard client parser (java.time, ISO8601DateFormatter, JS Date) works
+ * without custom code.
  */
-const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/;
+const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
 /** Go-style upstream variant: `2026-09-23 20:31:28 +0800 HKT` (optional fractional seconds, optional zone token). */
 const UPSTREAM_PATTERN = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})(?:\.(\d+))? ([+-]\d{4})(?: \S+)?$/;
@@ -46,6 +47,37 @@ function parseIsoOffset(group: string): number | null {
   return parseOffset(group.replace(':', ''));
 }
 
+/**
+ * Compute the UTC instant for wall-clock components, assigning the year literally.
+ * `Date.UTC` maps years 0-99 to 1900+year, so years below 100 (e.g. the CrowdSec
+ * "never expires" sentinel `0001-01-01`) would silently shift to 1901+; `setUTCFullYear`
+ * assigns the requested year as-is. Returns null when the components roll over into a
+ * different calendar date (out-of-range or non-existent dates).
+ */
+function utcInstant(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+): number | null {
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, 0);
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day ||
+    date.getUTCHours() !== hour ||
+    date.getUTCMinutes() !== minute ||
+    date.getUTCSeconds() !== second
+  ) {
+    return null;
+  }
+  return date.getTime();
+}
+
 function buildParsed(match: RegExpMatchArray, offsetMinutes: number | null): ParsedTimestamp | null {
   if (offsetMinutes === null) return null;
   const parsed: ParsedTimestamp = {
@@ -57,17 +89,8 @@ function buildParsed(match: RegExpMatchArray, offsetMinutes: number | null): Par
     second: Number(match[6]),
     offsetMinutes,
   };
-  // Reject out-of-range and non-existent calendar dates via UTC round-trip
-  const instant = Date.UTC(parsed.year, parsed.month - 1, parsed.day, parsed.hour, parsed.minute, parsed.second);
-  const roundTrip = new Date(instant);
-  if (
-    roundTrip.getUTCFullYear() !== parsed.year ||
-    roundTrip.getUTCMonth() !== parsed.month - 1 ||
-    roundTrip.getUTCDate() !== parsed.day ||
-    roundTrip.getUTCHours() !== parsed.hour ||
-    roundTrip.getUTCMinutes() !== parsed.minute ||
-    roundTrip.getUTCSeconds() !== parsed.second
-  ) {
+  // Reject out-of-range and non-existent calendar dates via component round-trip
+  if (utcInstant(parsed.year, parsed.month, parsed.day, parsed.hour, parsed.minute, parsed.second) === null) {
     return null;
   }
   return parsed;
@@ -95,18 +118,19 @@ function pad(value: number, length = 2): string {
   return String(value).padStart(length, '0');
 }
 
-function formatOffset(offsetMinutes: number): string {
-  const sign = offsetMinutes < 0 ? '-' : '+';
-  const absolute = Math.abs(offsetMinutes);
-  return `${sign}${pad(Math.floor(absolute / 60))}${pad(absolute % 60)}`;
-}
-
+/**
+ * Render parsed wall-clock components with their original UTC offset as an
+ * RFC 3339 UTC string (`YYYY-MM-DDTHH:MM:SSZ`).
+ */
 function render(parsed: ParsedTimestamp): string {
-  const offset = formatOffset(parsed.offsetMinutes);
+  const base = utcInstant(parsed.year, parsed.month, parsed.day, parsed.hour, parsed.minute, parsed.second);
+  if (base === null) {
+    throw new Error(`Invalid timestamp components: ${JSON.stringify(parsed)}`);
+  }
+  const utc = new Date(base - parsed.offsetMinutes * 60_000);
   return (
-    `${pad(parsed.year, 4)}-${pad(parsed.month)}-${pad(parsed.day)} ` +
-    `${pad(parsed.hour)}:${pad(parsed.minute)}:${pad(parsed.second)} ` +
-    `${offset} ${offset}`
+    `${pad(utc.getUTCFullYear(), 4)}-${pad(utc.getUTCMonth() + 1)}-${pad(utc.getUTCDate())}` +
+    `T${pad(utc.getUTCHours())}:${pad(utc.getUTCMinutes())}:${pad(utc.getUTCSeconds())}Z`
   );
 }
 
@@ -137,19 +161,18 @@ export function toCanonicalTimestamp(
 }
 
 /**
- * Render a Date-typed timestamp (backend-generated values) in the canonical format
- * using the service's own timezone.
+ * Render a Date-typed timestamp (backend-generated values) in the canonical
+ * RFC 3339 UTC format.
  */
 export function toCanonicalTimestampFromDate(date: Date): string {
-  const offsetMinutes = -date.getTimezoneOffset();
   return render({
-    year: date.getFullYear(),
-    month: date.getMonth() + 1,
-    day: date.getDate(),
-    hour: date.getHours(),
-    minute: date.getMinutes(),
-    second: date.getSeconds(),
-    offsetMinutes,
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+    second: date.getUTCSeconds(),
+    offsetMinutes: 0,
   });
 }
 

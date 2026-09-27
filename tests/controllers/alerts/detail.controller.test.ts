@@ -5,6 +5,7 @@ import {
   NAMED_ABBREVIATION,
   NAMED_ABBREVIATION_CANONICAL,
   DUPLICATED_OFFSET,
+  DUPLICATED_OFFSET_CANONICAL,
   UNPARSEABLE,
 } from '@tests/helpers/timestamp-fixtures';
 
@@ -63,7 +64,7 @@ describe('getAlertById', () => {
     expect(res.status).toBe(200);
     expect(res.body.events).toHaveLength(3);
     expect(res.body.events[0].timestamp).toBe(NAMED_ABBREVIATION_CANONICAL);
-    expect(res.body.events[1].timestamp).toBe(DUPLICATED_OFFSET);
+    expect(res.body.events[1].timestamp).toBe(DUPLICATED_OFFSET_CANONICAL);
     expect(res.body.events[2].timestamp).toBeNull();
   });
 
@@ -71,9 +72,9 @@ describe('getAlertById', () => {
     await app.seedDb({ alerts: [makeAlert({ id: 2 })] });
     const res = await app.request.get('/api/v1/alerts/2');
     expect(res.status).toBe(200);
-    expect(res.body.crowdsec_created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
-    expect(res.body.start_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
-    expect(res.body.stop_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$/);
+    expect(res.body.crowdsec_created_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    expect(res.body.start_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    expect(res.body.stop_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
   });
 
   it('logs the conversion failure identifying the alert and the original value', async () => {

@@ -12,7 +12,7 @@ export interface AlertDeliveryEvent extends Omit<Alert_EventData<ParsedMetaData>
 /**
  * Alert as delivered in API responses: event timestamps and date-typed fields
  * (`crowdsec_created_at`, `start_at`, `stop_at`) are rendered in the canonical
- * timestamp format (`YYYY-MM-DD HH:MM:SS ±ZZZZ ZZZ`) instead of raw storage types.
+ * RFC 3339 UTC format (`2026-09-27T10:40:36Z`) instead of raw storage types.
  */
 export type AlertDelivery = Omit<Alert<ParsedMetaData>, 'events' | 'crowdsec_created_at' | 'start_at' | 'stop_at'> & {
   events: AlertDeliveryEvent[];

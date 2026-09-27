@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import type { OpenAPIV3 } from 'openapi-types';
 
-const CANONICAL_PATTERN = String.raw`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4} [+-]\d{4}$`;
+const RFC3339_UTC_PATTERN = String.raw`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`;
 const TIMESTAMP_PROPERTY = /timestamp|(_at|_date|Datetime|expiration|lastSuccessfulSync|last_refresh)$/i;
 
 interface PropertyHit {
@@ -49,14 +49,17 @@ describe('openapi contract — canonical timestamp format', () => {
     }
   });
 
-  it('documents no RFC 3339 date-time formats for timestamp fields', () => {
-    expect(rawSpec).not.toContain('format: date-time');
-  });
-
-  it('declares the canonical pattern on every timestamp-like string property', () => {
+  it('documents every timestamp-like string property as an RFC 3339 date-time', () => {
     expect(hits.length).toBeGreaterThan(0);
     const offenders = hits
-      .filter((hit) => hit.schema.pattern !== CANONICAL_PATTERN)
+      .filter((hit) => hit.schema.format !== 'date-time')
+      .map((hit) => `${hit.schemaName}.${hit.property}`);
+    expect(offenders).toEqual([]);
+  });
+
+  it('declares the RFC 3339 UTC pattern on every timestamp-like string property', () => {
+    const offenders = hits
+      .filter((hit) => hit.schema.pattern !== RFC3339_UTC_PATTERN)
       .map((hit) => `${hit.schemaName}.${hit.property}`);
     expect(offenders).toEqual([]);
   });
