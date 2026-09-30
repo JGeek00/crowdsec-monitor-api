@@ -180,6 +180,65 @@ describe('e2e notification channels', () => {
     expect(badConfig.status).toBe(400);
   });
 
+  it('GET /api/v1/notification-channels/providers serves the definitions', async () => {
+    const res = await app.request.get('/api/v1/notification-channels/providers');
+    expect(res.status).toBe(200);
+    expect(res.body.version).toBe(1);
+    const types = (res.body.providers as { type: string }[]).map((p) => p.type).sort();
+    expect(types).toEqual(['email', 'ntfy']);
+    const ntfy = (res.body.providers as { type: string; fields: { key: string; visibleIf?: unknown }[] }[]).find(
+      (p) => p.type === 'ntfy',
+    );
+    expect(ntfy?.fields.some((f) => f.key === 'topic')).toBe(true);
+    expect(ntfy?.fields.some((f) => f.key === 'password' && f.visibleIf !== undefined)).toBe(true);
+  });
+
+  it('POST returns 400 for unknown provider type or unknown keys', async () => {
+    const badType = await app.request
+      .post('/api/v1/notification-channels')
+      .send(makeChannelPayload({ type: 'sms', config: {} }));
+    expect(badType.status).toBe(400);
+
+    const badKeys = await app.request
+      .post('/api/v1/notification-channels')
+      .send(makeChannelPayload({ config: { host: 'h', from: 'a@b.c', to: 'd@e.f', nope: 1 } }));
+    expect(badKeys.status).toBe(400);
+  });
+
+  it('secrets are never exposed and survive name-only updates', async () => {
+    const created = await app.request.post('/api/v1/notification-channels').send(
+      makeChannelPayload({
+        name: 'smtp',
+        config: { host: 'h', username: 'u', password: 'p', from: 'a@b.c', to: 'd@e.f' },
+      }),
+    );
+    expect(created.status).toBe(201);
+    expect(created.body.data.config.password).toBeUndefined();
+    const id = String(created.body.data.id);
+
+    const detail = await app.request.get(`/api/v1/notification-channels/${id}`);
+    expect(detail.body.data.config.password).toBeUndefined();
+    expect(detail.body.data.config.username).toBe('u');
+
+    const renamed = await app.request.put(`/api/v1/notification-channels/${id}`).send({ name: 'smtp2' });
+    expect(renamed.status).toBe(200);
+
+    const partial = await app.request.put(`/api/v1/notification-channels/${id}`).send({ config: { host: 'h2' } });
+    expect(partial.status).toBe(200);
+    expect(partial.body.data.config.host).toBe('h2');
+    expect(partial.body.data.config.password).toBeUndefined();
+  });
+
+  it('empty-string secret deletes it', async () => {
+    const created = await app.request
+      .post('/api/v1/notification-channels')
+      .send(makeChannelPayload({ name: 'n', type: 'ntfy', config: { topic: 't', accessToken: 'tk' } }));
+    const id = String(created.body.data.id);
+    const updated = await app.request.put(`/api/v1/notification-channels/${id}`).send({ config: { accessToken: '' } });
+    expect(updated.status).toBe(200);
+    expect('accessToken' in (updated.body.data.config as Record<string, unknown>)).toBe(false);
+  });
+
   it('DELETE removes the channel and 404 afterwards', async () => {
     const created = await app.request.post('/api/v1/notification-channels').send(makeChannelPayload());
     const id = String(created.body.data.id);

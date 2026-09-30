@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildNtfyUrl,
+  sanitizeChannelConfig,
   splitRecipients,
   validateChannelConfig,
   withChannelDefaults,
@@ -34,7 +35,7 @@ describe('validateChannelConfig ntfy', () => {
   it('rejects bad server, priority and tags', () => {
     expect(validateChannelConfig('ntfy', { topic: 'ok', server: 'ftp://x' }).length).toBeGreaterThan(0);
     expect(validateChannelConfig('ntfy', { topic: 'ok', priority: 'extreme' }).length).toBeGreaterThan(0);
-    expect(validateChannelConfig('ntfy', { topic: 'ok', tags: '' }).length).toBeGreaterThan(0);
+    expect(validateChannelConfig('ntfy', { topic: 'ok', tags: 'x'.repeat(257) }).length).toBeGreaterThan(0);
   });
 
   it('rejects username without password and token mixed with basic', () => {
@@ -47,7 +48,13 @@ describe('validateChannelConfig ntfy', () => {
 
   it('rejects non-objects and unknown types', () => {
     expect(validateChannelConfig('ntfy', null).length).toBeGreaterThan(0);
-    expect(validateChannelConfig('sms' as never, {}).length).toBeGreaterThan(0);
+    expect(validateChannelConfig('sms', {}).length).toBeGreaterThan(0);
+  });
+
+  it('treats empty strings as absent and rejects unknown keys', () => {
+    expect(validateChannelConfig('ntfy', { topic: 'ok', tags: '' })).toEqual([]);
+    expect(validateChannelConfig('ntfy', { topic: 'ok', nope: 1 }).length).toBeGreaterThan(0);
+    expect(validateChannelConfig('email', { host: 'h', from: 'a@b.c', to: 'd@e.f', nope: 1 }).length).toBeGreaterThan(0);
   });
 });
 
@@ -77,6 +84,21 @@ describe('validateChannelConfig email', () => {
   it('requires username and password together', () => {
     expect(validateChannelConfig('email', { ...valid, username: 'u' }).length).toBeGreaterThan(0);
     expect(validateChannelConfig('email', { ...valid, password: 'p' }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('sanitizeChannelConfig', () => {
+  it('removes secret fields', () => {
+    expect(sanitizeChannelConfig('ntfy', { topic: 't', username: 'u', password: 'p' })).toEqual({
+      topic: 't',
+      username: 'u',
+    });
+    expect(sanitizeChannelConfig('email', { host: 'h', password: 'p' })).toEqual({ host: 'h' });
+  });
+
+  it('returns empty for unknown types or non-objects', () => {
+    expect(sanitizeChannelConfig('sms', { a: 1 })).toEqual({});
+    expect(sanitizeChannelConfig('ntfy', null)).toEqual({});
   });
 });
 

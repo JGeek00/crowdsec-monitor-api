@@ -69,7 +69,9 @@ describe('notification validators', () => {
 
   it('validates channel payloads', async () => {
     expect((await runBody(createChannelValidators, validChannelBody())).isEmpty()).toBe(true);
-    expect((await runBody(createChannelValidators, { ...validChannelBody(), type: 'sms' })).isEmpty()).toBe(false);
+    // Unknown provider types pass the chains and are rejected by the controller
+    // against the provider definition (covered in e2e).
+    expect((await runBody(createChannelValidators, { ...validChannelBody(), type: 'sms' })).isEmpty()).toBe(true);
     expect((await runBody(createChannelValidators, { type: 'email', config: {} })).isEmpty()).toBe(false);
     expect((await runBody(updateChannelValidators, { name: 'renamed' }, { id: '1' })).isEmpty()).toBe(true);
     expect((await runBody(updateChannelValidators, { name: 'x' }, { id: 'bad' })).isEmpty()).toBe(false);
