@@ -9,3 +9,6 @@ export * from '@/controllers/lists';
 
 // Statistics controllers
 export * from '@/controllers/statistics';
+
+// Notifications controllers
+export * from '@/controllers/notifications';

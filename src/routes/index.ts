@@ -5,6 +5,8 @@ import listRoutes from '@/routes/list.routes';
 import allowlistRoutes from '@/routes/allowlist.routes';
 import blocklistRoutes from '@/routes/blocklist.routes';
 import statisticsRoutes from '@/routes/statistics.routes';
+import notificationRoutes from '@/routes/notification.routes';
+import notificationChannelRoutes from '@/routes/notification-channel.routes';
 import statusRoutes from '@/routes/status.routes';
 import { AuthMiddleware } from '@/middlewares/auth.middleware';
 
@@ -17,6 +19,8 @@ router.use('/lists', AuthMiddleware.expressAuth, listRoutes);
 router.use('/allowlists', AuthMiddleware.expressAuth, allowlistRoutes);
 router.use('/blocklists', AuthMiddleware.expressAuth, blocklistRoutes);
 router.use('/statistics', AuthMiddleware.expressAuth, statisticsRoutes);
+router.use('/notifications', AuthMiddleware.expressAuth, notificationRoutes);
+router.use('/notification-channels', AuthMiddleware.expressAuth, notificationChannelRoutes);
 
 // Mount status routes
 router.use('/', statusRoutes);

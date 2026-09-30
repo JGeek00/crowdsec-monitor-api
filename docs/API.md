@@ -2555,6 +2555,176 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
 
 ---
 
+## Notification Channels Endpoints
+
+Delivery channels configured by the user in the server settings. Each channel has a mandatory
+`name`, a provider `type` (`ntfy`|`email`) and a provider-specific `config`. Channels persist in
+the `notification_channels` DB table and are referenced from notifications via `channelIds`.
+
+Provider forms (mobile: provider picker first, then per-provider form + name field + test + save):
+
+- **ntfy** (`POST <server>/<topic>`, topic created on the fly):
+  - `topic` (required): letters, numbers, `_` and `-` only, max 64 chars (ntfy rule, enforced).
+    It acts as the password on public servers: use a hard-to-guess value.
+  - `server` (optional, default `https://ntfy.sh`): self-hosted URL for private setups.
+  - `username` + `password` (optional, both required together): Basic auth for protected servers.
+  - `accessToken` (optional, exclusive with username/password): Bearer token.
+  - `priority` (optional): `1-5` or `min/low/default/high/urgent/max`.
+  - `tags` (optional): comma-separated tags.
+- **email** (SMTP via nodemailer):
+  - `host` (required), `port` (optional, default 587; use 465 with `secure:true` for implicit TLS),
+    `secure` (optional, default false), `username` + `password` (optional, both or neither),
+  - `from` (required email), `to` (required, comma-separated emails).
+
+### GET `/api/v1/notification-channels`
+
+List configured channels.
+
+```bash
+curl http://localhost:3000/api/v1/notification-channels
+```
+
+### POST `/api/v1/notification-channels`
+
+Create a channel. Required: `name, type, config` (config validated per provider).
+
+```bash
+curl -X POST http://localhost:3000/api/v1/notification-channels \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Ops email","type":"email","config":{"host":"smtp.example.com","from":"crowdsec@example.com","to":"ops@example.com"}}'
+```
+
+### GET `/api/v1/notification-channels/:id`
+
+Get one channel. Returns 404 when missing.
+
+### PUT `/api/v1/notification-channels/:id`
+
+Partial update (`name, type, config`). Changing type revalidates the merged config.
+
+### DELETE `/api/v1/notification-channels/:id`
+
+Delete a channel. Returns 409 when a notification still references it (detach first).
+
+### POST `/api/v1/notification-channels/:id/test`
+
+Send a test message through the channel. Optional body `{message}` (default
+`Test notification from "<name>"`). Returns `{data: {channelId, ok, detail}}`.
+The result is returned directly and is NOT stored in history.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/notification-channels/1/test \
+  -H 'Content-Type: application/json' -d '{"message":"hello"}'
+```
+
+### POST `/api/v1/notification-channels/test`
+
+Test an unsaved channel config (used by the app before saving). Required: `type, config`;
+optional `message`. Returns `{data: {channelId: null, ok, detail}}`, nothing persisted,
+nothing stored in history.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/notification-channels/test \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"ntfy","config":{"topic":"my-alerts"},"message":"hello"}'
+```
+
+## Notifications Endpoints
+
+User-configurable notifications. Each notification has a `name`, optional `description`,
+`enabled` flag, block-based `condition` tree, optional frequency `threshold`
+(`{count, windowSeconds}` = "ocurre x veces en x segundos"), a `message`, and `channelIds`
+(references to configured channels; delivery providers `ntfy`/`email`, extensible via
+the channel registry).
+
+Condition DSL: `ConditionNode = {type:leaf, field, operator, value} | {type:and|or, children[]} | {type:not, child}`.
+Leaf `field`: `scenario | country | target | origin | type | scope | ipOwner` (`country` =
+`source.cn`, `target` = `source.value` fallback `source.ip`, `origin`/`type` from the first
+decision, `ipOwner` = `source.as_name`).
+Leaf `operator`: `equals | not_equals | in | not_in | contains` (case-insensitive).
+Example: `(scenario is xxx OR scenario is yyy) AND country is ES` + threshold `{count: 5, windowSeconds: 60}`.
+No condition: `condition: {"type": "and", "children": []}` matches every alert, so combined
+with a threshold it fires on any X alerts in Y seconds.
+
+Notifications persist in the `notifications` DB table. On backend start the engine loads
+enabled rows into memory; each newly synced alert is evaluated, and on match (+ threshold)
+channels are dispatched and the trigger is appended to the in-memory history (cap 200,
+newest first, not persisted). Disabling stops triggers but keeps the DB row; deleting
+removes the DB row and stops triggers.
+
+### GET `/api/v1/notifications`
+
+List configured notifications. **Authentication:** required if `API_PASSWORD` is set.
+
+```bash
+curl http://localhost:3000/api/v1/notifications
+```
+
+### POST `/api/v1/notifications`
+
+Create a notification. Required: `name, condition, message, channelIds` (all ids must
+exist, otherwise 422). In the app, the channel list is shown after condition + message
+so the user can pick through which channels to send.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/notifications \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"SSH bf desde ES","condition":{"type":"and","children":[{"type":"leaf","field":"scenario","operator":"equals","value":"crowdsecurity/ssh-bf"},{"type":"leaf","field":"country","operator":"equals","value":"ES"}]},"threshold":{"count":5,"windowSeconds":60},"message":"SSH brute force desde ES","channelIds":[1]}'
+```
+
+### GET `/api/v1/notifications/history`
+
+List sent-notifications history (in-memory, newest first). **Must be called before** `GET /:id` (Express route order).
+
+```bash
+curl http://localhost:3000/api/v1/notifications/history
+```
+
+### GET `/api/v1/notifications/:id`
+
+Get one notification. Returns 404 when missing.
+
+### PUT `/api/v1/notifications/:id`
+
+Partial update (any of `name, description, enabled, condition, threshold, message, channelIds`).
+Unknown channel ids return 422. Updating `enabled` here behaves like the toggle endpoint.
+
+### DELETE `/api/v1/notifications/:id`
+
+Delete from DB and stop future triggers. Returns `{message: 'Notification deleted'}`.
+
+### POST `/api/v1/notifications/:id/enabled`
+
+Enable/disable without deleting. Body: `{enabled: boolean}`.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/notifications/1/enabled \
+  -H 'Content-Type: application/json' -d '{"enabled":false}'
+```
+
+### Mobile contract (iOS / Android)
+
+- DTOs mirror `UserNotification`, `NotificationInput`, `NotificationChannel`, `ChannelInput`,
+  `ChannelTestResult`, `NotificationHistoryEntry` in `openapi.yaml`.
+- Server settings: new channels section (list + add: provider picker ntfy/email → per-provider
+  form always including mandatory `name` + test button + save button).
+- Notification editor: after condition + message, show the configured channel list for selection
+  (multi-select → `channelIds`).
+- Android: `data/models/NotificationsModels.kt` (`@Serializable`, matching openapi names) +
+  `data/api/NotificationsApiClient.kt` + `data/api/NotificationChannelsApiClient.kt`
+  (Retrofit `Service` + suspend fns with the standard try/catch ladder) + properties on
+  `CrowdSecApiClient` + ViewModels (`LoadingResult`) + `Route.Notifications*` +
+  screens under `ui/screens/settings/notifications/` and `ui/screens/settings/channels/`
+  (channel list, provider picker, per-provider form, test button, history list).
+- iOS: `Models/Notification.swift` + `Models/NotificationChannel.swift` (Codable) +
+  `Network/API/NotificationsAPIClient.swift` + `Network/API/NotificationChannelsAPIClient.swift`
+  (`init(_ httpClient: HttpClient)`, async fns) + `let`s on `CrowdSecAPIClient` +
+  `@Observable` ViewModels + SwiftUI views under `Views/Settings/Notifications/` and
+  `Views/Settings/Channels/`, strings in `Localizable.xcstrings`.
+- `api-dummy` mirrors the same endpoints with in-memory dummy data for App Store validation.
+
+---
+
 ## Rate Limiting
 
 The API supports optional rate limiting via the `RATE_LIMIT` environment variable:

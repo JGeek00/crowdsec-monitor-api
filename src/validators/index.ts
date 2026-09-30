@@ -3,3 +3,4 @@ export * from '@/validators/decision.validator';
 export * from '@/validators/statistics.validator';
 export * from '@/validators/allowlist.validator';
 export * from '@/validators/blocklist.validator';
+export * from '@/validators/notification.validator';

@@ -53,6 +53,10 @@ tags:
     description: Combined operations for blocklists and allowlists (check IPs and domains)
   - name: Statistics
     description: Statistics and aggregated data operations
+  - name: Notifications
+    description: User-configurable notifications with block-based conditions
+  - name: Notification channels
+    description: Delivery channels (ntfy, email) referenced by notifications
 
 paths:
   /health:
@@ -1794,6 +1798,403 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List configured notifications
+      operationId: listNotifications
+      description: Returns user-configured notifications (name, description, enabled, condition, threshold, message, channels).
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserNotification'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Notifications
+      summary: Create a notification
+      operationId: createNotification
+      description: Creates a user notification with a block-based condition tree and message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationInput'
+      responses:
+        '201':
+          description: Notification created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserNotification'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /notifications/history:
+    get:
+      tags:
+        - Notifications
+      summary: List sent-notifications history (in-memory)
+      operationId: listNotificationHistory
+      description: Returns the in-memory history of triggered notifications (not persisted, capped at 200, newest first).
+      responses:
+        '200':
+          description: History list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationHistoryEntry'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /notifications/{id}:
+    get:
+      tags:
+        - Notifications
+      summary: Get a notification
+      operationId: getNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserNotification'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+    put:
+      tags:
+        - Notifications
+      summary: Update a notification
+      operationId: updateNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationInput'
+      responses:
+        '200':
+          description: Notification updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserNotification'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      operationId: deleteNotification
+      description: Deletes the notification from the DB and stops future triggers. Disabling only stops triggers.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+
+  /notifications/{id}/enabled:
+    post:
+      tags:
+        - Notifications
+      summary: Enable or disable a notification
+      operationId: toggleNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: Toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserNotification'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+
+  /notification-channels:
+    get:
+      tags:
+        - Notification channels
+      summary: List configured channels
+      operationId: listNotificationChannels
+      description: Returns delivery channels (ntfy, email) configured by the user.
+      responses:
+        '200':
+          description: List of channels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationChannel'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Notification channels
+      summary: Create a channel
+      operationId: createNotificationChannel
+      description: Creates a channel. Config fields are validated per provider type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelInput'
+      responses:
+        '201':
+          description: Channel created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationChannel'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /notification-channels/test:
+    post:
+      tags:
+        - Notification channels
+      summary: Test an unsaved channel config
+      operationId: testInlineNotificationChannel
+      description: Validates the config and sends a test message without persisting anything. The result is not stored in history.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, config]
+              properties:
+                type:
+                  type: string
+                  enum: [ntfy, email]
+                config:
+                  type: object
+                message:
+                  type: string
+                  maxLength: 2000
+      responses:
+        '200':
+          description: Test result (channelId is null for inline tests)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChannelTestResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /notification-channels/{id}:
+    get:
+      tags:
+        - Notification channels
+      summary: Get a channel
+      operationId: getNotificationChannel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Channel detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationChannel'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+    put:
+      tags:
+        - Notification channels
+      summary: Update a channel
+      operationId: updateNotificationChannel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelInput'
+      responses:
+        '200':
+          description: Channel updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationChannel'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - Notification channels
+      summary: Delete a channel
+      operationId: deleteNotificationChannel
+      description: Deletes the channel. Returns 409 when a notification still references it.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+        '409':
+          description: Channel is referenced by notifications
+
+  /notification-channels/{id}/test:
+    post:
+      tags:
+        - Notification channels
+      summary: Send a test message through a channel
+      operationId: testNotificationChannel
+      description: Sends a test message. The result is returned directly and is not stored in history.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  maxLength: 2000
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChannelTestResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Not found
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1844,6 +2245,139 @@ components:
           type: string
           description: Detailed error description
           example: The requested resource was not found
+
+    UserNotification:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: SSH brute force desde ES
+        description:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
+        condition:
+          type: object
+          description: Block-based condition tree (leaf/and/or/not). Leaf fields scenario|country|target|origin|type|scope|ipOwner (ipOwner reads source.as_name), operators equals|not_equals|in|not_in|contains. An empty `and` (no children) matches every alert (no condition).
+        threshold:
+          type: object
+          nullable: true
+          properties:
+            count:
+              type: integer
+            windowSeconds:
+              type: integer
+        message:
+          type: string
+        channelIds:
+          type: array
+          description: IDs of configured notification channels used to deliver this notification.
+          items:
+            type: integer
+
+    NotificationInput:
+      type: object
+      required: [name, condition, message, channelIds]
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+        enabled:
+          type: boolean
+        condition:
+          type: object
+        threshold:
+          type: object
+          nullable: true
+        message:
+          type: string
+          maxLength: 2000
+        channelIds:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: integer
+
+    NotificationChannel:
+      type: object
+      description: Delivery channel (ntfy or email) stored in the DB and referenced by notifications.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: Ops email
+        type:
+          type: string
+          enum: [ntfy, email]
+        config:
+          type: object
+          description: |
+            ntfy: {topic (required, [-_A-Za-z0-9]{1,64}), server (optional, default https://ntfy.sh),
+            username/password (optional Basic auth), accessToken (optional Bearer, exclusive with Basic),
+            priority (optional: 1-5 or min/low/default/high/urgent/max), tags (optional)}.
+            email: {host (required), port (optional, default 587), secure (optional, default false, true for port 465),
+            username/password (optional SMTP auth, both or neither), from (required email),
+            to (required comma-separated emails)}.
+
+    ChannelInput:
+      type: object
+      required: [name, type, config]
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        type:
+          type: string
+          enum: [ntfy, email]
+        config:
+          type: object
+
+    ChannelTestResult:
+      type: object
+      properties:
+        channelId:
+          type: integer
+        ok:
+          type: boolean
+        detail:
+          type: string
+          nullable: true
+
+    NotificationHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        notificationId:
+          type: integer
+        notificationName:
+          type: string
+        message:
+          type: string
+        triggeredAt:
+          type: string
+          format: date-time
+        channels:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              ok:
+                type: boolean
+              detail:
+                type: string
+                nullable: true
 
     Alert:
       type: object
