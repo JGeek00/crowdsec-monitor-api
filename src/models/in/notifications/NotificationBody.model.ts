@@ -1,9 +1,4 @@
-import type {
-  ConditionNode,
-  NotificationChannelConfig,
-  NotificationChannelType,
-  NotificationThreshold,
-} from '@/models';
+import type { ConditionNode, NotificationChannelConfig, NotificationThreshold } from '@/models';
 
 export interface PostNotificationBody {
   name: string;
@@ -35,13 +30,13 @@ export interface PostToggleNotificationBody {
 
 export interface PostChannelBody {
   name: string;
-  type: NotificationChannelType;
+  type: string;
   config: NotificationChannelConfig;
 }
 
 export interface PutChannelBody {
   name?: string;
-  type?: NotificationChannelType;
+  type?: string;
   config?: NotificationChannelConfig;
 }
 
@@ -54,7 +49,7 @@ export interface PostChannelTestBody {
 }
 
 export interface PostChannelTestInlineBody {
-  type: NotificationChannelType;
+  type: string;
   config: NotificationChannelConfig;
   message?: string;
 }

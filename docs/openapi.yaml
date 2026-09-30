@@ -2074,6 +2074,30 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /notification-channels/providers:
+    get:
+      tags:
+        - Notification channels
+      summary: List provider definitions
+      operationId: listNotificationProviders
+      description: Returns the provider definitions (fields, validation rules, defaults) so apps render channel forms generically. Contains no secrets.
+      responses:
+        '200':
+          description: Provider definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: integer
+                  providers:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /notification-channels/{id}:
     get:
       tags:
@@ -2337,9 +2361,10 @@ components:
           maxLength: 120
         type:
           type: string
-          enum: [ntfy, email]
+          description: Must match a provider type from GET /notification-channels/providers.
         config:
           type: object
+          description: Validated against the provider definition; unknown keys are rejected.
 
     ChannelTestResult:
       type: object

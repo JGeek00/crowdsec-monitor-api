@@ -39,7 +39,7 @@ const channelNameValidators = (optional: boolean): ValidationChain => {
 
 const channelTypeValidators = (optional: boolean): ValidationChain[] => {
   const chain = optional ? body('type').optional() : body('type');
-  return [chain.isIn(['ntfy', 'email']).withMessage('type must be ntfy|email')];
+  return [chain.isString().withMessage('type must be a string').trim().notEmpty().withMessage('type is required')];
 };
 
 const channelConfigValidators = (optional: boolean): ValidationChain[] => {
@@ -161,7 +161,7 @@ export const channelIdValidators: ValidationChain[] = [
 ];
 
 export const testInlineChannelValidators: ValidationChain[] = [
-  body('type').isIn(['ntfy', 'email']).withMessage('type must be ntfy|email'),
+  body('type').isString().withMessage('type must be a string').trim().notEmpty().withMessage('type is required'),
   body('config').isObject().withMessage('config must be an object'),
   body('message')
     .optional()

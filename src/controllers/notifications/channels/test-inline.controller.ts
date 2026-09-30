@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
-import { PostChannelTestInlineBody, PostChannelTestResponse, ResponseWithError } from '@/models';
+import {
+  NotificationChannelRef,
+  PostChannelTestInlineBody,
+  PostChannelTestResponse,
+  ResponseWithError,
+} from '@/models';
 import { dispatchChannels } from '@/services/notifications/notification-sender.service';
 import { validateChannelConfig } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';
@@ -20,7 +25,9 @@ export async function testInlineChannel(
       return;
     }
     const text = message?.trim() || 'Test notification';
-    const [result] = await dispatchChannels([{ type, config }], text, 'Channel test');
+    // Validated against the provider definition above.
+    const ref = { type, config } as unknown as NotificationChannelRef;
+    const [result] = await dispatchChannels([ref], text, 'Channel test');
     res.status(200).json({
       data: { channelId: null, ok: result?.ok ?? false, detail: result?.detail ?? 'no result' },
     });

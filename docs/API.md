@@ -2558,8 +2558,15 @@ When query parameters fail validation, the API returns a 400 Bad Request with de
 ## Notification Channels Endpoints
 
 Delivery channels configured by the user in the server settings. Each channel has a mandatory
-`name`, a provider `type` (`ntfy`|`email`) and a provider-specific `config`. Channels persist in
-the `notification_channels` DB table and are referenced from notifications via `channelIds`.
+`name`, a provider `type` (`ntfy`|`email`, extensible) and a provider-specific `config`.
+Channels persist in the `notification_channels` DB table and are referenced from
+notifications via `channelIds`.
+
+Provider definitions (fields, validation rules, defaults) are served by
+`GET /api/v1/notification-channels/providers` so apps render forms generically.
+Secrets (passwords, tokens) are accepted on write but never returned by read endpoints:
+omitted secrets are preserved on update, an empty-string secret deletes it, and switching
+provider type validates the incoming config alone.
 
 Provider forms (mobile: provider picker first, then per-provider form + name field + test + save):
 
@@ -2600,7 +2607,17 @@ Get one channel. Returns 404 when missing.
 
 ### PUT `/api/v1/notification-channels/:id`
 
-Partial update (`name, type, config`). Changing type revalidates the merged config.
+Partial update (`name, type, config`). With the same type, the config merges over the
+stored one (omitted secrets preserved); changing type requires `config` and validates
+it alone.
+
+### GET `/api/v1/notification-channels/providers`
+
+Provider definitions for generic form rendering (no secrets included).
+
+```bash
+curl http://localhost:3000/api/v1/notification-channels/providers
+```
 
 ### DELETE `/api/v1/notification-channels/:id`
 

@@ -1,4 +1,5 @@
 import type { NotificationHistoryEntry, UserNotification, UserNotificationChannel } from '@/models';
+import type { ProviderDefinition } from '@/constants/notification-providers';
 
 export interface GetNotificationsResponse {
   data: UserNotification[];
@@ -47,4 +48,9 @@ export interface DeleteChannelResponse {
 
 export interface PostChannelTestResponse {
   data: { channelId: number | null; ok: boolean; detail: string | null };
+}
+
+export interface GetProvidersResponse {
+  version: number;
+  providers: ProviderDefinition[];
 }

@@ -1,59 +1,32 @@
-import type {
-  EmailChannelConfig,
-  NotificationChannelConfig,
-  NotificationChannelType,
-  NtfyChannelConfig,
-} from '@/models';
+import type { NotificationChannelConfig } from '@/models';
+import {
+  findProvider,
+  type ProviderFieldCondition,
+  type ProviderFieldDefinition,
+} from '@/constants/notification-providers';
 
-export const NTFY_DEFAULT_SERVER = 'https://ntfy.sh';
-export const EMAIL_DEFAULT_PORT = 587;
-
-const TOPIC_PATTERN = /^[-_A-Za-z0-9]{1,64}$/;
-const PRIORITIES = ['1', '2', '3', '4', '5', 'min', 'low', 'default', 'high', 'urgent', 'max'];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function asString(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
+function isPresent(value: unknown): boolean {
+  if (value === undefined || value === null) return false;
+  if (typeof value === 'string') return value.trim() !== '';
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
 }
 
-function validateNtfy(config: Record<string, unknown>): string[] {
-  const errors: string[] = [];
-  const topic = asString(config['topic']);
-  if (!topic || !TOPIC_PATTERN.test(topic)) {
-    errors.push('config.topic is required (letters, numbers, _ and -, max 64 chars)');
+function conditionHolds(condition: ProviderFieldCondition, config: Record<string, unknown>): boolean {
+  const value = config[condition.field];
+  if (condition.present !== undefined) {
+    return condition.present ? isPresent(value) : !isPresent(value);
   }
-  const server = config['server'];
-  if (server !== undefined) {
-    const s = asString(server);
-    if (!s || s.length > 2048 || !/^https?:\/\/.+/.test(s)) {
-      errors.push('config.server must be a valid http or https URL');
-    }
+  if (condition.equals !== undefined) {
+    return value === condition.equals;
   }
-  const username = asString(config['username']);
-  const password = asString(config['password']);
-  const accessToken = asString(config['accessToken']);
-  if (username !== null && username.length > 256) errors.push('config.username must be at most 256 characters');
-  if (password !== null && password.length > 1024) errors.push('config.password must be at most 1024 characters');
-  if (accessToken !== null && accessToken.length > 1024) {
-    errors.push('config.accessToken must be at most 1024 characters');
-  }
-  if (username !== null && password === null) errors.push('config.password is required when username is set');
-  if (accessToken !== null && (username !== null || password !== null)) {
-    errors.push('config.accessToken cannot be combined with username/password');
-  }
-  const priority = config['priority'];
-  if (priority !== undefined && !PRIORITIES.includes(String(priority))) {
-    errors.push(`config.priority must be one of ${PRIORITIES.join(', ')}`);
-  }
-  const tags = asString(config['tags']);
-  if (tags !== null && (tags.length === 0 || tags.length > 256)) {
-    errors.push('config.tags must be 1..256 characters');
-  }
-  return errors;
+  return false;
 }
 
 export function splitRecipients(to: string): string[] {
@@ -63,54 +36,153 @@ export function splitRecipients(to: string): string[] {
     .filter((r) => r !== '');
 }
 
-function validateEmail(config: Record<string, unknown>): string[] {
-  const errors: string[] = [];
-  const host = asString(config['host']);
-  if (!host || host.length > 253) errors.push('config.host is required (max 253 characters)');
-  const port = config['port'];
-  if (port !== undefined && (!Number.isInteger(port) || (port as number) < 1 || (port as number) > 65535)) {
-    errors.push('config.port must be an integer 1..65535');
+function checkString(
+  key: string,
+  value: unknown,
+  field: ProviderFieldDefinition,
+  errors: string[],
+  format?: (item: string) => boolean,
+  formatMessage?: string,
+): void {
+  if (typeof value !== 'string') {
+    errors.push(`config.${key} must be a string`);
+    return;
   }
-  if (config['secure'] !== undefined && typeof config['secure'] !== 'boolean') {
-    errors.push('config.secure must be a boolean');
+  if (field.minLength !== undefined && value.length < field.minLength) {
+    errors.push(`config.${key} must be at least ${String(field.minLength)} characters`);
   }
-  const username = asString(config['username']);
-  const password = asString(config['password']);
-  if (username !== null && password === null) errors.push('config.password is required when username is set');
-  if (password !== null && username === null) errors.push('config.username is required when password is set');
-  const from = asString(config['from']);
-  if (!from || !EMAIL_PATTERN.test(from)) errors.push('config.from must be a valid email address');
-  const to = asString(config['to']);
-  if (!to || to.length > 2000) {
-    errors.push('config.to is required (comma-separated email addresses)');
-  } else {
-    const bad = splitRecipients(to).filter((r) => !EMAIL_PATTERN.test(r));
-    if (splitRecipients(to).length === 0 || bad.length > 0) {
-      errors.push('config.to must contain valid email addresses');
+  if (field.maxLength !== undefined && value.length > field.maxLength) {
+    errors.push(`config.${key} must be at most ${String(field.maxLength)} characters`);
+  }
+  if (field.regex !== undefined && !new RegExp(field.regex).test(value)) {
+    errors.push(`config.${key} has an invalid format`);
+  }
+  if (format) {
+    const items = field.list === true ? splitRecipients(value) : [value];
+    if (items.length === 0 || items.some((item) => !format(item))) {
+      errors.push(formatMessage ?? `config.${key} has an invalid format`);
     }
+  }
+}
+
+function checkField(
+  key: string,
+  value: unknown,
+  field: ProviderFieldDefinition,
+  config: Record<string, unknown>,
+  errors: string[],
+): void {
+  const required =
+    field.required === true || (field.requiredIf !== undefined && conditionHolds(field.requiredIf, config));
+  if (!isPresent(value)) {
+    if (required) errors.push(`config.${key} is required`);
+    return;
+  }
+  switch (field.type) {
+    case 'text':
+    case 'password':
+      checkString(key, value, field, errors);
+      break;
+    case 'email':
+      checkString(
+        key,
+        value,
+        field,
+        errors,
+        (item) => EMAIL_PATTERN.test(item),
+        `config.${key} must contain valid email addresses`,
+      );
+      break;
+    case 'url':
+      checkString(
+        key,
+        value,
+        field,
+        errors,
+        (item) => /^https?:\/\/.+/.test(item),
+        `config.${key} must be a valid http or https URL`,
+      );
+      break;
+    case 'number': {
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        errors.push(`config.${key} must be a number`);
+        return;
+      }
+      if (field.integer === true && !Number.isInteger(value)) {
+        errors.push(`config.${key} must be an integer`);
+      }
+      if (field.min !== undefined && value < field.min)
+        errors.push(`config.${key} must be at least ${String(field.min)}`);
+      if (field.max !== undefined && value > field.max)
+        errors.push(`config.${key} must be at most ${String(field.max)}`);
+      break;
+    }
+    case 'boolean':
+      if (typeof value !== 'boolean') errors.push(`config.${key} must be a boolean`);
+      break;
+    case 'select': {
+      const allowed = (field.options ?? []).map((o) => o.value);
+      if (typeof value !== 'string' || !allowed.includes(value)) {
+        errors.push(`config.${key} must be one of ${allowed.join(', ')}`);
+      }
+      break;
+    }
+  }
+  if (field.exclusiveWith !== undefined) {
+    const clash = field.exclusiveWith.find((other) => isPresent(config[other]));
+    if (clash !== undefined) {
+      errors.push(`config.${key} cannot be combined with ${clash}`);
+    }
+  }
+}
+
+export function validateChannelConfig(type: string, config: unknown): string[] {
+  const provider = findProvider(type);
+  if (!provider) return [`unknown channel type ${type}`];
+  if (!isRecord(config)) return ['config must be an object'];
+  const errors: string[] = [];
+  const known = new Set(provider.fields.map((f) => f.key));
+  for (const key of Object.keys(config)) {
+    if (!known.has(key)) errors.push(`config.${key} is not a valid field for ${type}`);
+  }
+  for (const field of provider.fields) {
+    checkField(field.key, config[field.key], field, config, errors);
   }
   return errors;
 }
 
-export function validateChannelConfig(type: NotificationChannelType, config: unknown): string[] {
-  if (!isRecord(config)) return ['config must be an object'];
-  if (type === 'ntfy') return validateNtfy(config);
-  if (type === 'email') return validateEmail(config);
-  return [`unsupported channel type ${type}`];
+export function withChannelDefaults(type: string, config: NotificationChannelConfig): NotificationChannelConfig {
+  const provider = findProvider(type);
+  const source = (isRecord(config) ? config : {}) as Record<string, unknown>;
+  const merged: Record<string, unknown> = {};
+  if (provider) {
+    for (const field of provider.fields) {
+      if (field.default !== undefined && !isPresent(source[field.key])) {
+        merged[field.key] = field.default;
+      }
+    }
+  }
+  return { ...merged, ...source } as unknown as NotificationChannelConfig;
 }
 
-export function withChannelDefaults(
-  type: NotificationChannelType,
-  config: NotificationChannelConfig,
-): NotificationChannelConfig {
-  if (type === 'ntfy') {
-    const c = config as NtfyChannelConfig;
-    return { server: NTFY_DEFAULT_SERVER, ...c };
+/** Remove secret fields so read endpoints never leak them. */
+export function sanitizeChannelConfig(type: string, config: unknown): Record<string, unknown> {
+  const provider = findProvider(type);
+  if (!provider || !isRecord(config)) return {};
+  const secrets = new Set(provider.fields.filter((f) => f.secret === true).map((f) => f.key));
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(config)) {
+    if (!secrets.has(key)) clean[key] = value;
   }
-  const c = config as EmailChannelConfig;
-  return { port: EMAIL_DEFAULT_PORT, secure: false, ...c };
+  return clean;
 }
 
 export function buildNtfyUrl(server: string, topic: string): string {
   return `${server.replace(/\/+$/, '')}/${topic}`;
+}
+
+/** True when the key is flagged secret for the provider type. */
+export function isSecretKey(type: string, key: string): boolean {
+  const provider = findProvider(type);
+  return provider?.fields.some((f) => f.key === key && f.secret === true) ?? false;
 }

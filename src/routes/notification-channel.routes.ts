@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createChannel,
   listChannels,
+  listProviders,
   getChannel,
   updateChannel,
   deleteChannel,
@@ -21,6 +22,7 @@ const router: Router = Router();
 
 router.get('/', listChannels);
 router.post('/', createChannelValidators, handleValidationErrors, createChannel);
+router.get('/providers', listProviders);
 router.post('/test', testInlineChannelValidators, handleValidationErrors, testInlineChannel);
 router.get('/:id', channelIdValidators, handleValidationErrors, getChannel);
 router.put('/:id', updateChannelValidators, handleValidationErrors, updateChannel);
