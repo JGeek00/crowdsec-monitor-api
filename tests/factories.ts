@@ -134,3 +134,36 @@ export const makeDecisionsRequest: Factory<GetDecisionsQueryParams> = (overrides
   offset: 0,
   ...overrides,
 });
+
+export interface NotificationPayload {
+  name: string;
+  description?: string | null;
+  enabled?: boolean;
+  condition: Record<string, unknown>;
+  threshold?: { count: number; windowSeconds: number } | null;
+  message: string;
+  channelIds: number[];
+}
+
+export interface ChannelPayload {
+  name: string;
+  type: string;
+  config: Record<string, unknown>;
+}
+
+export const makeChannelPayload = (overrides: Partial<ChannelPayload> = {}): ChannelPayload => ({
+  name: 'ops email',
+  type: 'email',
+  config: { host: 'smtp.example.com', from: 'crowdsec@example.com', to: 'ops@example.com' },
+  ...overrides,
+});
+
+export const makeNotificationPayload: Factory<NotificationPayload> = (overrides = {}) => ({
+  name: 'ssh alerts',
+  description: null,
+  condition: { type: 'leaf', field: 'scenario', operator: 'equals', value: 'crowdsecurity/ssh-bf' },
+  threshold: null,
+  message: 'SSH brute force detected',
+  channelIds: [1],
+  ...overrides,
+});
