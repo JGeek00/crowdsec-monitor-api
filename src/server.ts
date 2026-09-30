@@ -7,6 +7,7 @@ import {
   versionCheckerService,
   statusService,
   statusBlocklistService,
+  notificationEngineService,
 } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
 import { webSocketApp } from '@/sockets';
@@ -92,6 +93,14 @@ const startServer = async (): Promise<void> => {
     await crowdSecAPI.checkBouncerConnection();
     statusService.updateBouncerStatus(crowdSecAPI.isBouncerConnected());
     step('Bouncer key', '✓');
+
+    // Load user notifications into the engine before any sync so fresh alerts can trigger them
+    try {
+      await notificationEngineService.reload();
+      step('Notifications', '✓');
+    } catch (err) {
+      step('Notifications', '⚠', err instanceof Error ? err.message : 'load failed');
+    }
 
     // Initial data sync
     if (isConnected) {

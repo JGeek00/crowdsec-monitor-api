@@ -230,6 +230,9 @@ importers:
       morgan:
         specifier: 1.12.1
         version: 1.12.1(supports-color@5.5.0)
+      nodemailer:
+        specifier: 10.0.12
+        version: 10.0.12
       sqlite3:
         specifier: npm:@vscode/sqlite3@5.1.14-vscode
         version: '@vscode/sqlite3@5.1.14-vscode'
@@ -255,6 +258,9 @@ importers:
       '@types/node':
         specifier: 26.6.2
         version: 26.6.2
+      '@types/nodemailer':
+        specifier: 8.0.2
+        version: 8.0.2
       '@types/supertest':
         specifier: 7.2.1
         version: 7.2.1
@@ -885,6 +891,9 @@ packages:
 
   '@types/node@26.6.2':
     resolution: {integrity: sha512-X1P21scMv4zGKLYqjdGjaKa7COa0RKVYYZZN/NfvLQ1JegxFhdhpZG/Lyn8AXx6CDUavKAd11v6BvfpkDByK8g==}
+
+  '@types/nodemailer@8.0.2':
+    resolution: {integrity: sha512-c7M5ox8p0nEOfbJ2E9Qcmt8/QCu/VzsiAhzBiZbvky2PhKZDHpKB3sQHBM5MEZNkCfBOaS6S9//AGPRTNB7IaA==}
 
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
@@ -1931,6 +1940,10 @@ packages:
   node-addon-api@8.9.2:
     resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
     engines: {node: ^18 || ^20 || >= 21}
+
+  nodemailer@10.0.12:
+    resolution: {integrity: sha512-PQ46oNbNMuH/Sno7B5IWIU9etytwrO0xdTFvWXpIQFRXhBAXtzD48243AS+BCbQQTPD8y3fqUrgLn0tSo77gvg==}
+    engines: {node: '>=20.0.0'}
 
   nodemon@3.1.14:
     resolution: {integrity: sha512-jakjZi93UtB3jHMWsXL68FXSAosbLfY0In5gtKq3niLSkrWznrVBzXFNOEMJUfc9+Ke7SHWoAZsiMkNP3vq6Jw==}
@@ -3124,6 +3137,10 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
+  '@types/nodemailer@8.0.2':
+    dependencies:
+      '@types/node': 26.6.2
+
   '@types/pg@8.23.1':
     dependencies:
       '@types/node': 26.6.2
@@ -4259,6 +4276,8 @@ snapshots:
       content-type: 2.1.0
 
   node-addon-api@8.9.2: {}
+
+  nodemailer@10.0.12: {}
 
   nodemon@3.1.14:
     dependencies:

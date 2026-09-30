@@ -6,6 +6,7 @@ import { toCanonicalTimestamp } from '@/utils/timestamp-format';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
 import { log } from '@/services/log.service';
+import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 
 class AlertsSyncService {
   private lastSuccessfulSync: Date | null = null;
@@ -49,6 +50,12 @@ class AlertsSyncService {
         let updated = 0;
         let errors = 0;
         let decisionsCount = 0;
+        const freshAlerts: {
+          scenario: string;
+          source: (typeof alerts)[number]['source'];
+          origin?: string;
+          alertType?: string;
+        }[] = [];
 
         for (const alert of alerts) {
           try {
@@ -92,6 +99,12 @@ class AlertsSyncService {
               alertInstance = await AlertsTable.create({ ...alertData, created_at: new Date() });
               synced++;
               log.debug(`  New alert #${alert.id} (${alert.scenario})`);
+              freshAlerts.push({
+                scenario: alert.scenario,
+                source: alert.source,
+                origin: alert.decisions?.[0]?.origin,
+                alertType: alert.decisions?.[0]?.type,
+              });
             }
 
             if (alert.decisions && alert.decisions.length > 0) {
@@ -150,6 +163,14 @@ class AlertsSyncService {
           } catch (err) {
             log.error(`Error syncing alert ${alert.id}:`, err);
             errors++;
+          }
+        }
+
+        for (const fresh of freshAlerts) {
+          try {
+            await notificationEngineService.handleAlert(fresh);
+          } catch (err) {
+            log.error('Error evaluating notifications for new alert:', err);
           }
         }
 

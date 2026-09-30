@@ -4,6 +4,8 @@ export { schedulerService } from '@/services/scheduler.service';
 export { versionCheckerService } from '@/services/version-checker.service';
 export { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
 
+export { notificationEngineService } from '@/services/notifications/notification-engine.service';
+export { notificationHistoryService } from '@/services/notifications/notification-history.service';
 export { statusService } from '@/services/status.service';
 export { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
 export { log, setLevel } from '@/services/log.service';
