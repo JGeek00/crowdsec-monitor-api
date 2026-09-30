@@ -23,3 +23,4 @@ export * from '@/models/in/statistics/GetScenarioHistoryParams.model';
 export * from '@/models/in/statistics/GetIpOwnerHistoryParams.model';
 export * from '@/models/in/statistics/GetTargetHistoryParams.model';
 export * from '@/models/in/allowlists/GetAllowlistParams.model';
+export * from '@/models/in/notifications/NotificationBody.model';

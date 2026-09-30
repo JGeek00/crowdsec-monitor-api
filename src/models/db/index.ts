@@ -3,6 +3,8 @@ import DecisionsTable from '@/models/db/Decisions';
 import BlocklistsTable from '@/models/db/Blocklists';
 import BlocklistIpsTable from '@/models/db/BlocklistIps';
 import CsBlocklistsTable from '@/models/db/CsBlocklists';
+import NotificationsTable from '@/models/db/Notifications';
+import NotificationChannelsTable from '@/models/db/NotificationChannels';
 import { Migration } from '@/models/db/Migration';
 
 // Define associations
@@ -39,4 +41,13 @@ BlocklistIpsTable.belongsTo(CsBlocklistsTable, {
   as: 'csBlocklist',
 });
 
-export { AlertsTable, DecisionsTable, BlocklistsTable, BlocklistIpsTable, CsBlocklistsTable, Migration };
+export {
+  AlertsTable,
+  DecisionsTable,
+  BlocklistsTable,
+  BlocklistIpsTable,
+  CsBlocklistsTable,
+  NotificationsTable,
+  NotificationChannelsTable,
+  Migration,
+};

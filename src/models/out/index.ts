@@ -30,3 +30,4 @@ export * from '@/models/out/statistics/GetCountryHistoryResponse.model';
 export * from '@/models/out/statistics/GetScenarioHistoryResponse.model';
 export * from '@/models/out/statistics/GetIpOwnerHistoryResponse.model';
 export * from '@/models/out/statistics/GetTargetHistoryResponse.model';
+export * from '@/models/out/notifications/NotificationResponse.model';
