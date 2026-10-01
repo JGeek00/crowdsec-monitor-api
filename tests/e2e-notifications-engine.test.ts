@@ -113,6 +113,31 @@ describe('e2e notifications engine and history', () => {
     expect(res.body.data[0].message).toBe('probing desde ES');
   });
 
+  it('5 alerts with count=3 in 10s fires once (reported duplicate bug)', async () => {
+    await app.request.post('/api/v1/notifications').send(
+      payload({
+        name: 'three-in-10s',
+        threshold: { count: 3, windowSeconds: 10, cooldownSeconds: 60 },
+        message: 'burst',
+      }),
+    );
+    for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(sshAlert);
+    const res = await app.request.get('/api/v1/notifications/history');
+    expect(res.body.total).toBe(1);
+  });
+
+  it('one burst matching two notifications fires both (independent pipelines)', async () => {
+    await app.request.post('/api/v1/notifications').send(
+      payload({ name: 'five-in-10s', threshold: { count: 5, windowSeconds: 10 }, message: 'five' }),
+    );
+    await app.request.post('/api/v1/notifications').send(
+      payload({ name: 'three-in-10s', threshold: { count: 3, windowSeconds: 10 }, message: 'three' }),
+    );
+    for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(sshAlert);
+    const res = await app.request.get('/api/v1/notifications/history');
+    expect(res.body.total).toBe(2);
+  });
+
   it('disabled notification stops triggering but keeps its DB row', async () => {
     const created = await app.request.post('/api/v1/notifications').send(payload());
     const id = String(created.body.data.id);

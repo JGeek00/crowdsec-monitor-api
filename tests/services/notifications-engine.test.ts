@@ -1,4 +1,5 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
+import appDefaults from '@/constants/app-defaults';
 import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 import { notificationHistoryService } from '@/services/notifications/notification-history.service';
 import type { UserNotification, UserNotificationChannel } from '@/models';
@@ -50,6 +51,11 @@ beforeEach(() => {
   seedChannel(11);
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
 describe('notification-engine', () => {
   it('triggers matching alerts and records history', async () => {
     notificationEngineService.upsertCache(makeNotification());
@@ -96,5 +102,77 @@ describe('notification-engine', () => {
     expect(notificationHistoryService.count()).toBe(0);
     await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.count()).toBe(1);
+  });
+
+  it('fires once for 5 alerts in the window (window-reset + default cooldown)', async () => {
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 20, threshold: { count: 3, windowSeconds: 10 } }),
+    );
+    for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+  });
+
+  it('suppresses a second burst inside cooldown and fires after expiry', async () => {
+    let now = 1_000_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 21, threshold: { count: 3, windowSeconds: 10, cooldownSeconds: 60 } }),
+    );
+    for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+    now += 20_000;
+    for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+    now += 60_000;
+    for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(2);
+  });
+
+  it('keeps pipelines independent: one burst fires every matching notification', async () => {
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 22, name: 'five-in-10s', threshold: { count: 5, windowSeconds: 10 } }),
+    );
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 23, name: 'three-ssh', threshold: { count: 3, windowSeconds: 10 } }),
+    );
+    for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(2);
+    expect(notificationHistoryService.list().map((e) => e.notificationName).sort()).toEqual([
+      'five-in-10s',
+      'three-ssh',
+    ]);
+  });
+
+  it('rate-limits count=1 with cooldown (at most once per cooldown)', async () => {
+    let now = 2_000_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 24, threshold: { count: 1, windowSeconds: 10, cooldownSeconds: 60 } }),
+    );
+    await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+    now += 10_000;
+    await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+    now += 60_000;
+    await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(2);
+  });
+
+  it('applies the service default cooldown when threshold omits it (legacy rows)', async () => {
+    const cooldownMs = appDefaults.notifications.defaultCooldownSeconds * 1000;
+    let now = 3_000_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 25, threshold: { count: 3, windowSeconds: 10 } }),
+    );
+    for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+    now += cooldownMs - 10_000;
+    for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(1);
+    now += 10_000;
+    for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.count()).toBe(2);
   });
 });

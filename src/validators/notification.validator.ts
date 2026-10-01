@@ -57,6 +57,7 @@ function thresholdValidators(optional: boolean): ValidationChain[] {
         const t = value as Record<string, unknown>;
         const count = t['count'];
         const windowSeconds = t['windowSeconds'];
+        const cooldownSeconds = t['cooldownSeconds'];
         if (typeof count !== 'number' || !Number.isInteger(count) || count < 1 || count > 1000) {
           throw new Error('threshold.count must be an integer 1..1000');
         }
@@ -67,6 +68,16 @@ function thresholdValidators(optional: boolean): ValidationChain[] {
           windowSeconds > 86400
         ) {
           throw new Error('threshold.windowSeconds must be an integer 10..86400');
+        }
+        if (cooldownSeconds !== undefined) {
+          if (
+            typeof cooldownSeconds !== 'number' ||
+            !Number.isInteger(cooldownSeconds) ||
+            cooldownSeconds < 0 ||
+            cooldownSeconds > 86400
+          ) {
+            throw new Error('threshold.cooldownSeconds must be an integer 0..86400');
+          }
         }
         return true;
       }),

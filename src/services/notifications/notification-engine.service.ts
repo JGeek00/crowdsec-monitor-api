@@ -1,6 +1,7 @@
 import { NotificationChannelsTable, NotificationsTable } from '@/models';
 import type { ConditionNode, NotificationChannelRef, UserNotification, UserNotificationChannel } from '@/models';
 import { evaluateCondition, type AlertLike } from '@/utils/notification-condition';
+import { resolveCooldownSeconds } from '@/helpers/notifications/threshold-defaults.helper';
 import { dispatchChannels } from '@/services/notifications/notification-sender.service';
 import { notificationHistoryService } from '@/services/notifications/notification-history.service';
 import { log } from '@/services/log.service';
@@ -26,6 +27,7 @@ class NotificationEngineService {
   private enabledCache: UserNotification[] = [];
   private channelsCache = new Map<number, UserNotificationChannel>();
   private hitsByNotification = new Map<number, number[]>();
+  private lastSentByNotification = new Map<number, number>();
 
   snapshotEnabled(): UserNotification[] {
     return [...this.enabledCache];
@@ -46,6 +48,12 @@ class NotificationEngineService {
     for (const cached of this.enabledCache) {
       if (!this.hitsByNotification.has(cached.id)) this.hitsByNotification.set(cached.id, []);
     }
+    for (const id of [...this.hitsByNotification.keys()]) {
+      if (!this.enabledCache.some((n) => n.id === id)) this.hitsByNotification.delete(id);
+    }
+    for (const id of [...this.lastSentByNotification.keys()]) {
+      if (!this.enabledCache.some((n) => n.id === id)) this.lastSentByNotification.delete(id);
+    }
     log.info(
       `[notifications] loaded ${String(this.enabledCache.length)} enabled notification(s), ${String(this.channelsCache.size)} channel(s)`,
     );
@@ -59,6 +67,7 @@ class NotificationEngineService {
   removeFromCache(id: number): void {
     this.enabledCache = this.enabledCache.filter((n) => n.id !== id);
     this.hitsByNotification.delete(id);
+    this.lastSentByNotification.delete(id);
   }
 
   upsertChannelCache(channel: UserNotificationChannel): void {
@@ -72,11 +81,17 @@ class NotificationEngineService {
   private thresholdMet(notification: UserNotification, now: number): boolean {
     if (!notification.threshold) return true;
     const { count, windowSeconds } = notification.threshold;
+    const cooldownSeconds = resolveCooldownSeconds(notification.threshold);
     const windowStart = now - windowSeconds * 1000;
     const hits = (this.hitsByNotification.get(notification.id) ?? []).filter((t) => t >= windowStart);
     hits.push(now);
     this.hitsByNotification.set(notification.id, hits);
-    return hits.length >= count;
+    if (hits.length < count) return false;
+    const lastSent = this.lastSentByNotification.get(notification.id);
+    if (lastSent !== undefined && now - lastSent < cooldownSeconds * 1000) return false;
+    this.lastSentByNotification.set(notification.id, now);
+    this.hitsByNotification.set(notification.id, []);
+    return true;
   }
 
   async handleAlert(raw: {

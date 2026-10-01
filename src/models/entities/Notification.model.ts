@@ -29,6 +29,7 @@ export type ConditionNode = NotificationLeaf | NotificationAnd | NotificationOr 
 export interface NotificationThreshold {
   count: number;
   windowSeconds: number;
+  cooldownSeconds?: number;
 }
 
 export type NotificationChannelType = 'ntfy' | 'email';

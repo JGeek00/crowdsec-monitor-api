@@ -15,4 +15,7 @@ export default {
     blocklistsSync: 'blocklists-sync',
     csBlocklistsSync: 'cs-blocklists-sync',
   },
+  notifications: {
+    defaultCooldownSeconds: 60,
+  },
 };

@@ -2292,8 +2292,17 @@ components:
           properties:
             count:
               type: integer
+              minimum: 1
+              maximum: 1000
             windowSeconds:
               type: integer
+              minimum: 10
+              maximum: 86400
+            cooldownSeconds:
+              type: integer
+              minimum: 0
+              maximum: 86400
+              description: Minimum seconds between sends for this notification (default 60 when omitted).
         message:
           type: string
         channelIds:
@@ -2320,6 +2329,19 @@ components:
         threshold:
           type: object
           nullable: true
+          properties:
+            count:
+              type: integer
+              minimum: 1
+              maximum: 1000
+            windowSeconds:
+              type: integer
+              minimum: 10
+              maximum: 86400
+            cooldownSeconds:
+              type: integer
+              minimum: 0
+              maximum: 86400
         message:
           type: string
           maxLength: 2000

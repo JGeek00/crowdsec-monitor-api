@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
+import appDefaults from '@/constants/app-defaults';
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeChannelPayload, makeNotificationPayload } from '@tests/factories';
 import { notificationEngineService } from '@/services/notifications/notification-engine.service';
@@ -98,6 +99,51 @@ describe('e2e notifications CRUD', () => {
       .post('/api/v1/notifications')
       .send(payload({ threshold: { count: 0, windowSeconds: 5 } }));
     expect(res.status).toBe(400);
+  });
+
+  it('POST accepts threshold with cooldown and rejects bad cooldown', async () => {
+    const ok = await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ threshold: { count: 3, windowSeconds: 10, cooldownSeconds: 60 } }));
+    expect(ok.status).toBe(201);
+    expect(ok.body.data.threshold).toMatchObject({ count: 3, windowSeconds: 10, cooldownSeconds: 60 });
+
+    const bad = await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ threshold: { count: 3, windowSeconds: 10, cooldownSeconds: -1 } }));
+    expect(bad.status).toBe(400);
+
+    const tooBig = await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ threshold: { count: 3, windowSeconds: 10, cooldownSeconds: 99999 } }));
+    expect(tooBig.status).toBe(400);
+  });
+
+  it('PUT updates threshold cooldown', async () => {
+    const created = await app.request.post('/api/v1/notifications').send(payload());
+    expect(created.body.data.threshold).toBeNull();
+    const id = String(created.body.data.id);
+    const res = await app.request
+      .put(`/api/v1/notifications/${id}`)
+      .send({ threshold: { count: 5, windowSeconds: 10, cooldownSeconds: 120 } });
+    expect(res.status).toBe(200);
+    expect(res.body.data.threshold).toMatchObject({ count: 5, windowSeconds: 10, cooldownSeconds: 120 });
+  });
+
+  it('POST and PUT backfill the service default cooldown when threshold omits it', async () => {
+    const expected = appDefaults.notifications.defaultCooldownSeconds;
+    const created = await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ threshold: { count: 3, windowSeconds: 10 } }));
+    expect(created.status).toBe(201);
+    expect(created.body.data.threshold).toMatchObject({ count: 3, windowSeconds: 10, cooldownSeconds: expected });
+
+    const id = String(created.body.data.id);
+    const updated = await app.request
+      .put(`/api/v1/notifications/${id}`)
+      .send({ threshold: { count: 5, windowSeconds: 10 } });
+    expect(updated.status).toBe(200);
+    expect(updated.body.data.threshold).toMatchObject({ count: 5, windowSeconds: 10, cooldownSeconds: expected });
   });
 
   it('GET /api/v1/notifications lists created notifications', async () => {

@@ -63,6 +63,16 @@ describe('notification validators', () => {
   it('accepts threshold null and update with id param', async () => {
     const withThreshold = { ...validBody(), threshold: { count: 3, windowSeconds: 60 } };
     expect((await runBody(createNotificationValidators, withThreshold)).isEmpty()).toBe(true);
+    const withCooldown = {
+      ...validBody(),
+      threshold: { count: 3, windowSeconds: 10, cooldownSeconds: 60 },
+    };
+    expect((await runBody(createNotificationValidators, withCooldown)).isEmpty()).toBe(true);
+    const badCooldown = {
+      ...validBody(),
+      threshold: { count: 3, windowSeconds: 10, cooldownSeconds: -1 },
+    };
+    expect((await runBody(createNotificationValidators, badCooldown)).isEmpty()).toBe(false);
     expect((await runBody(updateNotificationValidators, { name: 'renamed' }, { id: '1' })).isEmpty()).toBe(true);
     expect((await runBody(updateNotificationValidators, { name: 'x' }, { id: 'bad' })).isEmpty()).toBe(false);
   });

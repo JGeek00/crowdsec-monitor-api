@@ -140,7 +140,7 @@ export interface NotificationPayload {
   description?: string | null;
   enabled?: boolean;
   condition: Record<string, unknown>;
-  threshold?: { count: number; windowSeconds: number } | null;
+  threshold?: { count: number; windowSeconds: number; cooldownSeconds?: number } | null;
   message: string;
   channelIds: number[];
 }

@@ -8,6 +8,7 @@ import {
 } from '@/models';
 import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 import { findMissingChannelIds } from '@/helpers/notifications/channel-refs.helper';
+import { withThresholdDefaults } from '@/helpers/notifications/threshold-defaults.helper';
 import { isValidCondition } from '@/utils/notification-condition';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/services/log.service';
@@ -35,9 +36,10 @@ export async function updateNotification(
         return;
       }
     }
-    const { channelIds, ...rest } = req.body;
+    const { channelIds, threshold, ...rest } = req.body;
     await row.update({
       ...rest,
+      ...(threshold !== undefined ? { threshold: withThresholdDefaults(threshold) } : {}),
       ...(channelIds !== undefined ? { channelIds: [...new Set(channelIds)] } : {}),
       updated_at: new Date(),
     });

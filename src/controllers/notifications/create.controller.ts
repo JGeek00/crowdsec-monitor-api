@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { NotificationsTable, PostNotificationBody, PostNotificationResponse, ResponseWithError } from '@/models';
 import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 import { findMissingChannelIds } from '@/helpers/notifications/channel-refs.helper';
+import { withThresholdDefaults } from '@/helpers/notifications/threshold-defaults.helper';
 import { isValidCondition } from '@/utils/notification-condition';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/services/log.service';
@@ -28,7 +29,7 @@ export async function createNotification(
       description: description?.trim() ? description.trim() : null,
       enabled: enabled ?? true,
       condition,
-      threshold: threshold ?? null,
+      threshold: withThresholdDefaults(threshold),
       message: message.trim(),
       channelIds: [...new Set(channelIds)],
       created_at: new Date(),

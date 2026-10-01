@@ -2650,7 +2650,8 @@ curl -X POST http://localhost:3000/api/v1/notification-channels/test \
 
 User-configurable notifications. Each notification has a `name`, optional `description`,
 `enabled` flag, block-based `condition` tree, optional frequency `threshold`
-(`{count, windowSeconds}` = "ocurre x veces en x segundos"), a `message`, and `channelIds`
+(`{count, windowSeconds, cooldownSeconds?}` = "ocurre x veces en x segundos, como mucho
+una vez cada cooldown"), a `message`, and `channelIds`
 (references to configured channels; delivery providers `ntfy`/`email`, extensible via
 the channel registry).
 
@@ -2659,9 +2660,18 @@ Leaf `field`: `scenario | country | target | origin | type | scope | ipOwner` (`
 `source.cn`, `target` = `source.value` fallback `source.ip`, `origin`/`type` from the first
 decision, `ipOwner` = `source.as_name`).
 Leaf `operator`: `equals | not_equals | in | not_in | contains` (case-insensitive).
-Example: `(scenario is xxx OR scenario is yyy) AND country is ES` + threshold `{count: 5, windowSeconds: 60}`.
+Example: `(scenario is xxx OR scenario is yyy) AND country is ES` + threshold `{count: 5, windowSeconds: 60, cooldownSeconds: 60}`.
 No condition: `condition: {"type": "and", "children": []}` matches every alert, so combined
 with a threshold it fires on any X alerts in Y seconds.
+
+Threshold semantics (per notification, independent pipelines): the engine keeps a sliding
+window of matching hits per notification id. When `hits >= count` inside `windowSeconds` it
+fires once, clears that notification's window (disjoint bursts, so 5 alerts with count=3 fire
+once, not three times), and starts `cooldownSeconds` (optional, `0..86400`, default `60` from
+service defaults when omitted): further bursts inside the cooldown are suppressed
+but still counted toward the next window. `count: 1 + cooldownSeconds: 60` rate-limits to at
+most once per minute. Each notification has its own hits + cooldown state, so one burst
+matching two notifications fires both. `threshold: null` fires on every match.
 
 Notifications persist in the `notifications` DB table. On backend start the engine loads
 enabled rows into memory; each newly synced alert is evaluated, and on match (+ threshold)
