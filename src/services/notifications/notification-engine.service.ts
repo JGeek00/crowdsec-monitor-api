@@ -23,10 +23,15 @@ function toAlertLike(raw: {
   return { scenario: raw.scenario, source: raw.source, origin: raw.origin, alertType: raw.alertType };
 }
 
+interface WindowHit {
+  t: number;
+  alertId?: number;
+}
+
 class NotificationEngineService {
   private enabledCache: UserNotification[] = [];
   private channelsCache = new Map<number, UserNotificationChannel>();
-  private hitsByNotification = new Map<number, number[]>();
+  private hitsByNotification = new Map<number, WindowHit[]>();
   private lastSentByNotification = new Map<number, number>();
 
   snapshotEnabled(): UserNotification[] {
@@ -78,23 +83,30 @@ class NotificationEngineService {
     this.channelsCache.delete(id);
   }
 
-  private thresholdMet(notification: UserNotification, now: number): boolean {
-    if (!notification.threshold) return true;
+  /** Window hit with the alert id that produced it, so triggers can be traced back. */
+  private thresholdMet(
+    notification: UserNotification,
+    now: number,
+    alertId?: number,
+  ): { fired: boolean; alertIds: number[] } {
+    if (!notification.threshold) return { fired: true, alertIds: alertId !== undefined ? [alertId] : [] };
     const { count, windowSeconds } = notification.threshold;
     const cooldownSeconds = resolveCooldownSeconds(notification.threshold);
     const windowStart = now - windowSeconds * 1000;
-    const hits = (this.hitsByNotification.get(notification.id) ?? []).filter((t) => t >= windowStart);
-    hits.push(now);
+    const hits = (this.hitsByNotification.get(notification.id) ?? []).filter((h) => h.t >= windowStart);
+    hits.push({ t: now, alertId });
     this.hitsByNotification.set(notification.id, hits);
-    if (hits.length < count) return false;
+    if (hits.length < count) return { fired: false, alertIds: [] };
     const lastSent = this.lastSentByNotification.get(notification.id);
-    if (lastSent !== undefined && now - lastSent < cooldownSeconds * 1000) return false;
+    if (lastSent !== undefined && now - lastSent < cooldownSeconds * 1000) return { fired: false, alertIds: [] };
+    const alertIds = hits.map((h) => h.alertId).filter((id): id is number => id !== undefined);
     this.lastSentByNotification.set(notification.id, now);
     this.hitsByNotification.set(notification.id, []);
-    return true;
+    return { fired: true, alertIds };
   }
 
   async handleAlert(raw: {
+    alertId?: number;
     scenario: string;
     source: AlertLike['source'];
     origin?: string;
@@ -106,7 +118,8 @@ class NotificationEngineService {
     for (const notification of this.enabledCache) {
       const matches = safeEvaluate(alert, notification.condition);
       if (!matches) continue;
-      if (!this.thresholdMet(notification, now)) continue;
+      const { fired, alertIds } = this.thresholdMet(notification, now, raw.alertId);
+      if (!fired) continue;
       const missingIds = new Set<number>();
       const refs: NotificationChannelRef[] = notification.channelIds.map((id) => {
         const channel = this.channelsCache.get(id);
@@ -128,6 +141,7 @@ class NotificationEngineService {
         notificationId: notification.id,
         notificationName: notification.name,
         message: notification.message,
+        alertIds,
         channels: withMissing,
       });
       log.info(`[notifications] "${notification.name}" triggered`);

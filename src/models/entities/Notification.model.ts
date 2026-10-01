@@ -89,5 +89,6 @@ export interface NotificationHistoryEntry {
   notificationName: string;
   message: string;
   triggeredAt: string;
+  alertIds: number[];
   channels: { type: string; ok: boolean; detail: string | null }[];
 }

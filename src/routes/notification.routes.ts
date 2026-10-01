@@ -7,11 +7,13 @@ import {
   deleteNotification,
   toggleNotification,
   getNotificationHistory,
+  getNotificationHistoryAlerts,
 } from '@/controllers';
 import {
   createNotificationValidators,
   updateNotificationValidators,
   notificationIdValidators,
+  notificationHistoryIdValidators,
   toggleNotificationValidators,
 } from '@/validators';
 import { handleValidationErrors } from '@/middlewares';
@@ -19,6 +21,12 @@ import { handleValidationErrors } from '@/middlewares';
 const router: Router = Router();
 
 router.get('/history', getNotificationHistory);
+router.get(
+  '/history/:id/alerts',
+  notificationHistoryIdValidators,
+  handleValidationErrors,
+  getNotificationHistoryAlerts,
+);
 router.get('/', listNotifications);
 router.post('/', createNotificationValidators, handleValidationErrors, createNotification);
 router.get('/:id', notificationIdValidators, handleValidationErrors, getNotification);

@@ -149,6 +149,10 @@ export const notificationIdValidators: ValidationChain[] = [
   param('id').isInt({ min: 1 }).withMessage('id must be a positive integer'),
 ];
 
+export const notificationHistoryIdValidators: ValidationChain[] = [
+  param('id').isString().withMessage('id must be a string').trim().notEmpty().isLength({ max: 64 }),
+];
+
 export const toggleNotificationValidators: ValidationChain[] = [
   param('id').isInt({ min: 1 }).withMessage('id must be a positive integer'),
   body('enabled').isBoolean().withMessage('enabled must be a boolean'),

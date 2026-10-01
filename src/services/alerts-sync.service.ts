@@ -51,6 +51,7 @@ class AlertsSyncService {
         let errors = 0;
         let decisionsCount = 0;
         const freshAlerts: {
+          alertId: number;
           scenario: string;
           source: (typeof alerts)[number]['source'];
           origin?: string;
@@ -100,6 +101,7 @@ class AlertsSyncService {
               synced++;
               log.debug(`  New alert #${alert.id} (${alert.scenario})`);
               freshAlerts.push({
+                alertId: alert.id,
                 scenario: alert.scenario,
                 source: alert.source,
                 origin: alert.decisions?.[0]?.origin,

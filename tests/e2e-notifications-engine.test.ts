@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach, vi } from 'vitest';
 import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeChannelPayload, makeNotificationPayload } from '@tests/factories';
+import { makeAlert, makeChannelPayload, makeNotificationPayload } from '@tests/factories';
+import { AlertsTable } from '@/models/db';
 import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 import { notificationHistoryService } from '@/services/notifications/notification-history.service';
 
@@ -136,6 +137,35 @@ describe('e2e notifications engine and history', () => {
     for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(sshAlert);
     const res = await app.request.get('/api/v1/notifications/history');
     expect(res.body.total).toBe(2);
+  });
+
+  it('history/:id/alerts returns the alert details that fired the notification', async () => {
+    await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ name: 'grouped', threshold: { count: 2, windowSeconds: 10 }, message: 'grouped' }));
+    await AlertsTable.create(
+      makeAlert({ id: 9001, scenario: 'crowdsecurity/ssh-bf', source: { ...makeAlert().source, ip: '9.9.9.9', value: '9.9.9.9', cn: 'ES' } }),
+    );
+    await AlertsTable.create(
+      makeAlert({ id: 9002, scenario: 'crowdsecurity/ssh-bf', source: { ...makeAlert().source, ip: '8.8.8.8', value: '8.8.8.8', cn: 'ES' } }),
+    );
+    await notificationEngineService.handleAlert({ ...sshAlert, alertId: 9001 });
+    await notificationEngineService.handleAlert({ ...sshAlert, alertId: 9002 });
+
+    const history = await app.request.get('/api/v1/notifications/history');
+    const entryId = history.body.data[0].id as string;
+    expect(history.body.data[0].alertIds).toEqual([9001, 9002]);
+
+    const res = await app.request.get(`/api/v1/notifications/history/${entryId}/alerts`);
+    expect(res.status).toBe(200);
+    const ids = (res.body.data as { id: number }[]).map((a) => a.id).sort();
+    expect(ids).toEqual([9001, 9002]);
+    const first = res.body.data.find((a: { id: number }) => a.id === 9001);
+    expect(first).toMatchObject({ scenario: 'crowdsecurity/ssh-bf' });
+    expect(first?.source).toMatchObject({ ip: '9.9.9.9', cn: 'ES' });
+
+    const missing = await app.request.get('/api/v1/notifications/history/nope/alerts');
+    expect(missing.status).toBe(404);
   });
 
   it('disabled notification stops triggering but keeps its DB row', async () => {

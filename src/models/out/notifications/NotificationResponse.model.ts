@@ -1,4 +1,4 @@
-import type { NotificationHistoryEntry, UserNotification, UserNotificationChannel } from '@/models';
+import type { AlertDelivery, NotificationHistoryEntry, UserNotification, UserNotificationChannel } from '@/models';
 import type { ProviderDefinition } from '@/constants/notification-providers';
 
 export interface GetNotificationsResponse {
@@ -24,6 +24,10 @@ export interface DeleteNotificationResponse {
 export interface GetNotificationHistoryResponse {
   data: NotificationHistoryEntry[];
   total: number;
+}
+
+export interface GetNotificationHistoryAlertsResponse {
+  data: AlertDelivery[];
 }
 
 export interface GetChannelsResponse {

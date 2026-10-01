@@ -5,4 +5,5 @@ export * from '@/controllers/notifications/update.controller';
 export * from '@/controllers/notifications/delete.controller';
 export * from '@/controllers/notifications/toggle.controller';
 export * from '@/controllers/notifications/history.controller';
+export * from '@/controllers/notifications/history-alerts.controller';
 export * from '@/controllers/notifications/channels';

@@ -1870,6 +1870,46 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /notifications/history/{id}/alerts:
+    get:
+      tags:
+        - Notifications
+      summary: Alerts that fired a sent notification
+      operationId: getNotificationHistoryAlerts
+      description: Returns the full alert records (same shape as GET /alerts items) whose arrival fired the given sent-notification history entry. Alerts removed by retention or older entries without recorded ids are simply absent.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 64
+      responses:
+        '200':
+          description: Alerts that fired the notification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: History entry not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+
   /notifications/{id}:
     get:
       tags:
@@ -2413,6 +2453,11 @@ components:
         triggeredAt:
           type: string
           format: date-time
+        alertIds:
+          type: array
+          description: Ids of the alerts whose arrival inside the threshold window fired this notification.
+          items:
+            type: integer
         channels:
           type: array
           items:

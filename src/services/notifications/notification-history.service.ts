@@ -10,6 +10,10 @@ class NotificationHistoryService {
     return [...this.entries].reverse();
   }
 
+  find(id: string): NotificationHistoryEntry | undefined {
+    return this.entries.find((e) => e.id === id);
+  }
+
   clear(): void {
     this.entries = [];
   }

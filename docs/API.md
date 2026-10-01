@@ -2703,10 +2703,22 @@ curl -X POST http://localhost:3000/api/v1/notifications \
 
 ### GET `/api/v1/notifications/history`
 
-List sent-notifications history (in-memory, newest first). **Must be called before** `GET /:id` (Express route order).
+List sent-notifications history (in-memory, newest first). Each entry carries `alertIds`:
+the ids of the alerts whose arrival inside the threshold window fired it. **Must be called
+before** `GET /:id` (Express route order).
 
 ```bash
 curl http://localhost:3000/api/v1/notifications/history
+```
+
+### GET `/api/v1/notifications/history/:id/alerts`
+
+Full alert records (same shape as `GET /alerts` items) that fired one sent notification.
+Returns 404 for unknown history entries; alerts removed by retention (or entries recorded
+before alert ids existed) are simply absent from the list.
+
+```bash
+curl http://localhost:3000/api/v1/notifications/history/1759000000000-3/alerts
 ```
 
 ### GET `/api/v1/notifications/:id`

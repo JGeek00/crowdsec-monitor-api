@@ -175,4 +175,24 @@ describe('notification-engine', () => {
     for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.count()).toBe(2);
   });
+
+  it('records the group of alert ids that fired the notification', async () => {
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 26, threshold: { count: 3, windowSeconds: 10 } }),
+    );
+    await notificationEngineService.handleAlert({ ...alert, alertId: 101 });
+    await notificationEngineService.handleAlert({ ...alert, alertId: 102 });
+    await notificationEngineService.handleAlert({ ...alert, alertId: 103 });
+    const entry = notificationHistoryService.list()[0];
+    expect(entry?.alertIds).toEqual([101, 102, 103]);
+
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 27, threshold: null }),
+    );
+    await notificationEngineService.handleAlert({ ...alert, alertId: 55 });
+    expect(notificationHistoryService.list()[0]?.alertIds).toEqual([55]);
+
+    await notificationEngineService.handleAlert(alert);
+    expect(notificationHistoryService.list()[0]?.alertIds).toEqual([]);
+  });
 });
