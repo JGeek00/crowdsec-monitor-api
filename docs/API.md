@@ -2566,7 +2566,8 @@ Provider definitions (fields, validation rules, defaults) are served by
 `GET /api/v1/notification-channels/providers` so apps render forms generically.
 Secrets (passwords, tokens) are accepted on write but never returned by read endpoints:
 omitted secrets are preserved on update, an empty-string secret deletes it, and switching
-provider type validates the incoming config alone.
+provider type validates the incoming config alone. Secret fields in provider definitions
+never carry a literal `default` either.
 
 Provider forms (mobile: provider picker first, then per-provider form + name field + test + save):
 
@@ -2613,7 +2614,8 @@ it alone.
 
 ### GET `/api/v1/notification-channels/providers`
 
-Provider definitions for generic form rendering (no secrets included).
+Provider definitions for generic form rendering. No secrets included: secret fields
+never carry literal values (no `default`).
 
 ```bash
 curl http://localhost:3000/api/v1/notification-channels/providers

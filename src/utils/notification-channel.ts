@@ -1,6 +1,7 @@
 import type { NotificationChannelConfig } from '@/models';
 import {
   findProvider,
+  type ProviderDefinition,
   type ProviderFieldCondition,
   type ProviderFieldDefinition,
 } from '@/constants/notification-providers';
@@ -185,4 +186,19 @@ export function buildNtfyUrl(server: string, topic: string): string {
 export function isSecretKey(type: string, key: string): boolean {
   const provider = findProvider(type);
   return provider?.fields.some((f) => f.key === key && f.secret === true) ?? false;
+}
+
+/**
+ * Provider definitions are served publicly, so secret fields must never carry
+ * literal values: `default` is the only definition field that can embed one.
+ */
+export function sanitizeProviderDefinitions(providers: ProviderDefinition[]): ProviderDefinition[] {
+  return providers.map((provider) => ({
+    ...provider,
+    fields: provider.fields.map((field) => {
+      if (field.secret !== true || field.default === undefined) return field;
+      const { default: _removed, ...rest } = field;
+      return rest;
+    }),
+  }));
 }

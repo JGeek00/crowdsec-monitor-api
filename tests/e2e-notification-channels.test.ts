@@ -191,6 +191,12 @@ describe('e2e notification channels', () => {
     );
     expect(ntfy?.fields.some((f) => f.key === 'topic')).toBe(true);
     expect(ntfy?.fields.some((f) => f.key === 'password' && f.visibleIf !== undefined)).toBe(true);
+    const providers = res.body.providers as { fields: { key: string; secret?: boolean; default?: unknown }[] }[];
+    for (const provider of providers) {
+      for (const field of provider.fields) {
+        if (field.secret === true) expect(field.default).toBeUndefined();
+      }
+    }
   });
 
   it('POST returns 400 for unknown provider type or unknown keys', async () => {

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { notificationProviders } from '@/constants/notification-providers';
 import {
   buildNtfyUrl,
   sanitizeChannelConfig,
+  sanitizeProviderDefinitions,
   splitRecipients,
   validateChannelConfig,
   withChannelDefaults,
@@ -99,6 +101,53 @@ describe('sanitizeChannelConfig', () => {
   it('returns empty for unknown types or non-objects', () => {
     expect(sanitizeChannelConfig('sms', { a: 1 })).toEqual({});
     expect(sanitizeChannelConfig('ntfy', null)).toEqual({});
+  });
+});
+
+describe('sanitizeProviderDefinitions', () => {
+  it('strips defaults from secret fields and keeps the rest intact', () => {
+    const sanitized = sanitizeProviderDefinitions([
+      {
+        type: 'acme',
+        icon: 'acme',
+        labelKey: 'provider_acme',
+        supportsTest: false,
+        sections: [{ key: 'auth', labelKey: 'section_auth' }],
+        fields: [
+          {
+            key: 'password',
+            labelKey: 'field_password',
+            type: 'password',
+            secret: true,
+            default: 'leaked-secret',
+          },
+          { key: 'host', labelKey: 'field_host', type: 'text', required: true },
+        ],
+      },
+    ]);
+    expect(sanitized[0]?.fields[0]).toEqual({
+      key: 'password',
+      labelKey: 'field_password',
+      type: 'password',
+      secret: true,
+    });
+    expect(sanitized[0]?.fields[1]).toEqual({
+      key: 'host',
+      labelKey: 'field_host',
+      type: 'text',
+      required: true,
+    });
+  });
+
+  it('keeps non-secret defaults', () => {
+    const sanitized = sanitizeProviderDefinitions(notificationProviders);
+    const ntfy = sanitized.find((p) => p.type === 'ntfy');
+    expect(ntfy?.fields.find((f) => f.key === 'server')?.default).toBe('https://ntfy.sh');
+    for (const provider of sanitized) {
+      for (const field of provider.fields) {
+        if (field.secret === true) expect(field.default).toBeUndefined();
+      }
+    }
   });
 });
 

@@ -2080,7 +2080,7 @@ paths:
         - Notification channels
       summary: List provider definitions
       operationId: listNotificationProviders
-      description: Returns the provider definitions (fields, validation rules, defaults) so apps render channel forms generically. Contains no secrets.
+      description: Returns the provider definitions (fields, validation rules, defaults) so apps render channel forms generically. Secret fields never carry literal values (no default).
       responses:
         '200':
           description: Provider definitions
