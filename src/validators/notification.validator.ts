@@ -110,6 +110,7 @@ export const createNotificationValidators: ValidationChain[] = [
     .withMessage('message is required')
     .isLength({ max: 2000 })
     .withMessage('message must be at most 2000 characters'),
+  body('includeAlertInfo').optional().isBoolean().withMessage('includeAlertInfo must be a boolean'),
   ...channelIdsValidators(false),
 ];
 
@@ -142,6 +143,7 @@ export const updateNotificationValidators: ValidationChain[] = [
     .withMessage('message cannot be empty')
     .isLength({ max: 2000 })
     .withMessage('message must be at most 2000 characters'),
+  body('includeAlertInfo').optional().isBoolean().withMessage('includeAlertInfo must be a boolean'),
   ...channelIdsValidators(true),
 ];
 

@@ -2345,6 +2345,9 @@ components:
               description: Minimum seconds between sends for this notification (default 60 when omitted).
         message:
           type: string
+        includeAlertInfo:
+          type: boolean
+          description: When true, the triggered alert information is appended to the message body for providers that support it (see NotificationChannel.supportsAlertInfo).
         channelIds:
           type: array
           description: IDs of configured notification channels used to deliver this notification.
@@ -2385,6 +2388,9 @@ components:
         message:
           type: string
           maxLength: 2000
+        includeAlertInfo:
+          type: boolean
+          default: false
         channelIds:
           type: array
           minItems: 1
@@ -2404,6 +2410,9 @@ components:
         type:
           type: string
           enum: [ntfy, email]
+        supportsAlertInfo:
+          type: boolean
+          description: Derived from the provider definition; true when this channel can append triggered alert information to the message body (email only today).
         config:
           type: object
           description: |

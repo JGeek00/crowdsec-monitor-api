@@ -2,10 +2,21 @@ import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
 import appDefaults from '@/constants/app-defaults';
 import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 import { notificationHistoryService } from '@/services/notifications/notification-history.service';
-import type { UserNotification, UserNotificationChannel } from '@/models';
+import type { NotificationAlertSnapshot, UserNotification, UserNotificationChannel } from '@/models';
 import { registerNotificationChannel } from '@/services/notifications/notification-sender.service';
 
 registerNotificationChannel('test-ok', async () => null);
+
+const emailAlertInfo: NotificationAlertSnapshot[][] = [];
+const ntfyAlertInfo: (NotificationAlertSnapshot[] | undefined)[] = [];
+registerNotificationChannel('email', async (_channel, _message, _title, alertInfo) => {
+  emailAlertInfo.push(alertInfo ?? []);
+  return null;
+});
+registerNotificationChannel('ntfy', async (_channel, _message, _title, alertInfo) => {
+  ntfyAlertInfo.push(alertInfo as NotificationAlertSnapshot[]);
+  return null;
+});
 
 function makeNotification(overrides: Partial<UserNotification> = {}): UserNotification {
   return {
@@ -16,6 +27,7 @@ function makeNotification(overrides: Partial<UserNotification> = {}): UserNotifi
     condition: { type: 'leaf', field: 'scenario', operator: 'equals', value: 'crowdsecurity/ssh-bf' },
     threshold: null,
     message: 'SSH brute force detected',
+    includeAlertInfo: false,
     channelIds: [11],
     created_at: new Date(),
     updated_at: new Date(),
@@ -44,6 +56,8 @@ function seedChannel(id: number): void {
 
 beforeEach(() => {
   notificationHistoryService.clear();
+  emailAlertInfo.length = 0;
+  ntfyAlertInfo.length = 0;
   for (const n of notificationEngineService.snapshotEnabled()) {
     notificationEngineService.removeFromCache(n.id);
   }
@@ -194,5 +208,59 @@ describe('notification-engine', () => {
 
     await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.list()[0]?.alertIds).toEqual([]);
+  });
+
+  it('passes alert info only to providers that support it when the notification opts in', async () => {
+    notificationEngineService.upsertCache(makeNotification({ id: 30, includeAlertInfo: true }));
+    notificationEngineService.upsertChannelCache({
+      id: 12,
+      name: 'mail',
+      type: 'email',
+      config: {},
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    notificationEngineService.upsertChannelCache({
+      id: 13,
+      name: 'push',
+      type: 'ntfy',
+      config: {},
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    notificationEngineService.upsertCache(
+      makeNotification({ id: 31, channelIds: [12, 13], includeAlertInfo: true }),
+    );
+    await notificationEngineService.handleAlert({ ...alert, alertId: 201 });
+    expect(emailAlertInfo.at(-1)).toEqual([
+      { alertId: 201, scenario: alert.scenario, source: alert.source, origin: alert.origin, alertType: alert.alertType },
+    ]);
+    expect(ntfyAlertInfo.at(-1)).toBeUndefined();
+
+    notificationEngineService.upsertCache(makeNotification({ id: 32, channelIds: [12], includeAlertInfo: false }));
+    await notificationEngineService.handleAlert({ ...alert, alertId: 202 });
+    expect(emailAlertInfo.at(-1)).toEqual([]);
+  });
+
+  it('retains window alert snapshots across threshold hits', async () => {
+    notificationEngineService.upsertChannelCache({
+      id: 12,
+      name: 'mail',
+      type: 'email',
+      config: {},
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    notificationEngineService.upsertCache(
+      makeNotification({
+        id: 33,
+        channelIds: [12],
+        includeAlertInfo: true,
+        threshold: { count: 2, windowSeconds: 10 },
+      }),
+    );
+    await notificationEngineService.handleAlert({ ...alert, alertId: 301 });
+    await notificationEngineService.handleAlert({ ...alert, alertId: 302 });
+    expect(emailAlertInfo.at(-1)?.map((s) => s.alertId)).toEqual([301, 302]);
   });
 });

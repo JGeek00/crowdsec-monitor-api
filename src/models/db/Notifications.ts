@@ -13,6 +13,7 @@ class NotificationsTable extends Model<UserNotification, NotificationCreationAtt
   public condition!: ConditionNode;
   public threshold!: NotificationThreshold | null;
   public message!: string;
+  public includeAlertInfo!: boolean;
   public channelIds!: number[];
   public created_at!: Date;
   public updated_at!: Date;
@@ -25,6 +26,7 @@ class NotificationsTable extends Model<UserNotification, NotificationCreationAtt
     condition: 'condition',
     threshold: 'threshold',
     message: 'message',
+    includeAlertInfo: 'include_alert_info',
     channelIds: 'channel_ids',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -65,6 +67,11 @@ NotificationsTable.init(
     message: {
       type: DataTypes.TEXT,
       allowNull: false,
+    },
+    includeAlertInfo: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
     channelIds: {
       type: DataTypes.JSON,

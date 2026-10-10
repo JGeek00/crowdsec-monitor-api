@@ -35,13 +35,13 @@ describe('e2e notification channels', () => {
   it('POST creates email and ntfy channels', async () => {
     const email = await app.request.post('/api/v1/notification-channels').send(makeChannelPayload());
     expect(email.status).toBe(201);
-    expect(email.body.data).toMatchObject({ name: 'ops email', type: 'email' });
+    expect(email.body.data).toMatchObject({ name: 'ops email', type: 'email', supportsAlertInfo: true });
 
     const ntfy = await app.request
       .post('/api/v1/notification-channels')
       .send(makeChannelPayload({ name: 'phone', type: 'ntfy', config: { topic: 'my-alerts_01' } }));
     expect(ntfy.status).toBe(201);
-    expect(ntfy.body.data).toMatchObject({ name: 'phone', type: 'ntfy' });
+    expect(ntfy.body.data).toMatchObject({ name: 'phone', type: 'ntfy', supportsAlertInfo: false });
 
     const list = await app.request.get('/api/v1/notification-channels');
     expect(list.body.data).toHaveLength(2);
@@ -183,7 +183,7 @@ describe('e2e notification channels', () => {
   it('GET /api/v1/notification-channels/providers serves the definitions', async () => {
     const res = await app.request.get('/api/v1/notification-channels/providers');
     expect(res.status).toBe(200);
-    expect(res.body.version).toBe(1);
+    expect(res.body.version).toBe(2);
     const types = (res.body.providers as { type: string }[]).map((p) => p.type).sort();
     expect(types).toEqual(['email', 'ntfy']);
     const ntfy = (res.body.providers as { type: string; fields: { key: string; visibleIf?: unknown }[] }[]).find(
@@ -191,7 +191,11 @@ describe('e2e notification channels', () => {
     );
     expect(ntfy?.fields.some((f) => f.key === 'topic')).toBe(true);
     expect(ntfy?.fields.some((f) => f.key === 'password' && f.visibleIf !== undefined)).toBe(true);
-    const providers = res.body.providers as { fields: { key: string; secret?: boolean; default?: unknown }[] }[];
+    const providers = res.body.providers as {
+      supportsAlertInfo?: boolean;
+      fields: { key: string; secret?: boolean; default?: unknown }[];
+    }[];
+    expect(providers.map((p) => p.supportsAlertInfo).sort()).toEqual([false, true]);
     for (const provider of providers) {
       for (const field of provider.fields) {
         if (field.secret === true) expect(field.default).toBeUndefined();

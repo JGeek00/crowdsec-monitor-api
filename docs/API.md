@@ -2564,6 +2564,11 @@ notifications via `channelIds`.
 
 Provider definitions (fields, validation rules, defaults) are served by
 `GET /api/v1/notification-channels/providers` so apps render forms generically.
+Each provider definition carries `supportsAlertInfo`: whether that provider can append
+triggered alert information to the message body (only `email` today). Channel responses
+(`GET /notification-channels`, detail, create, update) expose the same flag as a derived
+`supportsAlertInfo` field so apps can show which configured channels support it without
+resolving provider definitions.
 Secrets (passwords, tokens) are accepted on write but never returned by read endpoints:
 omitted secrets are preserved on update, an empty-string secret deletes it, and switching
 provider type validates the incoming config alone. Secret fields in provider definitions
@@ -2653,7 +2658,9 @@ curl -X POST http://localhost:3000/api/v1/notification-channels/test \
 User-configurable notifications. Each notification has a `name`, optional `description`,
 `enabled` flag, block-based `condition` tree, optional frequency `threshold`
 (`{count, windowSeconds, cooldownSeconds?}` = "ocurre x veces en x segundos, como mucho
-una vez cada cooldown"), a `message`, and `channelIds`
+una vez cada cooldown"), a `message`, `includeAlertInfo` (opt-in flag: when true, the
+triggered alert information is appended to the message body only through channels whose
+provider declares `supportsAlertInfo: true` — the email provider today), and `channelIds`
 (references to configured channels; delivery providers `ntfy`/`email`, extensible via
 the channel registry).
 
@@ -2727,8 +2734,9 @@ Get one notification. Returns 404 when missing.
 
 ### PUT `/api/v1/notifications/:id`
 
-Partial update (any of `name, description, enabled, condition, threshold, message, channelIds`).
-Unknown channel ids return 422. Updating `enabled` here behaves like the toggle endpoint.
+Partial update (any of `name, description, enabled, condition, threshold, message,
+includeAlertInfo, channelIds`). Unknown channel ids return 422. Updating `enabled` here
+behaves like the toggle endpoint.
 
 ### DELETE `/api/v1/notifications/:id`
 

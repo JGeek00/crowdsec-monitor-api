@@ -1,6 +1,12 @@
 import nodemailer from 'nodemailer';
-import type { EmailChannelConfig, NotificationChannelRef, NtfyChannelConfig } from '@/models';
+import type {
+  EmailChannelConfig,
+  NotificationAlertSnapshot,
+  NotificationChannelRef,
+  NtfyChannelConfig,
+} from '@/models';
 import { buildNtfyUrl, splitRecipients, withChannelDefaults } from '@/utils/notification-channel';
+import { findProvider } from '@/constants/notification-providers';
 import { log } from '@/services/log.service';
 
 export interface ChannelResult {
@@ -9,7 +15,12 @@ export interface ChannelResult {
   detail: string | null;
 }
 
-type SenderFn = (channel: NotificationChannelRef, message: string, title: string) => Promise<string | null>;
+type SenderFn = (
+  channel: NotificationChannelRef,
+  message: string,
+  title: string,
+  alertInfo?: NotificationAlertSnapshot[],
+) => Promise<string | null>;
 
 function basicAuth(username: string, password: string): string {
   return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
@@ -36,7 +47,17 @@ async function sendNtfy(channel: NotificationChannelRef, message: string, title:
   }
 }
 
-async function sendEmail(channel: NotificationChannelRef, message: string, title: string): Promise<string | null> {
+/**
+ * Alert info is part of the body only for providers that support it. The
+ * concrete body formatting is not defined yet; `_alertInfo` is the extension
+ * point where the deferred summary will be appended.
+ */
+async function sendEmail(
+  channel: NotificationChannelRef,
+  message: string,
+  title: string,
+  _alertInfo?: NotificationAlertSnapshot[],
+): Promise<string | null> {
   const config = withChannelDefaults('email', channel.config) as EmailChannelConfig;
   if (!config.host || !config.from || !config.to) return 'missing host, from or recipient';
   try {
@@ -79,6 +100,7 @@ export async function dispatchChannels(
   channels: NotificationChannelRef[],
   message: string,
   title: string,
+  alertInfo?: NotificationAlertSnapshot[],
 ): Promise<ChannelResult[]> {
   const results: ChannelResult[] = [];
   for (const channel of channels) {
@@ -87,8 +109,9 @@ export async function dispatchChannels(
       results.push({ type: channel.type, ok: false, detail: `unsupported channel ${channel.type}` });
       continue;
     }
+    const providerSupportsAlertInfo = findProvider(channel.type)?.supportsAlertInfo === true;
     try {
-      const detail = await sender(channel, message, title);
+      const detail = await sender(channel, message, title, providerSupportsAlertInfo ? alertInfo : undefined);
       results.push({ type: channel.type, ok: detail === null, detail });
     } catch (err) {
       const detail = err instanceof Error ? err.message : 'send failed';

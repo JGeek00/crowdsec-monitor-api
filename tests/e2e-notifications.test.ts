@@ -39,8 +39,29 @@ describe('e2e notifications CRUD', () => {
   it('POST /api/v1/notifications creates a notification with defaults', async () => {
     const res = await app.request.post('/api/v1/notifications').send(payload());
     expect(res.status).toBe(201);
-    expect(res.body.data).toMatchObject({ name: 'ssh alerts', enabled: true, channelIds: [channelId] });
+    expect(res.body.data).toMatchObject({
+      name: 'ssh alerts',
+      enabled: true,
+      includeAlertInfo: false,
+      channelIds: [channelId],
+    });
     expect(res.body.data).toHaveProperty('id');
+  });
+
+  it('POST persists includeAlertInfo and PUT updates it', async () => {
+    const created = await app.request.post('/api/v1/notifications').send(payload({ includeAlertInfo: true }));
+    expect(created.status).toBe(201);
+    expect(created.body.data.includeAlertInfo).toBe(true);
+    const id = String(created.body.data.id);
+    const updated = await app.request.put(`/api/v1/notifications/${id}`).send({ includeAlertInfo: false });
+    expect(updated.status).toBe(200);
+    expect(updated.body.data.includeAlertInfo).toBe(false);
+  });
+
+  it('POST returns 400 when includeAlertInfo is not a boolean', async () => {
+    const res = await app.request.post('/api/v1/notifications').send(payload({ includeAlertInfo: 'yes' }));
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain('includeAlertInfo');
   });
 
   it('POST creates with description, threshold and disabled flag', async () => {

@@ -1,3 +1,5 @@
+import type { Alert_SourceInfo } from '@/models';
+
 export type NotificationField = 'scenario' | 'country' | 'target' | 'origin' | 'type' | 'scope' | 'ipOwner';
 
 export type NotificationOperator = 'equals' | 'not_equals' | 'in' | 'not_in' | 'contains';
@@ -61,6 +63,15 @@ export interface NotificationChannelRef {
   config: NotificationChannelConfig;
 }
 
+/** Alert snapshot retained by the engine for providers that support alert info. */
+export interface NotificationAlertSnapshot {
+  alertId?: number;
+  scenario: string;
+  source: Alert_SourceInfo;
+  origin?: string;
+  alertType?: string;
+}
+
 export interface UserNotificationChannel {
   id: number;
   name: string;
@@ -70,6 +81,9 @@ export interface UserNotificationChannel {
   updated_at: Date;
 }
 
+/** Channel row as served by the API: adds the provider-derived alert-info support flag. */
+export type NotificationChannelResponse = UserNotificationChannel & { supportsAlertInfo: boolean };
+
 export interface UserNotification {
   id: number;
   name: string;
@@ -78,6 +92,7 @@ export interface UserNotification {
   condition: ConditionNode;
   threshold: NotificationThreshold | null;
   message: string;
+  includeAlertInfo: boolean;
   channelIds: number[];
   created_at: Date;
   updated_at: Date;

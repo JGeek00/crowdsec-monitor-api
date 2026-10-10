@@ -65,12 +65,14 @@ export interface ProviderDefinition {
   icon: string;
   labelKey: string;
   supportsTest: boolean;
+  /** Whether this provider can append triggered alert information to the body. */
+  supportsAlertInfo: boolean;
   /** Section order for forms; fields without (or with unknown) section render ungrouped. */
   sections: ProviderSectionDefinition[];
   fields: ProviderFieldDefinition[];
 }
 
-export const notificationProvidersVersion = 1;
+export const notificationProvidersVersion = 2;
 
 export const notificationProviders: ProviderDefinition[] = [
   {
@@ -79,6 +81,7 @@ export const notificationProviders: ProviderDefinition[] = [
     labelKey: 'provider_ntfy',
     descriptionKey: 'provider_ntfy_description',
     supportsTest: true,
+    supportsAlertInfo: false,
     sections: [
       { key: 'topic', labelKey: 'section_topic' },
       { key: 'authentication', labelKey: 'section_authentication' },
@@ -163,6 +166,7 @@ export const notificationProviders: ProviderDefinition[] = [
     labelKey: 'provider_email',
     descriptionKey: 'provider_email_description',
     supportsTest: true,
+    supportsAlertInfo: true,
     sections: [
       { key: 'server', labelKey: 'section_server' },
       { key: 'authentication', labelKey: 'section_authentication' },

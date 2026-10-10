@@ -1,5 +1,11 @@
 import { NotificationChannelsTable, NotificationsTable } from '@/models';
-import type { ConditionNode, NotificationChannelRef, UserNotification, UserNotificationChannel } from '@/models';
+import type {
+  ConditionNode,
+  NotificationAlertSnapshot,
+  NotificationChannelRef,
+  UserNotification,
+  UserNotificationChannel,
+} from '@/models';
 import { evaluateCondition, type AlertLike } from '@/utils/notification-condition';
 import { resolveCooldownSeconds } from '@/helpers/notifications/threshold-defaults.helper';
 import { dispatchChannels } from '@/services/notifications/notification-sender.service';
@@ -26,6 +32,7 @@ function toAlertLike(raw: {
 interface WindowHit {
   t: number;
   alertId?: number;
+  snapshot?: NotificationAlertSnapshot;
 }
 
 class NotificationEngineService {
@@ -83,26 +90,36 @@ class NotificationEngineService {
     this.channelsCache.delete(id);
   }
 
-  /** Window hit with the alert id that produced it, so triggers can be traced back. */
+  /** Window hit with the alert id and snapshot that produced it, so triggers can be traced back. */
   private thresholdMet(
     notification: UserNotification,
     now: number,
-    alertId?: number,
-  ): { fired: boolean; alertIds: number[] } {
-    if (!notification.threshold) return { fired: true, alertIds: alertId !== undefined ? [alertId] : [] };
+    snapshot?: NotificationAlertSnapshot,
+  ): { fired: boolean; alertIds: number[]; snapshots: NotificationAlertSnapshot[] } {
+    if (!notification.threshold) {
+      return {
+        fired: true,
+        alertIds: snapshot?.alertId !== undefined ? [snapshot.alertId] : [],
+        snapshots: snapshot ? [snapshot] : [],
+      };
+    }
     const { count, windowSeconds } = notification.threshold;
     const cooldownSeconds = resolveCooldownSeconds(notification.threshold);
     const windowStart = now - windowSeconds * 1000;
     const hits = (this.hitsByNotification.get(notification.id) ?? []).filter((h) => h.t >= windowStart);
-    hits.push({ t: now, alertId });
+    const hit: WindowHit = { t: now, alertId: snapshot?.alertId, snapshot };
+    hits.push(hit);
     this.hitsByNotification.set(notification.id, hits);
-    if (hits.length < count) return { fired: false, alertIds: [] };
+    if (hits.length < count) return { fired: false, alertIds: [], snapshots: [] };
     const lastSent = this.lastSentByNotification.get(notification.id);
-    if (lastSent !== undefined && now - lastSent < cooldownSeconds * 1000) return { fired: false, alertIds: [] };
+    if (lastSent !== undefined && now - lastSent < cooldownSeconds * 1000) {
+      return { fired: false, alertIds: [], snapshots: [] };
+    }
     const alertIds = hits.map((h) => h.alertId).filter((id): id is number => id !== undefined);
+    const snapshots = hits.map((h) => h.snapshot).filter((s): s is NotificationAlertSnapshot => s !== undefined);
     this.lastSentByNotification.set(notification.id, now);
     this.hitsByNotification.set(notification.id, []);
-    return { fired: true, alertIds };
+    return { fired: true, alertIds, snapshots };
   }
 
   async handleAlert(raw: {
@@ -118,8 +135,16 @@ class NotificationEngineService {
     for (const notification of this.enabledCache) {
       const matches = safeEvaluate(alert, notification.condition);
       if (!matches) continue;
-      const { fired, alertIds } = this.thresholdMet(notification, now, raw.alertId);
+      const snapshot: NotificationAlertSnapshot = {
+        alertId: raw.alertId,
+        scenario: raw.scenario,
+        source: raw.source,
+        origin: raw.origin,
+        alertType: raw.alertType,
+      };
+      const { fired, alertIds, snapshots } = this.thresholdMet(notification, now, snapshot);
       if (!fired) continue;
+      const wantAlertInfo = notification.includeAlertInfo === true;
       const missingIds = new Set<number>();
       const refs: NotificationChannelRef[] = notification.channelIds.map((id) => {
         const channel = this.channelsCache.get(id);
@@ -129,7 +154,12 @@ class NotificationEngineService {
         }
         return { type: channel.type, config: channel.config };
       });
-      const channels = await dispatchChannels(refs, notification.message, notification.name);
+      const channels = await dispatchChannels(
+        refs,
+        notification.message,
+        notification.name,
+        wantAlertInfo ? snapshots : undefined,
+      );
       const withMissing = channels.map((result, index) => {
         const id = notification.channelIds[index];
         if (id !== undefined && missingIds.has(id)) {

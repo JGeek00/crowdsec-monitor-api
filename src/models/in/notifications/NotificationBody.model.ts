@@ -7,6 +7,7 @@ export interface PostNotificationBody {
   condition: ConditionNode;
   threshold?: NotificationThreshold | null;
   message: string;
+  includeAlertInfo?: boolean;
   channelIds: number[];
 }
 
@@ -17,6 +18,7 @@ export interface PutNotificationBody {
   condition?: ConditionNode;
   threshold?: NotificationThreshold | null;
   message?: string;
+  includeAlertInfo?: boolean;
   channelIds?: number[];
 }
 

@@ -1,6 +1,7 @@
 import { MigrationTask } from '@/types/migration-task.types';
 import migration0001 from './0001_add_last_refresh_failed_to_blocklists';
 import migration0002 from './0002_create_notifications';
+import migration0003 from './0003_add_include_alert_info_to_notifications';
 
 export const migrations: MigrationTask[] = [
   {
@@ -9,6 +10,10 @@ export const migrations: MigrationTask[] = [
   },
   {
     ...migration0002,
+    timestamp: Date.now(),
+  },
+  {
+    ...migration0003,
     timestamp: Date.now(),
   },
 ];

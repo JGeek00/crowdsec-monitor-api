@@ -14,7 +14,7 @@ export async function createNotification(
   res: Response<Res>,
 ): Promise<void> {
   try {
-    const { name, description, enabled, condition, threshold, message, channelIds } = req.body;
+    const { name, description, enabled, condition, threshold, message, includeAlertInfo, channelIds } = req.body;
     if (!isValidCondition(condition)) {
       res.status(400).json(errorResponse('Validation error', 'condition has an unsupported shape'));
       return;
@@ -31,6 +31,7 @@ export async function createNotification(
       condition,
       threshold: withThresholdDefaults(threshold),
       message: message.trim(),
+      includeAlertInfo: includeAlertInfo === true,
       channelIds: [...new Set(channelIds)],
       created_at: new Date(),
       updated_at: new Date(),
