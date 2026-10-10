@@ -4,7 +4,6 @@ import {
   buildAlertInfoEmailHtml,
   buildAlertInfoHtml,
   countryFlag,
-  escapeHtml,
   formatDeclaredAt,
 } from '@/helpers/notifications/alert-info-body.helper';
 
@@ -30,10 +29,6 @@ function makeSnapshot(overrides: Partial<NotificationAlertSnapshot> = {}): Notif
 }
 
 describe('alert-info-body helper', () => {
-  it('escapes HTML special characters', () => {
-    expect(escapeHtml('a<b>&"\'')).toBe('a&lt;b&gt;&amp;&quot;&#39;');
-  });
-
   it('builds flag emojis and falls back to N/A', () => {
     expect(countryFlag('ES')).toBe('🇪🇸');
     expect(countryFlag('us')).toBe('🇺🇸');
@@ -112,7 +107,7 @@ describe('alert-info-body helper', () => {
     ]);
     expect(html.startsWith('Intento de &lt;login&gt; &amp; fuerza bruta\n')).toBe(true);
     expect(html).toContain('<td>Scenary</td>\n      <td>crowdsecurity/&lt;script&gt;</td>');
-    expect(html).toContain('<td>Path</td>\n      <td>/?x=&lt;b&gt;</td>');
+    expect(html).toContain('<td>Path</td>\n      <td>/?x&#x3D;&lt;b&gt;</td>');
     expect(html).not.toContain('<script>');
   });
 });
