@@ -10,6 +10,8 @@ const sshAlert = {
   source: { ip: '1.2.3.4', value: '1.2.3.4', scope: 'Ip', cn: 'ES' },
   origin: 'crowdsec',
   alertType: 'ban',
+  declaredAt: new Date('2026-10-10T01:02:03Z'),
+  events: [[{ key: 'datasource_path', value: '/var/log/auth.log' }]],
 };
 
 describe('e2e notifications engine and history', () => {

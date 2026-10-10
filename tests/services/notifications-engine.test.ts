@@ -40,6 +40,8 @@ const alert = {
   source: { ip: '1.2.3.4', value: '1.2.3.4', scope: 'Ip', cn: 'ES' },
   origin: 'crowdsec',
   alertType: 'ban',
+  declaredAt: new Date('2026-10-10T01:02:03Z'),
+  events: [[{ key: 'datasource_path', value: '/var/log/auth.log' }]],
 };
 
 function seedChannel(id: number): void {
@@ -233,7 +235,15 @@ describe('notification-engine', () => {
     );
     await notificationEngineService.handleAlert({ ...alert, alertId: 201 });
     expect(emailAlertInfo.at(-1)).toEqual([
-      { alertId: 201, scenario: alert.scenario, source: alert.source, origin: alert.origin, alertType: alert.alertType },
+      {
+        alertId: 201,
+        scenario: alert.scenario,
+        source: alert.source,
+        origin: alert.origin,
+        alertType: alert.alertType,
+        declaredAt: alert.declaredAt,
+        events: alert.events,
+      },
     ]);
     expect(ntfyAlertInfo.at(-1)).toBeUndefined();
 

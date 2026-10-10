@@ -56,6 +56,8 @@ class AlertsSyncService {
           source: (typeof alerts)[number]['source'];
           origin?: string;
           alertType?: string;
+          declaredAt: Date;
+          events: (typeof alerts)[number]['events'][number]['meta'][];
         }[] = [];
 
         for (const alert of alerts) {
@@ -106,6 +108,8 @@ class AlertsSyncService {
                 source: alert.source,
                 origin: alert.decisions?.[0]?.origin,
                 alertType: alert.decisions?.[0]?.type,
+                declaredAt: new Date(alert.created_at),
+                events: (alert.events || []).map((event) => event.meta ?? []),
               });
             }
 

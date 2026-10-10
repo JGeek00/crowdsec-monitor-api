@@ -63,6 +63,12 @@ export interface NotificationChannelRef {
   config: NotificationChannelConfig;
 }
 
+/** Event meta as received from CrowdSec (single string value per key). */
+export interface NotificationAlertEventMeta {
+  key: string;
+  value: string;
+}
+
 /** Alert snapshot retained by the engine for providers that support alert info. */
 export interface NotificationAlertSnapshot {
   alertId?: number;
@@ -70,6 +76,10 @@ export interface NotificationAlertSnapshot {
   source: Alert_SourceInfo;
   origin?: string;
   alertType?: string;
+  /** When CrowdSec declared (created) the alert. */
+  declaredAt: Date;
+  /** Meta of each event, in event order. */
+  events: NotificationAlertEventMeta[][];
 }
 
 export interface UserNotificationChannel {

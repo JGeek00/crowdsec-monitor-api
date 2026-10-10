@@ -6,6 +6,7 @@ import type {
   NtfyChannelConfig,
 } from '@/models';
 import { buildNtfyUrl, splitRecipients, withChannelDefaults } from '@/utils/notification-channel';
+import { buildAlertInfoEmailHtml } from '@/helpers/notifications/alert-info-body.helper';
 import { findProvider } from '@/constants/notification-providers';
 import { log } from '@/services/log.service';
 
@@ -48,15 +49,15 @@ async function sendNtfy(channel: NotificationChannelRef, message: string, title:
 }
 
 /**
- * Alert info is part of the body only for providers that support it. The
- * concrete body formatting is not defined yet; `_alertInfo` is the extension
- * point where the deferred summary will be appended.
+ * Alert info is part of the body only for providers that support it. When the
+ * notification opts in, the email html part carries the escaped user message
+ * followed by the alert-info block; the plain-text part keeps just the message.
  */
 async function sendEmail(
   channel: NotificationChannelRef,
   message: string,
   title: string,
-  _alertInfo?: NotificationAlertSnapshot[],
+  alertInfo?: NotificationAlertSnapshot[],
 ): Promise<string | null> {
   const config = withChannelDefaults('email', channel.config) as EmailChannelConfig;
   if (!config.host || !config.from || !config.to) return 'missing host, from or recipient';
@@ -67,11 +68,13 @@ async function sendEmail(
       secure: config.secure,
       auth: config.username && config.password ? { user: config.username, pass: config.password } : undefined,
     });
+    const html = alertInfo && alertInfo.length > 0 ? buildAlertInfoEmailHtml(message, alertInfo) : undefined;
     await transporter.sendMail({
       from: config.from,
       to: splitRecipients(config.to).join(', '),
       subject: title,
       text: message,
+      html,
     });
     return null;
   } catch (err) {

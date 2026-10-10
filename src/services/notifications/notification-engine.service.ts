@@ -1,6 +1,7 @@
 import { NotificationChannelsTable, NotificationsTable } from '@/models';
 import type {
   ConditionNode,
+  NotificationAlertEventMeta,
   NotificationAlertSnapshot,
   NotificationChannelRef,
   UserNotification,
@@ -128,6 +129,8 @@ class NotificationEngineService {
     source: AlertLike['source'];
     origin?: string;
     alertType?: string;
+    declaredAt: Date;
+    events: NotificationAlertEventMeta[][];
   }): Promise<void> {
     if (this.enabledCache.length === 0) return;
     const alert = toAlertLike(raw);
@@ -141,6 +144,8 @@ class NotificationEngineService {
         source: raw.source,
         origin: raw.origin,
         alertType: raw.alertType,
+        declaredAt: raw.declaredAt,
+        events: raw.events,
       };
       const { fired, alertIds, snapshots } = this.thresholdMet(notification, now, snapshot);
       if (!fired) continue;
