@@ -31,10 +31,20 @@ export function countryFlag(countryCode?: string): string {
   return flag;
 }
 
-/** hh:mm:ss in UTC (canonical API convention). */
+/** Server timezone name, resolved once per process (IANA, e.g. Europe/Madrid). */
+const serverTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** hh:mm:ss in the server's local time, with the used timezone and UTC offset. */
 export function formatDeclaredAt(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+  const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMinutes);
+  return `${time} (${serverTimeZone}, UTC${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)})`;
 }
 
 function uniqueValues(values: (string | undefined)[]): string[] {

@@ -41,9 +41,14 @@ describe('alert-info-body helper', () => {
     expect(countryFlag('')).toBe('N/A');
   });
 
-  it('formats hh:mm:ss in UTC with zero padding', () => {
-    expect(formatDeclaredAt(new Date('2026-10-10T01:02:03Z'))).toBe('01:02:03');
-    expect(formatDeclaredAt(new Date('2026-10-10T23:59:09Z'))).toBe('23:59:09');
+  it('formats local hh:mm:ss with timezone name and UTC offset', () => {
+    const date = new Date('2026-10-10T01:02:03Z');
+    const formatted = formatDeclaredAt(date);
+    expect(formatted).toMatch(/^\d{2}:\d{2}:\d{2} \(.+, UTC[+-]\d{2}:\d{2}\)$/);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    expect(formatted.startsWith(`${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`)).toBe(
+      true,
+    );
   });
 
   it('summarizes unique values in order of appearance', () => {
@@ -66,7 +71,7 @@ describe('alert-info-body helper', () => {
     const html = buildAlertInfoHtml([makeSnapshot()]);
     expect(html).toContain('<h2>Alert #2741</h2>');
     expect(html).toContain('<h1>Summary</h1>');
-    expect(html).toContain('<td>Declared at</td>\n      <td>01:02:03</td>');
+    expect(html).toContain(`<td>Declared at</td>\n      <td>${formatDeclaredAt(makeSnapshot().declaredAt)}</td>`);
     expect(html).toContain('<td>Scenary</td>\n      <td>crowdsecurity/ssh-bf</td>');
     expect(html).toContain('<td>Country</td>\n      <td>🇪🇸</td>');
     expect(html).toContain('<td>Target</td>\n      <td>1.2.3.4</td>');

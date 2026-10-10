@@ -2669,10 +2669,11 @@ message carries the user message (HTML-escaped) followed by a generated block â€
 `Summary` table with the distinct scenarios, country flags, targets and IP owners of the
 triggering alerts (comma-separated, first-appearance order; `N/A` when a field is missing
 for every alert), then one `Alert #<id>` block per triggering alert: a Properties table
-(Declared at = CrowdSec creation time as `hh:mm:ss` UTC, scenario, country flag, target,
-IP owner) and one table per event with only the available fields among Method (`http_verb`),
-Target (`target_fqdn`), Path (`http_path`), User agent (`http_user_agent`) and
-Datasource path (`datasource_path`). The plain-text part keeps just the user message.
+(Declared at = CrowdSec creation time as server-local `hh:mm:ss` with the used timezone
+name and UTC offset, e.g. `01:02:03 (Europe/Madrid, UTC+02:00)`; scenario, country flag,
+target, IP owner) and one table per event with only the available fields among Method
+(`http_verb`), Target (`target_fqdn`), Path (`http_path`), User agent (`http_user_agent`)
+and Datasource path (`datasource_path`). The plain-text part keeps just the user message.
 
 Condition DSL: `ConditionNode = {type:leaf, field, operator, value} | {type:and|or, children[]} | {type:not, child}`.
 Leaf `field`: `scenario | country | target | origin | type | scope | ipOwner` (`country` =
