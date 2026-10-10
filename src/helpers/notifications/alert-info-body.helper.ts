@@ -1,10 +1,47 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import Handlebars from 'handlebars';
 import type { NotificationAlertEventMeta, NotificationAlertSnapshot } from '@/models';
-import {
-  alertInfoTemplate,
-  type AlertInfoAlert,
-  type AlertInfoContext,
-  type AlertInfoEventRow,
-} from '@/helpers/notifications/alert-info.template';
+
+/** Row of an event table: only the meta fields that have a value. */
+export interface AlertInfoEventRow {
+  label: string;
+  value: string;
+}
+
+/** One event table's rows. */
+export interface AlertInfoEvent {
+  rows: AlertInfoEventRow[];
+}
+
+/** Pre-computed values for one alert block. */
+export interface AlertInfoAlert {
+  id: string;
+  declaredAt: string;
+  scenario: string;
+  country: string;
+  target: string;
+  ipOwner: string;
+  events: AlertInfoEvent[];
+}
+
+/** Template context: every interpolated value is escaped by Handlebars. */
+export interface AlertInfoContext {
+  message: string;
+  summary: {
+    scenaries: string;
+    countries: string;
+    targets: string;
+    ipOwners: string;
+  };
+  alerts: AlertInfoAlert[];
+}
+
+// src/templates mirrors dist/templates (copied by scripts/copy-templates.js), so the
+// path relative to this module is the same when running from src and from dist.
+const alertInfoTemplate = Handlebars.compile(
+  readFileSync(path.join(__dirname, '../../templates/notifications/alert-info.hbs'), 'utf8'),
+);
 
 /** Event meta keys rendered in the per-event table, with their row labels. */
 const eventRowLabels: Record<string, string> = {
