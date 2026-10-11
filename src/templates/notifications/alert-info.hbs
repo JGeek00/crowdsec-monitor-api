@@ -1,58 +1,58 @@
 {{message}}<h1>Summary</h1>
-<table>
+<table style="border-collapse: collapse;">
   <tbody>
     <tr>
-      <td>Scenaries</td>
-      <td>{{summary.scenaries}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Scenaries</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{summary.scenaries}}</td>
     </tr>
     <tr>
-      <td>Countries</td>
-      <td>{{summary.countries}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Countries</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{summary.countries}}</td>
     </tr>
     <tr>
-      <td>Targets</td>
-      <td>{{summary.targets}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Targets</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{summary.targets}}</td>
     </tr>
     <tr>
-      <td>IP Owners</td>
-      <td>{{summary.ipOwners}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">IP Owners</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{summary.ipOwners}}</td>
     </tr>
   </tbody>
 </table>
 {{#each alerts}}
 <h2>Alert {{id}}</h2>
 <h3>Properties</h3>
-<table>
+<table style="border-collapse: collapse;">
   <tbody>
     <tr>
-      <td>Declared at</td>
-      <td>{{declaredAt}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Declared at</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{declaredAt}}</td>
     </tr>
     <tr>
-      <td>Scenary</td>
-      <td>{{scenario}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Scenary</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{scenario}}</td>
     </tr>
     <tr>
-      <td>Country</td>
-      <td>{{country}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Country</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{country}}</td>
     </tr>
     <tr>
-      <td>Target</td>
-      <td>{{target}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">Target</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{target}}</td>
     </tr>
     <tr>
-      <td>IP Owner</td>
-      <td>{{ipOwner}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">IP Owner</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{ipOwner}}</td>
     </tr>
   </tbody>
 </table>
 <h3>Events</h3>
-{{#each events}}{{#if rows.length}}<table>
+{{#each events}}{{#if rows.length}}<table style="border-collapse: collapse; margin-bottom: 8px;">
   <tbody>
     {{#each rows}}
     <tr>
-      <td>{{label}}</td>
-      <td>{{value}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{label}}</td>
+      <td style="border: 1px solid #ccc; padding: 4px 8px;">{{value}}</td>
     </tr>
     {{/each}}
   </tbody>
