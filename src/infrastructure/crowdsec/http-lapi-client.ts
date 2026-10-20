@@ -42,6 +42,18 @@ export class HttpLapiClient implements LapiClient {
     return this.api.decisions.deleteDecision(id);
   }
 
+  getAllowlists() {
+    return this.api.allowlists.getAllowlists();
+  }
+
+  getAllowlistByName(name: string) {
+    return this.api.allowlists.getAllowlistByName(name);
+  }
+
+  checkAllowlist(ips: string[]) {
+    return this.api.allowlists.checkAllowlist(ips);
+  }
+
   /** Allowlist entries (values) from the LAPI; empty on failure, never throws. */
   fetchAllowlistEntries(): Promise<string[]> {
     return this.api.allowlists

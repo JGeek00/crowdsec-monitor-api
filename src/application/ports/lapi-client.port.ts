@@ -21,6 +21,10 @@ export interface LapiClient {
   createAlerts(payload: unknown): Promise<string[]>;
   /** Deletes a decision from the LAPI; returns number of deleted rows. */
   deleteDecision(id: number): Promise<number>;
+  /** Allowlists (CrowdSec LAPI). */
+  getAllowlists(): Promise<import('@/types/crowdsec.types').CrowdSecAllowlist[]>;
+  getAllowlistByName(name: string): Promise<import('@/types/crowdsec.types').CrowdSecAllowlist | null>;
+  checkAllowlist(ips: string[]): Promise<Array<{ ip: string; allowlist: string | null }>>;
   /** Allowlist entries for lookup checks. */
   fetchAllowlistEntries(): Promise<string[]>;
 }

@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
-import { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } from '@/models';
-import { isIpv4 } from '@/utils/ip';
+import type { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } from '@/models';
+import { isIpv4 } from '@/shared/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
-import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
+import { container } from '@/application/container';
 
 /**
  * Check if IPs are in any list (blocklist or allowlist)
@@ -29,15 +28,8 @@ export async function checkIpsInList(
       return;
     }
 
-    const [blocklistMap, allowlistMap] = await Promise.all([lookupIpsInBlocklists(ips), lookupIpsInAllowlists(ips)]);
-
-    const results = ips.map((ip) => ({
-      ip,
-      blocklists: blocklistMap.get(ip) ?? [],
-      allowlists: allowlistMap.get(ip) ?? [],
-    }));
-
-    res.status(200).json({ results });
+    const result = await container.useCases.blocklists.checkIpsInList.execute(ips);
+    res.status(200).json(result as PostCheckIpsInListResult);
   } catch (err) {
     log.error('Error checking lists:', err);
     res.status(500).json(errorResponse('Failed to check lists', err instanceof Error ? err.message : 'Unknown error'));

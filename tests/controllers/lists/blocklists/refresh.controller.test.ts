@@ -1,24 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  mockIsSyncing: vi.fn().mockReturnValue(false),
-  mockIsBlocklistBusy: vi.fn().mockReturnValue(false),
-  mockFindByPk: vi.fn(),
+  mockExecute: vi.fn(),
 }));
 
-vi.mock('@/services', () => ({
-  statusBlocklistService: { isSyncingBlocklists: mocks.mockIsSyncing, isBlocklistBusy: mocks.mockIsBlocklistBusy },
-  databaseService: { refreshBlocklists: vi.fn().mockResolvedValue(undefined) },
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      blocklists: { refreshSingleBlocklist: { execute: mocks.mockExecute } },
+    },
+  },
 }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
-vi.mock('@/models', () => ({
-  BlocklistsTable: { findByPk: mocks.mockFindByPk },
-  DeleteBlocklistParams: {},
-  ResponseWithError: {} as any,
-}));
 
 import { Request, Response } from 'express';
 import { refreshSingleBlocklist } from '@/controllers/lists/blocklists/refresh.controller';
+import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 
 describe('refreshSingleBlocklist', () => {
   let req: Partial<Request>;
@@ -27,6 +24,7 @@ describe('refreshSingleBlocklist', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
     req = { params: { id: '1' } };
@@ -34,27 +32,31 @@ describe('refreshSingleBlocklist', () => {
   });
 
   it('returns 202 on success', async () => {
-    mocks.mockFindByPk.mockResolvedValue({ id: 1, name: 'test' });
+    mocks.mockExecute.mockResolvedValue(undefined);
     await refreshSingleBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(202);
   });
 
   it('returns 404 when blocklist is not found', async () => {
-    mocks.mockFindByPk.mockResolvedValue(null);
+    mocks.mockExecute.mockRejectedValue(new NotFoundError('Blocklist not found'));
     await refreshSingleBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
 
   it('returns 503 when already syncing', async () => {
-    mocks.mockIsSyncing.mockReturnValue(true);
+    mocks.mockExecute.mockRejectedValue(
+      new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.'),
+    );
     await refreshSingleBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(503);
   });
 
   it('returns 409 when blocklist is busy', async () => {
-    mocks.mockIsSyncing.mockReturnValue(false);
-    mocks.mockFindByPk.mockResolvedValue({ id: 1, name: 'test' });
-    mocks.mockIsBlocklistBusy.mockReturnValue(true);
+    mocks.mockExecute.mockRejectedValue(
+      new ConflictError(
+        'A process is already running for this blocklist. Wait for it to complete before performing another action.',
+      ),
+    );
     await refreshSingleBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(409);
   });

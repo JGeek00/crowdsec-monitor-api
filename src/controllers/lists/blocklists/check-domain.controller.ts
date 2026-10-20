@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
-import { resolveIps } from '@/utils/dns-resolve';
-import { config } from '@/config';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
+import { container } from '@/application/container';
 
 /**
  * Resolve DNS for a domain using the configured DNS server and check if any
@@ -13,17 +11,14 @@ export async function checkDomainBlocklist(req: Request, res: Response): Promise
   try {
     const { domain } = req.body as { domain: string };
 
-    const ips = await resolveIps(domain, config.dns.server);
+    const result = await container.useCases.blocklists.checkDomain.execute(domain);
 
-    if (ips.length === 0) {
+    if ('unresolvable' in result) {
       res.status(422).json(errorResponse('Unprocessable entity', 'Could not resolve domain to any IP address'));
       return;
     }
 
-    const blocklistMap = await lookupIpsInBlocklists(ips);
-    const results = ips.map((ip) => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
-
-    res.status(200).json({ domain, ips: results });
+    res.status(200).json(result);
   } catch (err) {
     log.error('Error checking domain blocklist:', err);
     res

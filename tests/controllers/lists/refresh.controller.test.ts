@@ -1,19 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockIsAnyRunning = vi.hoisted(() => vi.fn().mockReturnValue(false));
-const mockRefreshBlocklists = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mocks = vi.hoisted(() => ({
+  mockExecute: vi.fn(),
+}));
 
-vi.mock('@/services', () => ({
-  statusBlocklistService: { isAnyBlocklistProcessRunning: mockIsAnyRunning },
-  databaseService: { refreshBlocklists: mockRefreshBlocklists },
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      blocklists: { refreshAllBlocklists: { execute: mocks.mockExecute } },
+    },
+  },
 }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
 import { refreshLists } from '@/controllers/lists/refresh.controller';
+import { ServiceUnavailableError } from '@/domain/errors';
 
 describe('refreshLists', () => {
-  let req: Partial<Request>;
   let res: Partial<Response>;
   let jsonSpy: ReturnType<typeof vi.fn>;
   let statusSpy: ReturnType<typeof vi.fn>;
@@ -22,18 +26,21 @@ describe('refreshLists', () => {
     vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
-    req = {};
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
   });
 
   it('returns 202 on success', async () => {
-    await refreshLists(req as Request, res as Response);
+    mocks.mockExecute.mockResolvedValue(undefined);
+    await refreshLists({} as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(202);
+    expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'Blocklist refresh started' }));
   });
 
   it('returns 503 when a blocklist process is already running', async () => {
-    mockIsAnyRunning.mockReturnValue(true);
-    await refreshLists(req as Request, res as Response);
+    mocks.mockExecute.mockRejectedValue(
+      new ServiceUnavailableError('A blocklist operation is already in progress. Please try again later.'),
+    );
+    await refreshLists({} as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(503);
   });
 });

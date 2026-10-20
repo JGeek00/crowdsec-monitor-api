@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockCheckAllowlist = vi.hoisted(() => vi.fn());
+const mocks = vi.hoisted(() => ({
+  mockExecute: vi.fn(),
+}));
 
-vi.mock('@/services', () => ({
-  crowdSecAPI: {
-    allowlists: { checkAllowlist: mockCheckAllowlist },
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      blocklists: { checkAllowlist: { execute: mocks.mockExecute } },
+    },
   },
 }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
@@ -19,6 +23,7 @@ describe('checkAllowlist', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
     req = { body: { ips: ['1.2.3.4'] } };
@@ -26,14 +31,14 @@ describe('checkAllowlist', () => {
   });
 
   it('returns 200 with results', async () => {
-    mockCheckAllowlist.mockResolvedValue([{ ip: '1.2.3.4', listed: false }]);
+    mocks.mockExecute.mockResolvedValue([{ ip: '1.2.3.4', allowlist: null }]);
     await checkAllowlist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(200);
-    expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ results: expect.any(Array) }));
+    expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ results: [{ ip: '1.2.3.4', allowlist: null }] }));
   });
 
   it('returns 500 on LAPI failure', async () => {
-    mockCheckAllowlist.mockRejectedValue(new Error('LAPI error'));
+    mocks.mockExecute.mockRejectedValue(new Error('LAPI error'));
     await checkAllowlist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });

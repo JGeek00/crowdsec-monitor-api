@@ -1,24 +1,8 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI } from '@/services';
-import { isValidDate } from '@/utils/date-validator';
-import { CrowdSecAllowlist } from '@/types/crowdsec.types';
+import type { GetAllowlistsResponse, ResponseWithError } from '@/models';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { toCanonicalTimestamp } from '@/utils/timestamp-format';
-import { GetAllowlistsResponse, ResponseWithError } from '@/models';
-
-/**
- * Sanitize allowlist items by converting invalid expiration dates to null and rendering timestamps canonically
- */
-function sanitizeAllowlists(allowlists: CrowdSecAllowlist[]): CrowdSecAllowlist[] {
-  return allowlists.map((allowlist) => ({
-    ...allowlist,
-    items: allowlist.items.map((item) => ({
-      ...item,
-      expiration: isValidDate(item.expiration) ? toCanonicalTimestamp(item.expiration) : null,
-    })),
-  }));
-}
+import { container } from '@/application/container';
 
 /**
  * Get all allowlists from CrowdSec LAPI
@@ -26,13 +10,9 @@ function sanitizeAllowlists(allowlists: CrowdSecAllowlist[]): CrowdSecAllowlist[
 type Res = ResponseWithError<GetAllowlistsResponse>;
 export async function getAllowlists(_: Request<object, Res>, res: Response<Res>): Promise<void> {
   try {
-    const allowlists = await crowdSecAPI.allowlists.getAllowlists();
-    const sanitizedAllowlists = sanitizeAllowlists(allowlists);
+    const result = await container.useCases.blocklists.listAllowlists.execute();
 
-    res.status(200).json({
-      data: sanitizedAllowlists,
-      length: sanitizedAllowlists.length,
-    });
+    res.status(200).json(result);
   } catch (err) {
     log.error('Error fetching allowlists:', err);
     res

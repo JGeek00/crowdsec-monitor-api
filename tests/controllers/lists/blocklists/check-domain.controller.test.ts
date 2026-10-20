@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  mockLookupIpsInBlocklists: vi.fn(),
-  mockResolveIps: vi.fn(),
+  mockExecute: vi.fn(),
 }));
 
-vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mocks.mockLookupIpsInBlocklists }));
-vi.mock('@/utils/dns-resolve', () => ({ resolveIps: mocks.mockResolveIps }));
-vi.mock('@/config', () => ({ config: { dns: { server: '1.1.1.1' } } }));
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      blocklists: { checkDomain: { execute: mocks.mockExecute } },
+    },
+  },
+}));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
@@ -20,6 +23,7 @@ describe('checkDomainBlocklist', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
     req = { body: { domain: 'example.com' } };
@@ -27,28 +31,20 @@ describe('checkDomainBlocklist', () => {
   });
 
   it('returns 200 with domain results', async () => {
-    mocks.mockResolveIps.mockResolvedValue(['1.2.3.4']);
-    mocks.mockLookupIpsInBlocklists.mockResolvedValue(new Map());
+    mocks.mockExecute.mockResolvedValue({ domain: 'example.com', ips: [{ ip: '1.2.3.4', blocklists: [] }] });
     await checkDomainBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(200);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ domain: 'example.com' }));
   });
 
   it('returns 422 when domain cannot be resolved', async () => {
-    mocks.mockResolveIps.mockResolvedValue([]);
+    mocks.mockExecute.mockResolvedValue({ unresolvable: true });
     await checkDomainBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(422);
   });
 
   it('returns 500 when lookup fails', async () => {
-    mocks.mockResolveIps.mockResolvedValue(['1.2.3.4']);
-    mocks.mockLookupIpsInBlocklists.mockRejectedValue(new Error('DB error'));
-    await checkDomainBlocklist(req as Request, res as Response);
-    expect(statusSpy).toHaveBeenCalledWith(500);
-  });
-
-  it('returns 500 when DNS resolution throws', async () => {
-    mocks.mockResolveIps.mockRejectedValue(new Error('DNS timeout'));
+    mocks.mockExecute.mockRejectedValue(new Error('DB error'));
     await checkDomainBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });

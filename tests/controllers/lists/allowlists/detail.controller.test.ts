@@ -1,16 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetAllowlistByName = vi.hoisted(() => vi.fn());
+const mocks = vi.hoisted(() => ({
+  mockExecute: vi.fn(),
+}));
 
-vi.mock('@/services', () => ({
-  crowdSecAPI: {
-    allowlists: { getAllowlistByName: mockGetAllowlistByName },
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      blocklists: { getAllowlist: { execute: mocks.mockExecute } },
+    },
   },
 }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
 import { getAllowlistByName } from '@/controllers/lists/allowlists/detail.controller';
+import { NotFoundError } from '@/domain/errors';
 
 describe('getAllowlistByName', () => {
   let req: Partial<Request>;
@@ -19,32 +24,28 @@ describe('getAllowlistByName', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
-    req = { params: { allowlist_name: 'test-list' } };
+    req = { params: { allowlist_name: 'test-allowlist' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
   });
 
   it('returns 200 when allowlist is found', async () => {
-    mockGetAllowlistByName.mockResolvedValue({
-      name: 'test-list',
-      description: '',
-      items: [],
-      created_at: '',
-      updated_at: '',
-    });
+    mocks.mockExecute.mockResolvedValue({ name: 'test-allowlist', items: [] });
     await getAllowlistByName(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(200);
+    expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ data: { name: 'test-allowlist', items: [] } }));
   });
 
   it('returns 404 when allowlist is not found', async () => {
-    mockGetAllowlistByName.mockResolvedValue(null);
+    mocks.mockExecute.mockRejectedValue(new NotFoundError("Allowlist 'test-allowlist' was not found"));
     await getAllowlistByName(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
 
   it('returns 500 on LAPI failure', async () => {
-    mockGetAllowlistByName.mockRejectedValue(new Error('LAPI error'));
+    mocks.mockExecute.mockRejectedValue(new Error('LAPI error'));
     await getAllowlistByName(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });

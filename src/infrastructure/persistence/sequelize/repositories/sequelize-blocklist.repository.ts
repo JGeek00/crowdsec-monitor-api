@@ -1,5 +1,12 @@
+import { FindAndCountOptions } from '@sequelize/core';
 import { BlocklistsTable, BlocklistIpsTable, CsBlocklistsTable } from '@/models/db';
 import { BLOCKLIST_IP_ORIGIN } from '@/models';
+import { DB_SORTING } from '@/types/database.types';
+import {
+  BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE,
+  BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE,
+  BLOCKLISTS_IPS_INCLUDE_OPTION,
+} from '@/application/use-cases/blocklists/blocklists-db-queries';
 import type { Blocklist } from '@/domain/entities/blocklist.entity';
 import type { BlocklistIp } from '@/domain/entities/blocklist-ip.entity';
 import type { CsBlocklist } from '@/domain/entities/cs-blocklist.entity';
@@ -150,5 +157,150 @@ export class SequelizeBlocklistRepository implements BlocklistRepositoryPort {
         }
       });
     });
+  }
+
+  /** Merged listing (api first, then cs) with the exact query semantics of the legacy controller. */
+  async listMerged(opts: {
+    unpaged: boolean;
+    limit: number;
+    offset: number;
+    includeIps: boolean;
+    onlyApi: boolean;
+    onlyCs: boolean;
+  }) {
+    const includeOption = opts.includeIps ? [BLOCKLISTS_IPS_INCLUDE_OPTION] : [];
+
+    const [totalApi, totalCs] = await Promise.all([
+      opts.onlyCs ? Promise.resolve(0) : BlocklistsTable.count(),
+      opts.onlyApi ? Promise.resolve(0) : CsBlocklistsTable.count(),
+    ]);
+    const total = totalApi + totalCs;
+
+    let apiRows: BlocklistsTable[] = [];
+    let csRows: CsBlocklistsTable[] = [];
+
+    if (opts.unpaged) {
+      [apiRows, csRows] = await Promise.all([
+        opts.onlyCs
+          ? Promise.resolve([])
+          : BlocklistsTable.findAll({
+              attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
+              order: [[BlocklistsTable.col.name, DB_SORTING.ASC]],
+              include: includeOption,
+            }),
+        opts.onlyApi
+          ? Promise.resolve([])
+          : CsBlocklistsTable.findAll({
+              attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
+              order: [[CsBlocklistsTable.col.name, DB_SORTING.ASC]],
+              include: includeOption,
+            }),
+      ]);
+    } else {
+      const apiOffset = opts.offset;
+      const apiLimit = opts.onlyCs ? 0 : Math.max(0, Math.min(opts.limit, totalApi - apiOffset));
+      const csOffset = Math.max(0, opts.offset - totalApi);
+      const csLimit = opts.onlyApi ? 0 : opts.limit - apiLimit;
+
+      await Promise.all([
+        apiLimit > 0
+          ? BlocklistsTable.findAll({
+              attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
+              order: [[BlocklistsTable.col.name, DB_SORTING.ASC]],
+              include: includeOption,
+              limit: apiLimit,
+              offset: apiOffset,
+            }).then((rows) => {
+              apiRows = rows;
+            })
+          : Promise.resolve(),
+        csLimit > 0
+          ? CsBlocklistsTable.findAll({
+              attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
+              order: [[CsBlocklistsTable.col.name, DB_SORTING.ASC]],
+              include: includeOption,
+              limit: csLimit,
+              offset: csOffset,
+            }).then((rows) => {
+              csRows = rows;
+            })
+          : Promise.resolve(),
+      ]);
+    }
+
+    return { apiRows, csRows, total };
+  }
+
+  /** Detail by id ('crowdsec-' prefix → cs-managed); includes ips when requested. */
+  async findByIdMerged(id: string, opts: { includeIps: boolean }) {
+    const isCsId = id.startsWith('crowdsec-');
+
+    if (isCsId) {
+      const csBlocklist = await CsBlocklistsTable.findByPk(id, {
+        attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
+      });
+      if (!csBlocklist) return null;
+
+      const ips = opts.includeIps
+        ? await BlocklistIpsTable.findAll({
+            where: { [BlocklistIpsTable.col.csBlocklistId]: id },
+            order: [['id', DB_SORTING.ASC]],
+            raw: true,
+          })
+        : null;
+
+      return { type: 'cs' as const, data: csBlocklist.toJSON(), ips };
+    }
+
+    const numId = Number(id);
+    const apiBlocklist = await BlocklistsTable.findByPk(numId, {
+      attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
+    });
+    if (!apiBlocklist) return null;
+
+    const ips = opts.includeIps
+      ? await BlocklistIpsTable.findAll({
+          where: { [BlocklistIpsTable.col.blocklistId]: numId },
+          order: [['id', DB_SORTING.ASC]],
+          raw: true,
+        })
+      : null;
+
+    return { type: 'api' as const, data: apiBlocklist.toJSON(), ips };
+  }
+
+  /** Paginated IP rows of one blocklist (api or cs); null when the parent does not exist. */
+  async getIpsPage(id: string, opts: { limit: number; offset: number; unpaged: boolean; onlyStrings: boolean }) {
+    const isCsId = id.startsWith('crowdsec-');
+    let whereClause: Record<string, number | string>;
+
+    if (isCsId) {
+      const csBlocklist = await CsBlocklistsTable.findByPk(id);
+      if (!csBlocklist) return null;
+      whereClause = { [BlocklistIpsTable.col.csBlocklistId]: id };
+    } else {
+      const numId = Number(id);
+      const apiBlocklist = await BlocklistsTable.findByPk(numId);
+      if (!apiBlocklist) return null;
+      whereClause = { [BlocklistIpsTable.col.blocklistId]: numId };
+    }
+
+    const queryOptions: FindAndCountOptions<BlocklistIp> = {
+      where: whereClause,
+      order: [['id', DB_SORTING.ASC]],
+      attributes: opts.onlyStrings ? ['value'] : undefined,
+    };
+
+    if (!opts.unpaged) {
+      queryOptions.limit = opts.limit;
+      queryOptions.offset = opts.offset;
+    }
+
+    const { rows, count } = await BlocklistIpsTable.findAndCountAll({
+      ...queryOptions,
+      raw: true,
+    });
+
+    return { items: rows, total: count };
   }
 }

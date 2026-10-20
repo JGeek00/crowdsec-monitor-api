@@ -1,10 +1,5 @@
 import { Request, Response } from 'express';
-import { FindAndCountOptions } from '@sequelize/core';
-import {
-  BlocklistIp,
-  BlocklistIpsTable,
-  BlocklistsTable,
-  CsBlocklistsTable,
+import type {
   GetBlocklistIpsParams,
   GetBlocklistIpsQueryParams,
   GetBlocklistIpsResponse,
@@ -13,7 +8,8 @@ import {
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { DB_SORTING } from '@/types/database.types';
+import { container } from '@/application/container';
+import { NotFoundError } from '@/domain/errors';
 
 /**
  * Get IPs for a specific blocklist with pagination.
@@ -33,62 +29,21 @@ export async function getBlocklistIps(
   try {
     const { id } = req.params;
     const { limit = 50, offset = 0, unpaged, ip_string } = req.query;
-    const onlyStrings = ip_string === 'true';
-    const isCsId = id.startsWith('crowdsec-');
-    let whereClause: Record<string, number | string>;
 
-    if (isCsId) {
-      const csBlocklist = await CsBlocklistsTable.findByPk(id);
-      if (!csBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
-        return;
-      }
-      whereClause = { [BlocklistIpsTable.col.csBlocklistId]: id };
-    } else {
-      const numId = Number(id);
-      const apiBlocklist = await BlocklistsTable.findByPk(numId);
-      if (!apiBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
-        return;
-      }
-      whereClause = { [BlocklistIpsTable.col.blocklistId]: numId };
-    }
-
-    const queryOptions: FindAndCountOptions<BlocklistIp> = {
-      where: whereClause,
-      order: [['id', DB_SORTING.ASC]],
-      attributes: onlyStrings ? ['value'] : undefined,
-    };
-
-    if (unpaged !== true) {
-      queryOptions.limit = Number(limit);
-      queryOptions.offset = Number(offset);
-    }
-
-    const { rows: ips, count: total } = await BlocklistIpsTable.findAndCountAll({
-      ...queryOptions,
-      raw: true,
+    const response = await container.useCases.blocklists.getBlocklistIps.execute(id, {
+      limit: Number(limit),
+      offset: Number(offset),
+      unpaged: unpaged === true,
+      onlyStrings: ip_string === 'true',
     });
 
-    const items: BlocklistIp[] | string[] = onlyStrings
-      ? (ips as BlocklistIp[]).map((ip) => ip.value)
-      : (ips as BlocklistIp[]);
-    const response: GetBlocklistIpsResponse = { items };
-
-    if (unpaged !== true) {
-      const page = Math.floor(Number(offset) / Number(limit)) + 1;
-      response.pagination = {
-        page,
-        amount: items.length,
-        total,
-      };
-    } else {
-      response.total = total;
-    }
-
-    res.status(200).json(response);
+    res.status(200).json(response as GetBlocklistIpsResponse);
   } catch (err) {
     if (signal.aborted) return;
+    if (err instanceof NotFoundError) {
+      res.status(404).json(errorResponse('Not found', 'BlocklistsTable not found'));
+      return;
+    }
     log.error('Error fetching blocklist IPs:', err);
     res
       .status(500)

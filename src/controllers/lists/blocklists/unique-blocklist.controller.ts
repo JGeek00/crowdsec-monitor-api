@@ -1,26 +1,10 @@
 import { Request, Response } from 'express';
-import {
-  Blocklist,
-  BlocklistIp,
-  BlocklistIpsTable,
-  BlocklistsTable,
-  BlocklistType,
-  CsBlocklist,
-  CsBlocklistsTable,
-  GetBlocklistParams,
-  GetBlocklistQueryParams,
-  GetBlocklistResponse,
-  ResponseWithError,
-} from '@/models';
-import { errorResponse } from '@/utils/error-response';
+import type { GetBlocklistParams, GetBlocklistQueryParams, GetBlocklistResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
-import { canonicalizeFields } from '@/utils/timestamp-format';
 import { log } from '@/services/log.service';
-import { DB_SORTING } from '@/types/database.types';
-import {
-  BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE,
-  BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE,
-} from '@/helpers/blocklists/blocklists-db-queries';
+import { errorResponse } from '@/utils/error-response';
+import { container } from '@/application/container';
+import { NotFoundError } from '@/domain/errors';
 
 /**
  * Get a specific blocklist by ID.
@@ -40,81 +24,14 @@ export async function getBlocklistById(
     const includeIps = req.query.include_ips === 'full' || req.query.include_ips === 'ip_string';
     const onlyIps = req.query.include_ips === 'ip_string';
 
-    const isCsId = id.startsWith('crowdsec-');
-
-    if (isCsId) {
-      const csBlocklist = await CsBlocklistsTable.findByPk(id as string, {
-        attributes: { include: [BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE] },
-      });
-
-      if (!csBlocklist) {
-        res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
-        return;
-      }
-
-      const ips = includeIps
-        ? await BlocklistIpsTable.findAll({
-            where: { [BlocklistIpsTable.col.csBlocklistId]: id as string },
-            order: [['id', DB_SORTING.ASC]],
-            raw: true,
-          })
-        : null;
-
-      const result = csBlocklist.toJSON() as CsBlocklist & {
-        type: BlocklistType;
-        blocklistIps?: BlocklistIp[] | string[];
-        added_date?: Date | null;
-        last_refresh_attempt?: Date | null;
-        last_successful_refresh?: Date | null;
-      };
-      result.type = 'cs';
-      const canonical = canonicalizeFields(result, [
-        'added_date',
-        'last_refresh_attempt',
-        'last_successful_refresh',
-      ] as const);
-      if (ips !== null) {
-        canonical.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
-      }
-      res.status(200).json({ data: canonical });
-      return;
-    }
-
-    const numId = Number(id);
-    const apiBlocklist = await BlocklistsTable.findByPk(numId, {
-      attributes: { include: [BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE] },
-    });
-
-    if (!apiBlocklist) {
+    const canonical = await container.useCases.blocklists.getBlocklist.execute(id, includeIps, onlyIps);
+    res.status(200).json({ data: canonical } as GetBlocklistResponse);
+  } catch (err) {
+    if (signal.aborted) return;
+    if (err instanceof NotFoundError) {
       res.status(404).json(errorResponse('Not found', 'Blocklist not found'));
       return;
     }
-
-    const ips = includeIps
-      ? await BlocklistIpsTable.findAll({
-          where: { [BlocklistIpsTable.col.blocklistId]: numId },
-          order: [['id', DB_SORTING.ASC]],
-          raw: true,
-        })
-      : null;
-
-    const result = apiBlocklist.toJSON() as Blocklist & {
-      type: BlocklistType;
-      blocklistIps?: BlocklistIp[] | string[];
-    };
-    result.id = String(result.id) as unknown as number;
-    result.type = 'api';
-    const canonicalApi = canonicalizeFields(result, [
-      'added_date',
-      'last_refresh_attempt',
-      'last_successful_refresh',
-    ] as const);
-    if (ips !== null) {
-      canonicalApi.blocklistIps = onlyIps ? (ips as BlocklistIp[]).map((ip) => ip.value) : ips;
-    }
-    res.status(200).json({ data: canonicalApi });
-  } catch (err) {
-    if (signal.aborted) return;
     log.error('Error fetching blocklist:', err);
     res
       .status(500)

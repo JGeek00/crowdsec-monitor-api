@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
+import { container } from '@/application/container';
 
 /**
  * Check if IPs are in any blocklist
@@ -10,10 +10,8 @@ export async function checkBlocklist(req: Request, res: Response): Promise<void>
   try {
     const { ips } = req.body as { ips: string[] };
 
-    const blocklistMap = await lookupIpsInBlocklists(ips);
-    const results = ips.map((ip) => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
-
-    res.status(200).json({ results });
+    const result = await container.useCases.blocklists.checkIp.execute(ips);
+    res.status(200).json(result);
   } catch (err) {
     log.error('Error checking blocklist:', err);
     res

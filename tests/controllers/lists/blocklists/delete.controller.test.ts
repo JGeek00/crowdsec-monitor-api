@@ -1,32 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  mockIsSyncing: vi.fn().mockReturnValue(false),
-  mockIsBlocklistBusy: vi.fn().mockReturnValue(false),
-  mockFindByPk: vi.fn(),
-  mockBlocklistIpsCount: vi.fn().mockResolvedValue(0),
+  mockExecute: vi.fn(),
 }));
 
-vi.mock('@/services', () => ({
-  statusBlocklistService: {
-    isSyncingBlocklists: mocks.mockIsSyncing,
-    isBlocklistBusy: mocks.mockIsBlocklistBusy,
-    createBlocklistDeleteProcess: vi.fn(),
-    completeProcess: vi.fn(),
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      blocklists: { deleteBlocklist: { execute: mocks.mockExecute } },
+    },
   },
-  databaseService: { deleteBlocklistAlerts: vi.fn() },
 }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
-vi.mock('@/models', () => ({
-  BlocklistsTable: { findByPk: mocks.mockFindByPk },
-  BlocklistIpsTable: { count: mocks.mockBlocklistIpsCount, col: { blocklistId: 'blocklist_id' } },
-  DeleteBlocklistParams: {},
-  DeleteBlocklistResponse: {} as any,
-  ResponseWithError: {} as any,
-}));
 
 import { Request, Response } from 'express';
 import { deleteBlocklist } from '@/controllers/lists/blocklists/delete.controller';
+import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 
 describe('deleteBlocklist', () => {
   let req: Partial<Request>;
@@ -35,6 +24,7 @@ describe('deleteBlocklist', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
     req = { params: { id: '1' } };
@@ -42,27 +32,32 @@ describe('deleteBlocklist', () => {
   });
 
   it('returns 202 on successful deletion', async () => {
-    mocks.mockFindByPk.mockResolvedValue({ id: 1, name: 'test', destroy: vi.fn() });
+    mocks.mockExecute.mockResolvedValue(undefined);
     await deleteBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(202);
+    expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'BlocklistsTable deletion requested' }));
   });
 
   it('returns 404 when blocklist is not found', async () => {
-    mocks.mockFindByPk.mockResolvedValue(null);
+    mocks.mockExecute.mockRejectedValue(new NotFoundError('BlocklistsTable not found'));
     await deleteBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
 
   it('returns 503 when blocklist refresh is in progress', async () => {
-    mocks.mockIsSyncing.mockReturnValue(true);
+    mocks.mockExecute.mockRejectedValue(
+      new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.'),
+    );
     await deleteBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(503);
   });
 
   it('returns 409 when blocklist is busy', async () => {
-    mocks.mockIsSyncing.mockReturnValue(false);
-    mocks.mockFindByPk.mockResolvedValue({ id: 1, name: 'test', destroy: vi.fn() });
-    mocks.mockIsBlocklistBusy.mockReturnValue(true);
+    mocks.mockExecute.mockRejectedValue(
+      new ConflictError(
+        'A process is already running for this blocklist. Wait for it to complete before performing another action.',
+      ),
+    );
     await deleteBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(409);
   });

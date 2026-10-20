@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { ResponseWithError } from '@/models';
-import { databaseService, statusBlocklistService } from '@/services';
+import { container } from '@/application/container';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
+import { ServiceUnavailableError } from '@/domain/errors';
 
 /**
  * Trigger a manual blocklist & allowlist refresh.
@@ -14,21 +15,14 @@ import { errorResponse } from '@/utils/error-response';
 type Res = ResponseWithError<{ message: string }>;
 export async function refreshLists(_req: Request<object, Res>, res: Response<Res>): Promise<void> {
   try {
-    if (statusBlocklistService.isAnyBlocklistProcessRunning()) {
-      res
-        .status(503)
-        .json(
-          errorResponse('Service Unavailable', 'A blocklist operation is already in progress. Please try again later.'),
-        );
-      return;
-    }
-
-    databaseService.refreshBlocklists().catch((err) => {
-      log.error('Background blocklist refresh failed:', err);
-    });
+    await container.useCases.blocklists.refreshAllBlocklists.execute();
 
     res.status(202).json({ message: 'Blocklist refresh started' });
   } catch (err) {
+    if (err instanceof ServiceUnavailableError) {
+      res.status(503).json(errorResponse(err.kind, err.detail));
+      return;
+    }
     log.error('Error starting blocklist refresh:', err);
     res
       .status(500)

@@ -46,4 +46,26 @@ export interface BlocklistRepository {
   upsertCsBlocklists(entries: CsBlocklist[]): Promise<void>;
   listCsBlocklists(): Promise<CsBlocklist[]>;
   syncCsBlocklistIps(csBlocklistId: string, blocklistName: string, values: string[]): Promise<void>;
+
+  /** Merged listing (api-managed first, then cs-managed) with count attributes. */
+  listMerged(opts: {
+    unpaged: boolean;
+    limit: number;
+    offset: number;
+    includeIps: boolean;
+    onlyApi: boolean;
+    onlyCs: boolean;
+  }): Promise<{ apiRows: unknown[]; csRows: unknown[]; total: number }>;
+
+  /** Detail by id (numeric → api-managed, 'crowdsec-' prefix → cs-managed). */
+  findByIdMerged(
+    id: string,
+    opts: { includeIps: boolean },
+  ): Promise<{ type: 'api' | 'cs'; data: unknown; ips: unknown[] | null } | null>;
+
+  /** Paginated IP rows of one blocklist (api or cs). */
+  getIpsPage(
+    id: string,
+    opts: { limit: number; offset: number; unpaged: boolean; onlyStrings: boolean },
+  ): Promise<{ items: unknown[]; total: number } | null>;
 }
