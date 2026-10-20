@@ -1,6 +1,7 @@
+import type { WhereOptions } from '@sequelize/core';
 import { DecisionsTable, AlertsTable } from '@/infrastructure/persistence/sequelize/models';
 import type { Decision } from '@/domain/entities';
-import { DB_SORTING } from '@/types/database.types';
+import { DB_SORTING } from '@/infrastructure/persistence/sequelize/db.types';
 import {
   buildDecisionsWhere,
   fetchFilteringOptions as fetchFilteringOptionsQuery,
@@ -9,8 +10,11 @@ import {
 import type {
   DecisionRepository as DecisionRepositoryPort,
   DecisionQueryOptions,
+  DecisionScopeCount,
+  DecisionStats,
+  DecisionTypeCount,
 } from '@/application/ports/decision-repository.port';
-import type { FilteringInfo } from '@/application/use-cases/decisions/decisions.dto';
+import type { DecisionWithAlert, FilteringInfo } from '@/application/use-cases/decisions/decisions.dto';
 
 /**
  * Sequelize implementation of the DecisionRepository port.
@@ -18,7 +22,7 @@ import type { FilteringInfo } from '@/application/use-cases/decisions/decisions.
  * decision endpoints that read/write decisions without their parent alert.
  */
 export class SequelizeDecisionRepository implements DecisionRepositoryPort {
-  async findById(id: number, options?: DecisionQueryOptions): Promise<Decision | null> {
+  async findById(id: number, options?: DecisionQueryOptions): Promise<DecisionWithAlert | null> {
     const row = await DecisionsTable.findByPk(id, {
       attributes: { exclude: [DecisionsTable.col.createdAt, DecisionsTable.col.updatedAt] },
       include: options?.withAlert
@@ -31,13 +35,14 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
           ]
         : undefined,
     });
-    return row ? (row.toJSON() as Decision) : null;
+    return row ? (row.toJSON() as DecisionWithAlert) : null;
   }
 
-  async findByQuery(query: Record<string, unknown>, options?: DecisionQueryOptions): Promise<Decision[]> {
+  async findByQuery(query: Record<string, unknown>, options?: DecisionQueryOptions): Promise<DecisionWithAlert[]> {
     const where = buildDecisionsWhere(query, options?.group ?? false);
+    const whereClause: WhereOptions<Decision> = where as WhereOptions<Decision>;
     const rows = await DecisionsTable.findAll({
-      where: where as never,
+      where: whereClause,
       ...DECISIONS_QUERY,
       include: options?.withAlert
         ? [
@@ -49,16 +54,16 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
           ]
         : undefined,
     });
-    return rows.map((row) => row.toJSON() as unknown as Decision);
+    return rows.map((row) => row.toJSON() as DecisionWithAlert);
   }
 
   async fetchFilteringOptions(): Promise<FilteringInfo> {
     return fetchFilteringOptionsQuery();
   }
 
-  async findByIp(ip: string, options?: DecisionQueryOptions): Promise<Decision[]> {
+  async findByIp(ip: string, options?: DecisionQueryOptions): Promise<DecisionWithAlert[]> {
     const rows = await DecisionsTable.findAll({
-      where: { value: ip } as never,
+      where: { value: ip } as WhereOptions<Decision>,
       ...{
         attributes: { exclude: [DecisionsTable.col.createdAt, DecisionsTable.col.updatedAt] },
         order: [[DecisionsTable.col.crowdsecCreatedAt, DB_SORTING.DESC]],
@@ -73,7 +78,7 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
           ]
         : undefined,
     });
-    return rows.map((row) => row.toJSON() as unknown as Decision);
+    return rows.map((row) => row.toJSON() as DecisionWithAlert);
   }
 
   async create(decision: Omit<Decision, 'id' | 'created_at' | 'updated_at'>): Promise<Decision> {
@@ -93,7 +98,7 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
     );
   }
 
-  async getStats(): Promise<{ total: number; byType: unknown[]; byScope: unknown[] }> {
+  async getStats(): Promise<DecisionStats> {
     const total = (await DecisionsTable.count()) as number;
 
     const byType = (await DecisionsTable.findAll({
@@ -105,7 +110,7 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
       order: [
         [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), DB_SORTING.DESC],
       ],
-    })) as unknown as unknown[];
+    })) as unknown as DecisionTypeCount[]; // ORM boundary: grouped COUNT rows
 
     const byScope = (await DecisionsTable.findAll({
       attributes: [
@@ -116,7 +121,7 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
       order: [
         [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), DB_SORTING.DESC],
       ],
-    })) as unknown as unknown[];
+    })) as unknown as DecisionScopeCount[]; // ORM boundary: grouped COUNT rows
 
     return { total, byType, byScope };
   }

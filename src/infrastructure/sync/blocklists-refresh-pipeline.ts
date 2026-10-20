@@ -8,7 +8,7 @@ import {
   type ProcessBlocklistRefreshStep,
   type ProcessBlocklistStep,
   type ProcessBlocklistStepStatus,
-} from '@/types/process.types';
+} from '@/shared/process.types';
 import { filterAllowlistedIps } from '@/infrastructure/sync/blocklist-allowlist-filter';
 import { parseBlocklistContent } from '@/shared/utils/parse-blocklist';
 

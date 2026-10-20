@@ -1,4 +1,10 @@
-import type { Decision } from '@/domain/entities';
+import type { Alert, Decision } from '@/domain/entities';
+import type { UnparsedMetaData } from '@/shared/meta-data';
+
+/** Decision read model with its parent alert attached (`withAlert` queries). */
+export interface DecisionWithAlert extends Decision {
+  alert?: Alert<UnparsedMetaData> | null;
+}
 
 /** Distinct countries / ip owners present in decision sources (list `filtering`). */
 export interface FilteringInfo {
@@ -36,5 +42,5 @@ export interface DecisionGroup {
   // Grouping helper works on raw Decision rows; when decisions are delivered,
   // controllers canonicalize them into DecisionSummary (timestamp fields as
   // canonical strings) before the response is built.
-  decisions?: Decision[];
+  decisions?: DecisionWithAlert[];
 }

@@ -1,4 +1,8 @@
-import type { NotificationAlertSnapshot } from '@/domain/entities/notification.entity';
+import type {
+  NotificationAlertSnapshot,
+  NotificationChannelConfig,
+  NotificationChannelRef,
+} from '@/domain/entities/notification.entity';
 
 export interface DispatchResult {
   type: string;
@@ -9,7 +13,12 @@ export interface DispatchResult {
 // Implemented by: infrastructure/notifications/dispatcher.ts (+ ntfy-sender/email-sender)
 // Called by: application/use-cases/notifications/evaluate-alert, send-test
 export interface NotificationSender {
-  send(config: unknown, title: string, message: string, alert?: NotificationAlertSnapshot): Promise<DispatchResult>;
+  send(
+    config: NotificationChannelConfig,
+    title: string,
+    message: string,
+    alert?: NotificationAlertSnapshot,
+  ): Promise<DispatchResult>;
   /** Fire one or more unsaved channel refs (test endpoints); results are not stored in history. */
-  dispatch(channels: unknown[], message: string, name: string): Promise<DispatchResult[]>;
+  dispatch(channels: NotificationChannelRef[], message: string, name: string): Promise<DispatchResult[]>;
 }

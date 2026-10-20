@@ -17,7 +17,7 @@ function parseMetaValues(meta: UnparsedMetaData[]): ParsedMetaData[] {
 
     // If already an array, ensure all elements are strings
     if (Array.isArray(item.value)) {
-      return { ...item, value: (item.value as unknown[]).map((v: unknown) => String(v)) };
+      return { ...item, value: item.value.map((v) => String(v)) };
     }
 
     // If it's a string, try to parse it
@@ -26,7 +26,7 @@ function parseMetaValues(meta: UnparsedMetaData[]): ParsedMetaData[] {
         const parsed: unknown = JSON.parse(item.value);
         // If parsed result is an array, convert all elements to strings
         if (Array.isArray(parsed)) {
-          return { ...item, value: (parsed as unknown[]).map((v: unknown) => String(v)) };
+          return { ...item, value: parsed.map((v) => String(v)) };
         }
         // If it's not an array, stringify it and wrap in array
         return { ...item, value: [String(parsed)] };

@@ -1,7 +1,7 @@
 import { BlocklistsTable } from '@/infrastructure/persistence/sequelize/models';
 import { sequelize } from '@/config/database';
 import { config } from '@/config';
-import { DB_MODE } from '@/types/database.types';
+import { DB_MODE } from '@/config/db-mode.types';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 import { log } from '@/infrastructure/system/logger';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
@@ -9,7 +9,7 @@ import { statusService } from '@/infrastructure/status/monitor-status-store';
 import { blocklistDbService } from '@/infrastructure/persistence/sequelize/blocklist-db-writes';
 import { blocklistCrowdSecService } from '@/infrastructure/crowdsec/http-bouncer-client';
 import { SingleRefreshReporter, statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
-import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
+import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/shared/process.types';
 import { filterAllowlistedIps } from '@/infrastructure/sync/blocklist-allowlist-filter';
 import { parseBlocklistContent } from '@/shared/utils/parse-blocklist';
 import { fetchAndDeduplicateIps, buildActivationSummary } from '@/infrastructure/sync/blocklist-activation';

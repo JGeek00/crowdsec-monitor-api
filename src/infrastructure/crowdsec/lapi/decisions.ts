@@ -1,5 +1,5 @@
 import { config } from '@/config';
-import { CrowdSecDecision } from '@/types/crowdsec.types';
+import { CrowdSecDecision } from '@/shared/crowdsec.types';
 import { CrowdSecBaseClient } from './base-client';
 import { AlertsService } from './alerts';
 

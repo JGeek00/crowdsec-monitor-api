@@ -18,6 +18,29 @@ export interface BlocklistWithIps extends Blocklist {
   ips: BlocklistIp[];
 }
 
+/** A persistence row exposing its plain object (Sequelize models satisfy this structurally). */
+export interface BlocklistRow {
+  toJSON(): Record<string, unknown>;
+}
+
+/** Merged-list item after canonicalization (dynamic delivered shape). */
+export type BlocklistListItem = Record<string, unknown>;
+
+export interface BlocklistListPagination {
+  page: number;
+  amount: number;
+  total: number;
+}
+
+export type BlocklistListResult =
+  { total: number; items: BlocklistListItem[] } | { items: BlocklistListItem[]; pagination: BlocklistListPagination };
+
+export interface BlocklistIpsResult {
+  items: BlocklistListItem[];
+  total?: number;
+  pagination?: BlocklistListPagination;
+}
+
 // Implemented by: infrastructure/persistence/sequelize/repositories/sequelize-blocklist.repository.ts
 // Called by: application/use-cases/blocklists/*, application/use-cases/allowlists/*
 export interface BlocklistRepository {
@@ -55,17 +78,17 @@ export interface BlocklistRepository {
     includeIps: boolean;
     onlyApi: boolean;
     onlyCs: boolean;
-  }): Promise<{ apiRows: unknown[]; csRows: unknown[]; total: number }>;
+  }): Promise<{ apiRows: BlocklistRow[]; csRows: BlocklistRow[]; total: number }>;
 
   /** Detail by id (numeric → api-managed, 'crowdsec-' prefix → cs-managed). */
   findByIdMerged(
     id: string,
     opts: { includeIps: boolean },
-  ): Promise<{ type: 'api' | 'cs'; data: unknown; ips: unknown[] | null } | null>;
+  ): Promise<{ type: 'api' | 'cs'; data: Record<string, unknown>; ips: BlocklistIp[] | null } | null>;
 
   /** Paginated IP rows of one blocklist (api or cs). */
   getIpsPage(
     id: string,
     opts: { limit: number; offset: number; unpaged: boolean; onlyStrings: boolean },
-  ): Promise<{ items: unknown[]; total: number } | null>;
+  ): Promise<{ items: BlocklistIp[]; total: number } | null>;
 }

@@ -47,7 +47,11 @@ export class CreateChannelUseCase {
     },
   ) {}
 
-  async execute(input: { name: string; type: string; config: unknown }): Promise<UserNotificationChannel> {
+  async execute(input: {
+    name: string;
+    type: string;
+    config: NotificationChannelConfig;
+  }): Promise<UserNotificationChannel> {
     const errors = validateChannelConfig(input.type, input.config);
     if (errors.length > 0) {
       throw new ValidationError(errors.join(', '));
@@ -80,7 +84,7 @@ export class UpdateChannelUseCase {
 
   async execute(
     id: number,
-    body: { name?: string; type?: string; config?: unknown },
+    body: { name?: string; type?: string; config?: NotificationChannelConfig },
   ): Promise<UserNotificationChannel> {
     const row = await this.deps.notificationRepository.findChannelById(id);
     if (!row) {
@@ -91,12 +95,10 @@ export class UpdateChannelUseCase {
       throw new ValidationError('config is required when changing provider type');
     }
     const typeChanged = body.type !== undefined && body.type !== row.type;
-    let nextConfig = row.config as unknown as Record<string, unknown>;
+    let nextConfig: Record<string, unknown> = { ...row.config };
     if (body.config !== undefined) {
-      const incoming = body.config as unknown as Record<string, unknown>;
-      const merged: Record<string, unknown> = typeChanged
-        ? {}
-        : { ...(row.config as unknown as Record<string, unknown>) };
+      const incoming: Record<string, unknown> = { ...body.config };
+      const merged: Record<string, unknown> = typeChanged ? {} : { ...row.config };
       for (const [key, value] of Object.entries(incoming)) {
         if (typeof value === 'string' && value === '' && isSecretKey(nextType, key)) {
           delete merged[key];
@@ -114,7 +116,7 @@ export class UpdateChannelUseCase {
       ...(body.name !== undefined ? { name: body.name.trim() } : {}),
       // Validated against the provider definition above; stored types are the built-ins for now.
       type: nextType as NotificationChannelType,
-      config: nextConfig,
+      config: nextConfig as NotificationChannelConfig,
     });
     this.deps.engine.upsertChannelCache(updated);
     return updated;

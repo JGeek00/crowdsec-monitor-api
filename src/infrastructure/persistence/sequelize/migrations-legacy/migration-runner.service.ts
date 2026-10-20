@@ -2,11 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { Migration } from '@/infrastructure/persistence/sequelize/models/Migration';
 import { MigrationService } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration.service';
-import { MigrationTask } from '@/types/migration-task.types';
+import { MigrationTask } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration-task.types';
 import { log } from '@/infrastructure/system/logger';
 import { config } from '@/config/index';
 import { sequelize } from '@/config/database';
-import { DB_MODE } from '@/types/database.types';
+import { DB_MODE } from '@/config/db-mode.types';
 
 /**
  * Load and execute a migration file as a TypeScript module
@@ -192,7 +192,7 @@ export class MigrationRunner {
         throw new Error(`Migration not found: ${migrationName}`);
       }
 
-      await migration.up({});
+      await migration.up();
 
       await this.migrationService.registerMigration(migrationName);
 

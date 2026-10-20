@@ -7,9 +7,6 @@ export function toChannelResponse(channel: UserNotificationChannel): Notificatio
   return {
     ...channel,
     supportsAlertInfo: findProvider(channel.type)?.supportsAlertInfo === true,
-    config: sanitizeChannelConfig(
-      channel.type,
-      channel.config as unknown as Record<string, unknown>,
-    ) as unknown as UserNotificationChannel['config'],
+    config: sanitizeChannelConfig(channel.type, channel.config),
   };
 }

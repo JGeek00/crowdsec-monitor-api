@@ -1,4 +1,4 @@
-import { CrowdSecAllowlist } from '@/types/crowdsec.types';
+import { CrowdSecAllowlist } from '@/shared/crowdsec.types';
 
 export interface GetAllowlistsResponse {
   data: CrowdSecAllowlist[];

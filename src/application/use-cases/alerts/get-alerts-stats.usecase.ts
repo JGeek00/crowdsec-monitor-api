@@ -1,4 +1,3 @@
-import { DB_SORTING } from '@/types/database.types';
 import type { AlertRepository } from '@/application/ports/alert-repository.port';
 
 export interface AlertStatsResult {
@@ -35,8 +34,6 @@ export class GetAlertsStatsUseCase {
       .map(([organization, count]) => ({ organization, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-
-    void DB_SORTING; // ordering handled inside the repository aggregation
 
     return { total, simulated, real: total - simulated, topScenarios, topCountries, topOrganizations };
   }

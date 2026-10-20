@@ -9,13 +9,13 @@ import type {
   ProcessBlocklistStepStatus,
   ProcessFieldBlocklist,
   ProcessFieldBlocklistOps,
-} from '@/types/process.types';
+} from '@/shared/process.types';
 import {
   PROCESS_BLOCKLIST_STEP,
   PROCESS_BLOCKLIST_FIELD_STATUS,
   PROCESS_BLOCKLIST_STEP_STATUS,
   PROCESS_FIELD_BLOCKLIST,
-} from '@/types/process.types';
+} from '@/shared/process.types';
 import { config } from '@/config';
 import { toCanonicalTimestampFromDate } from '@/shared/utils/timestamp-format';
 import { type StatusService, statusService } from './monitor-status-store';

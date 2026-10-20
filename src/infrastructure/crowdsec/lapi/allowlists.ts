@@ -1,4 +1,4 @@
-import { CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '@/types/crowdsec.types';
+import { CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '@/shared/crowdsec.types';
 import { CrowdSecBaseClient } from './base-client';
 
 export class AllowlistsService {

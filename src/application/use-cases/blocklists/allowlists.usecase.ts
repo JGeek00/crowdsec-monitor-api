@@ -1,7 +1,7 @@
 import { isValidDate } from '@/shared/utils/date-validator';
 import { toCanonicalTimestamp } from '@/shared/utils/timestamp-format';
 import { NotFoundError } from '@/domain/errors';
-import type { CrowdSecAllowlist } from '@/types/crowdsec.types';
+import type { CrowdSecAllowlist } from '@/shared/crowdsec.types';
 import type { LapiClient } from '@/application/ports/lapi-client.port';
 
 /** Renders timestamps canonically; invalid expirations become null (legacy sanitize). */

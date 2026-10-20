@@ -42,10 +42,16 @@ export class CheckDomainUseCase {
 }
 
 // Called by: delivery/http controllers (lists check-ips endpoint)
+export interface CheckIpsInListResultItem {
+  ip: string;
+  blocklists: string[];
+  allowlists: string[];
+}
+
 export class CheckIpsInListUseCase {
   constructor(private readonly deps: { blocklistLookup: BlocklistIpLookup; allowlistLookup: AllowlistIpLookup }) {}
 
-  async execute(ips: string[]): Promise<unknown> {
+  async execute(ips: string[]): Promise<{ results: CheckIpsInListResultItem[] }> {
     const [blocklistMap, allowlistMap] = await Promise.all([
       this.deps.blocklistLookup(ips),
       this.deps.allowlistLookup(ips),
@@ -65,7 +71,7 @@ export class CheckIpsInListUseCase {
 export class CheckAllowlistUseCase {
   constructor(private readonly deps: { lapiClient: LapiClient }) {}
 
-  execute(ips: string[]): Promise<unknown> {
+  execute(ips: string[]): ReturnType<LapiClient['checkAllowlist']> {
     return this.deps.lapiClient.checkAllowlist(ips);
   }
 }

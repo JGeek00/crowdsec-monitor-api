@@ -154,7 +154,8 @@ export function validateChannelConfig(type: string, config: unknown): string[] {
 
 export function withChannelDefaults(type: string, config: NotificationChannelConfig): NotificationChannelConfig {
   const provider = findProvider(type);
-  const source = (isRecord(config) ? config : {}) as Record<string, unknown>;
+  // Single boundary cast: field lookup by arbitrary provider key on a union type.
+  const source = config as Record<string, unknown>;
   const merged: Record<string, unknown> = {};
   if (provider) {
     for (const field of provider.fields) {
@@ -163,19 +164,19 @@ export function withChannelDefaults(type: string, config: NotificationChannelCon
       }
     }
   }
-  return { ...merged, ...source } as unknown as NotificationChannelConfig;
+  return { ...merged, ...source } as NotificationChannelConfig;
 }
 
 /** Remove secret fields so read endpoints never leak them. */
-export function sanitizeChannelConfig(type: string, config: unknown): Record<string, unknown> {
+export function sanitizeChannelConfig(type: string, config: NotificationChannelConfig): NotificationChannelConfig {
   const provider = findProvider(type);
-  if (!provider || !isRecord(config)) return {};
+  if (!provider || !isRecord(config)) return {} as NotificationChannelConfig;
   const secrets = new Set(provider.fields.filter((f) => f.secret === true).map((f) => f.key));
   const clean: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(config)) {
     if (!secrets.has(key)) clean[key] = value;
   }
-  return clean;
+  return clean as NotificationChannelConfig;
 }
 
 export function buildNtfyUrl(server: string, topic: string): string {

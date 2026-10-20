@@ -1,4 +1,5 @@
-import { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
+import { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/shared/crowdsec.types';
+import type { LapiAlertsParams } from '@/application/ports/lapi-client.port';
 import { CrowdSecBaseClient } from './base-client';
 
 export class AlertsService {
@@ -11,13 +12,7 @@ export class AlertsService {
    * @param params.until - Duration string (e.g., '1h', '30s')
    * @param params.has_active_decision - Filter alerts with active decisions
    */
-  async getAlerts(params?: {
-    since?: string;
-    until?: string;
-    has_active_decision?: boolean;
-    origin?: string;
-    scenario?: string;
-  }): Promise<CrowdSecAlert[]> {
+  async getAlerts(params?: LapiAlertsParams): Promise<CrowdSecAlert[]> {
     try {
       const headers = await this.base.getAuthHeaders();
 

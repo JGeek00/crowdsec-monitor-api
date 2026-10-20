@@ -1,7 +1,7 @@
 import appDefaults from '@/constants/app-defaults';
 import type { Logger } from '@/application/ports/logger.port';
 import type { ProcessTrackerPort } from '@/application/ports/process-tracker.port';
-import type { JobDefinition } from './check-lapi-health.job';
+import type { JobDefinition, JobResult } from './check-lapi-health.job';
 
 /**
  * Blocklists refresh job: full refresh of enabled blocklists.
@@ -10,7 +10,7 @@ import type { JobDefinition } from './check-lapi-health.job';
  */
 export const buildRefreshBlocklistsJob = (deps: {
   tracker: Pick<ProcessTrackerPort, 'isSyncingBlocklists'>;
-  runRefresh: () => Promise<unknown>;
+  runRefresh: () => Promise<JobResult | void>;
   logger: Logger;
 }): JobDefinition => ({
   id: appDefaults.scheduler.blocklistsSync,

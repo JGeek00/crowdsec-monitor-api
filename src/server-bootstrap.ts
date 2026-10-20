@@ -6,7 +6,7 @@ import { log } from '@/infrastructure/system/logger';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import { setLevel as initLogger } from '@/infrastructure/system/logger';
 import { schedulerService } from '@/infrastructure/scheduling/interval-scheduler';
-import { LogLevel } from '@/types/log.types';
+import { LogLevel } from '@/config/log.types';
 import { formatInterval } from '@/application/jobs/format-interval';
 import { container } from '@/container';
 import packageJson from '../package.json';

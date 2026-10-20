@@ -14,6 +14,6 @@ export interface NotificationEnginePort {
 // Implemented by: infrastructure/notifications/history
 // Called by: application/use-cases/notifications/*
 export interface NotificationHistoryPort {
-  list(): unknown[];
+  list(): NotificationHistoryEntry[];
   find(id: string): NotificationHistoryEntry | undefined;
 }

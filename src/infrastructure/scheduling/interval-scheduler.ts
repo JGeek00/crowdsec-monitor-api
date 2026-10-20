@@ -1,6 +1,7 @@
 import { log } from '@/infrastructure/system/logger';
 
-type ScheduledTask = () => unknown | Promise<unknown>;
+/** Opaque scheduled task: the scheduler never inspects the result. */
+type ScheduledTask = () => unknown;
 
 interface SchedulerOptions {
   intervalSeconds: number;

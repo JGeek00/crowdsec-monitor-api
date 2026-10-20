@@ -10,7 +10,7 @@ import type {
 import type { UnparsedMetaData } from '@/shared/models';
 import type { GetAlertsQueryParams } from '@/delivery/http/schemas/alerts/GetAlertsQueryParams.model';
 import type { GetDecisionsQueryParams } from '@/application/use-cases/decisions/decisions.dto';
-import type { CrowdSecAllowlist, CrowdSecLoginResponse } from '@/types/crowdsec.types';
+import type { CrowdSecAllowlist, CrowdSecLoginResponse } from '@/shared/crowdsec.types';
 
 export type Factory<T> = (overrides?: Partial<T>) => T;
 

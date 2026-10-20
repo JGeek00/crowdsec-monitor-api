@@ -8,7 +8,7 @@ export interface AlertFilters {
   offset?: number;
   unpaged?: boolean;
   scenario?: string | string[];
-  simulated?: unknown;
+  simulated?: boolean | string;
   ip_address?: string | string[];
   country?: string | string[];
   ip_owner?: string | string[];
@@ -38,7 +38,7 @@ export interface AlertRepository {
   /** Alerts by explicit ids (notification history drill-down). */
   findByIds(ids: number[]): Promise<Alert<UnparsedMetaData>[]>;
   /** Batch upsert keyed by CrowdSec alert UUID. */
-  upsertBatch(alerts: unknown[]): Promise<number>;
+  upsertBatch(alerts: Alert<UnparsedMetaData>[]): Promise<number>;
   deleteById(id: number): Promise<boolean>;
   /** Deletes decisions whose alert no longer exists upstream. */
   deleteOlderThan(cutoff: Date): Promise<number>;
@@ -62,5 +62,18 @@ export interface AlertRepository {
   getScenarioHistory(scenario: string): Promise<{ date: string; amount: number }[]>;
   getTopTargets(): Promise<{ target: string; amount: number }[]>;
   getTargetHistory(target: string): Promise<{ date: string; amount: number }[]>;
-  getGeneralStats(since: string | undefined, limit: number | undefined): Promise<unknown>;
+  getGeneralStats(since: string | undefined, limit: number | undefined): Promise<GeneralStatistics>;
+}
+
+/** Raw general-statistics aggregation as produced by the repository.
+ *  NOTE: `topCountries`/`topIpOwners`/`topTargets` use `{ item, amount }`;
+ *  delivery maps them to the response field names. */
+export interface GeneralStatistics {
+  alertsLast24Hours: number;
+  activeDecisions: number;
+  activityHistory: { date: string; amountAlerts: number; amountDecisions: number }[];
+  topCountries: { item: string; amount: number }[];
+  topScenarios: { scenario: string; amount: number }[];
+  topIpOwners: { item: string; amount: number }[];
+  topTargets: { item: string; amount: number }[];
 }

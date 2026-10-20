@@ -1,5 +1,5 @@
 import type { StatusSnapshot } from '@/shared/models';
-import type { Process } from '@/types/process.types';
+import type { Process } from '@/shared/process.types';
 import { makeReactive } from '@/infrastructure/status/make-reactive';
 import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/shared/utils/timestamp-format';
 import packageJson from '../../../package.json';

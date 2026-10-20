@@ -1,3 +1,5 @@
+import type { Process } from '@/shared/process.types';
+
 /** One step of a blocklist refresh pipeline (fetch → parse → delete → import). */
 export interface ProcessStep {
   step: 'fetch' | 'parse' | 'delete' | 'import';
@@ -18,7 +20,7 @@ export interface ProcessTrackerPort {
   createBlocklistDeleteProcess(blocklistIps: number, blocklistId: number, blocklistName: string): string;
   createBlocklistRefreshProcess(blocklists: { number: number; name: string }[]): string;
   completeProcess(id: string, successful: boolean, error?: string | null): void;
-  getProcessesSnapshot(): unknown[];
+  getProcessesSnapshot(): Process[];
   isBlocklistBusy(blocklistId: number): boolean;
   isSyncingBlocklists(): boolean;
   isAnyBlocklistProcessRunning(): boolean;

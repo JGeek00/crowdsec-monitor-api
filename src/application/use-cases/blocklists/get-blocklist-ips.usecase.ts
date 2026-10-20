@@ -1,5 +1,5 @@
 import { NotFoundError } from '@/domain/errors';
-import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
+import type { BlocklistIpsResult, BlocklistRepository } from '@/application/ports/blocklist-repository.port';
 
 // Called by: delivery/http controllers (blocklists ips endpoint)
 export class GetBlocklistIpsUseCase {
@@ -8,15 +8,13 @@ export class GetBlocklistIpsUseCase {
   async execute(
     id: string,
     opts: { limit: number; offset: number; unpaged: boolean; onlyStrings: boolean },
-  ): Promise<unknown> {
+  ): Promise<BlocklistIpsResult> {
     const result = await this.deps.blocklistRepository.getIpsPage(id, opts);
     if (!result) {
       throw new NotFoundError('BlocklistsTable not found');
     }
 
-    const items: unknown[] = opts.onlyStrings
-      ? (result.items as { value: string }[]).map((ip) => ip.value)
-      : result.items;
+    const items = opts.onlyStrings ? result.items.map((ip) => ip.value) : result.items;
 
     if (opts.unpaged) {
       return { total: result.total, items };

@@ -1,5 +1,5 @@
 import { crowdSecAPI, type CrowdSecAPIService } from './lapi/crowdsec-api';
-import type { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
+import type { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/shared/crowdsec.types';
 import type { LapiAlertsParams, LapiClient } from '@/application/ports/lapi-client.port';
 
 /**
@@ -42,8 +42,8 @@ export class HttpLapiClient implements LapiClient {
     return this.api.alerts.deleteAlert(id);
   }
 
-  createAlerts(payload: unknown): Promise<string[]> {
-    return this.api.alerts.createAlerts(payload as CrowdSecCreateAlertPayload);
+  createAlerts(payload: CrowdSecCreateAlertPayload): Promise<string[]> {
+    return this.api.alerts.createAlerts(payload);
   }
 
   deleteDecision(id: number): Promise<number> {

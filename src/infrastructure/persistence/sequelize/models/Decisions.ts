@@ -1,6 +1,6 @@
 import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
-import { Optional } from '@/types/database.types';
+import { Optional } from '@/infrastructure/persistence/sequelize/db.types';
 import type { Alert_SourceInfo, Alert, Decision } from '@/domain/entities';
 import type { UnparsedMetaData } from '@/shared/models';
 

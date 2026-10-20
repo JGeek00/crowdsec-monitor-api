@@ -9,6 +9,7 @@ import { errorResponse } from '@/delivery/http/error-response';
 import { log } from '@/infrastructure/system/logger';
 import { container } from '@/container';
 import { ValidationError, NotFoundError } from '@/domain/errors';
+import type { UpdateNotificationInput } from '@/application/use-cases/notifications';
 
 type Res = ResponseWithError<PutNotificationResponse>;
 
@@ -19,7 +20,7 @@ export async function updateNotification(
   try {
     const plain = await container.useCases.notifications.updateNotification.execute(
       Number(req.params.id),
-      req.body as unknown as Record<string, unknown>,
+      req.body as UpdateNotificationInput,
     );
     res.status(200).json({ data: plain } as never);
   } catch (err) {

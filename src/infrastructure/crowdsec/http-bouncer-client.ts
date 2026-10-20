@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
-import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
+import { CrowdSecCreateAlertPayload } from '@/shared/crowdsec.types';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 import appDefaults from '@/constants/app-defaults';
 import { config } from '@/config';

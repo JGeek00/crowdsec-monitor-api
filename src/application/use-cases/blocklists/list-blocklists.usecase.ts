@@ -1,4 +1,9 @@
-import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
+import type {
+  BlocklistListItem,
+  BlocklistListResult,
+  BlocklistRepository,
+  BlocklistRow,
+} from '@/application/ports/blocklist-repository.port';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import type { BlocklistIp } from '@/domain/entities';
 import type { GetBlocklistsQueryParams } from './blocklists.dto';
@@ -8,7 +13,7 @@ import { BLOCKLIST_TYPE, type BlocklistType } from '@/domain/entities/blocklist.
 export class ListBlocklistsUseCase {
   constructor(private readonly deps: { blocklistRepository: BlocklistRepository }) {}
 
-  async execute(query: GetBlocklistsQueryParams): Promise<unknown> {
+  async execute(query: GetBlocklistsQueryParams): Promise<BlocklistListResult> {
     const { limit = 100, offset = 0, unpaged, include_ips, get_only } = query;
     const lim = Number(limit);
     const off = Number(offset);
@@ -26,24 +31,20 @@ export class ListBlocklistsUseCase {
       onlyCs,
     });
 
-    const mapItem = (item: { toJSON(): unknown }, type: BlocklistType): Record<string, unknown> => {
-      const obj = item.toJSON() as Record<string, unknown> & { blocklistIps?: BlocklistIp[] };
+    const mapItem = (item: BlocklistRow, type: BlocklistType): BlocklistListItem => {
+      const obj = item.toJSON() as BlocklistListItem & { blocklistIps?: BlocklistIp[] };
       obj.id = String(obj.id);
       obj.type = type;
-      const canonical = canonicalizeFields(obj, [
-        'added_date',
-        'last_refresh_attempt',
-        'last_successful_refresh',
-      ] as never) as Record<string, unknown>;
+      const canonical = canonicalizeFields(obj, ['added_date', 'last_refresh_attempt', 'last_successful_refresh']);
       if (onlyIps && Array.isArray(canonical.blocklistIps)) {
-        canonical.blocklistIps = (canonical.blocklistIps as BlocklistIp[]).map((ip) => ip.value);
+        canonical.blocklistIps = canonical.blocklistIps.map((ip) => ip.value);
       }
       return canonical;
     };
 
     const items = [
-      ...(apiRows as { toJSON(): unknown }[]).map((row) => mapItem(row, BLOCKLIST_TYPE.API)),
-      ...(csRows as { toJSON(): unknown }[]).map((row) => mapItem(row, BLOCKLIST_TYPE.CROWDSEC)),
+      ...apiRows.map((row) => mapItem(row, BLOCKLIST_TYPE.API)),
+      ...csRows.map((row) => mapItem(row, BLOCKLIST_TYPE.CROWDSEC)),
     ];
 
     if (unpaged === true) {

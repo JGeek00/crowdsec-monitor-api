@@ -1,5 +1,6 @@
 import { dispatchChannels } from './sender';
 import type { DispatchResult, NotificationSender } from '@/application/ports/notification-sender.port';
+import type { NotificationChannelRef } from '@/domain/entities/notification.entity';
 
 /**
  * Application-facing channel dispatcher: fires unsaved channel refs
@@ -7,7 +8,7 @@ import type { DispatchResult, NotificationSender } from '@/application/ports/not
  * touching history.
  */
 export const channelDispatcher = {
-  dispatch(channels: unknown[], message: string, name: string): Promise<DispatchResult[]> {
-    return dispatchChannels(channels as never, message, name);
+  dispatch(channels: NotificationChannelRef[], message: string, name: string): Promise<DispatchResult[]> {
+    return dispatchChannels(channels, message, name);
   },
 } satisfies Pick<NotificationSender, 'dispatch'>;

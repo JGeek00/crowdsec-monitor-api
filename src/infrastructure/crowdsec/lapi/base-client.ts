@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '@/config';
-import { CrowdSecLoginResponse } from '@/types/crowdsec.types';
+import { CrowdSecLoginResponse } from '@/shared/crowdsec.types';
 import { BLOCKLIST_SCENARIO_PREFIX, MANUAL_DECISION } from '@/constants/scenarios';
 import { log } from '@/infrastructure/system/logger';
 

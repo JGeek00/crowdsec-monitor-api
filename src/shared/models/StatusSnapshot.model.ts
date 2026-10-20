@@ -1,4 +1,4 @@
-import { Process } from '@/types/process.types';
+import { Process } from '@/shared/process.types';
 
 export interface StatusSnapshot {
   csLapi: {

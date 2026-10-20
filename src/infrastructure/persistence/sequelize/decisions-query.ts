@@ -2,12 +2,12 @@ import { Op, WhereOptions } from '@sequelize/core';
 import { DecisionsTable } from '@/infrastructure/persistence/sequelize/models';
 import type { Decision, Alert_SourceInfo } from '@/domain/entities';
 import { escapeLike } from '@/shared/utils/sql';
-import { DB_SORTING } from '@/types/database.types';
-import type { FilteringInfo } from '@/application/use-cases/decisions/decisions.dto';
+import { DB_SORTING } from '@/infrastructure/persistence/sequelize/db.types';
+import type { FilteringInfo, GetDecisionsQueryParams } from '@/application/use-cases/decisions/decisions.dto';
 
 // ─── WHERE clause builder (Sequelize-flavored, repository-internal) ───────
 
-export function buildDecisionsWhere(query: Record<string, unknown>, hasGroup: boolean): WhereOptions<Decision> {
+export function buildDecisionsWhere(query: GetDecisionsQueryParams, hasGroup: boolean): WhereOptions<Decision> {
   const where: WhereOptions<Decision> = {};
   const { type, scope, value, simulated, scenario, ip_address, only_active } = query;
 

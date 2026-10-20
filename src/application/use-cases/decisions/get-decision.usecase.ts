@@ -1,27 +1,27 @@
-import type { Decision, Alert } from '@/domain/entities';
+import type { Alert } from '@/domain/entities';
 import type { UnparsedMetaData } from '@/shared/meta-data';
 import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import { NotFoundError } from '@/domain/errors';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
+import type { DecisionWithAlert } from './decisions.dto';
 
 // Called by: delivery/http controllers (decisions detail endpoint)
 export class GetDecisionUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
-  async execute(id: number): Promise<unknown> {
-    const decision = await this.deps.decisionRepository.findById(id, { withAlert: true });
+  async execute(id: number): Promise<Record<string, unknown>> {
+    const decision: DecisionWithAlert | null = await this.deps.decisionRepository.findById(id, { withAlert: true });
     if (!decision) {
       throw new NotFoundError('DecisionsTable not found');
     }
 
-    const rawDecision = decision as Decision & { alert?: unknown };
     return {
-      ...canonicalizeFields(rawDecision, ['expiration', 'crowdsec_created_at'], {
+      ...canonicalizeFields(decision, ['expiration', 'crowdsec_created_at'], {
         kind: 'decision',
-        id: rawDecision.id,
+        id: decision.id,
       }),
-      alert: rawDecision.alert ? parseAlertMeta(rawDecision.alert as Alert<UnparsedMetaData>) : undefined,
+      alert: decision.alert ? parseAlertMeta(decision.alert as Alert<UnparsedMetaData>) : undefined,
     };
   }
 }

@@ -1,9 +1,11 @@
+import type { StatusSnapshot } from '@/shared/models';
+
 // Called by: delivery/http controllers (status endpoint) and the WS status channel
 export class GetStatusUseCase {
-  constructor(private readonly deps: { getSnapshot: () => unknown }) {}
+  constructor(private readonly deps: { getSnapshot: () => StatusSnapshot }) {}
 
   /** Full clean snapshot (processes included) — same payload as the legacy controller. */
-  execute<T = unknown>(): T {
-    return this.deps.getSnapshot() as T;
+  execute(): StatusSnapshot {
+    return this.deps.getSnapshot();
   }
 }

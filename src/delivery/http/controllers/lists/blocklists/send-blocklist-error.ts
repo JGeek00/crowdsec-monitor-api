@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { errorResponse } from '@/delivery/http/error-response';
+import type { Logger } from '@/application/ports/logger.port';
 import {
   ServiceUnavailableError,
   UpstreamUnavailableError,
@@ -17,7 +18,7 @@ export function sendBlocklistError(
   err: unknown,
   fallbackKind: string,
   fallbackMessage: string,
-  log: { error: (...args: unknown[]) => void },
+  log: Logger,
   label: string,
 ): void {
   if (err instanceof ServiceUnavailableError) {

@@ -11,7 +11,7 @@ import type { Logger } from '@/application/ports/logger.port';
 import type { LapiClient } from '@/application/ports/lapi-client.port';
 import type { ProcessTrackerPort } from '@/application/ports/process-tracker.port';
 import type { BlocklistOpsPort } from '@/application/ports/blocklist-ops.port';
-import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
+import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/shared/process.types';
 
 // Called by: delivery/http controllers (blocklists toggle endpoint)
 export class ToggleBlocklistUseCase {
@@ -66,7 +66,7 @@ export class ToggleBlocklistUseCase {
 
     // Background CrowdSec operation (same fire-and-forget as legacy)
     let processId: string;
-    let crowdsecOp: Promise<unknown>;
+    let crowdsecOp: Promise<{ allowlistSkipped: number } | void>;
 
     if (enabled) {
       processId = tracker.createBlocklistEnableProcess(blocklist.id, blocklist.name);

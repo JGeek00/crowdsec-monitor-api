@@ -1,6 +1,14 @@
-import { NotificationsTable, NotificationChannelsTable } from '@/infrastructure/persistence/sequelize/models';
+import type { Order, WhereOptions } from '@sequelize/core';
+import { NotificationChannelsTable, NotificationsTable } from '@/infrastructure/persistence/sequelize/models';
+import type { UserNotificationChannel as ChannelAttributes } from '@/domain/entities';
+import type { UserNotification as NotificationAttributes } from '@/domain/entities';
 import type { UserNotification, UserNotificationChannel } from '@/domain/entities';
-import type { NotificationRepository as NotificationRepositoryPort } from '@/application/ports/notification-repository.port';
+import type {
+  ChannelUpdateFields,
+  NotificationRepository as NotificationRepositoryPort,
+  NotificationUpdateFields,
+} from '@/application/ports/notification-repository.port';
+import type { ConditionNode, NotificationChannelConfig } from '@/domain/entities';
 
 /**
  * Sequelize implementation of the NotificationRepository port.
@@ -22,12 +30,12 @@ export class SequelizeNotificationRepository implements NotificationRepositoryPo
     return row ? (row.get({ plain: true }) as UserNotification) : null;
   }
 
-  async updateFields(id: number, fields: Record<string, unknown>): Promise<UserNotification> {
+  async updateFields(id: number, fields: NotificationUpdateFields): Promise<UserNotification> {
     const row = await NotificationsTable.findByPk(id);
     if (!row) {
       throw new Error('Notification not found');
     }
-    await row.update({ ...fields, updated_at: new Date() } as never);
+    await row.update({ ...fields, updated_at: new Date() });
     return row.get({ plain: true }) as UserNotification;
   }
 
@@ -36,7 +44,8 @@ export class SequelizeNotificationRepository implements NotificationRepositoryPo
   }
 
   async listChannels(): Promise<UserNotificationChannel[]> {
-    const rows = await NotificationChannelsTable.findAll({ order: [['id', 'ASC']] as never });
+    const order: Order = [['id', 'ASC']];
+    const rows = await NotificationChannelsTable.findAll({ order });
     return rows.map((row) => row.toJSON() as UserNotificationChannel);
   }
 
@@ -45,53 +54,57 @@ export class SequelizeNotificationRepository implements NotificationRepositoryPo
     return row ? (row.get({ plain: true }) as UserNotificationChannel) : null;
   }
 
-  async updateChannel(id: number, fields: Record<string, unknown>): Promise<UserNotificationChannel> {
+  async updateChannel(id: number, fields: ChannelUpdateFields): Promise<UserNotificationChannel> {
     const row = await NotificationChannelsTable.findByPk(id);
     if (!row) {
       throw new Error('Channel not found');
     }
-    await row.update({ ...fields, updated_at: new Date() } as never);
+    await row.update({ ...fields, updated_at: new Date() });
     return row.get({ plain: true }) as UserNotificationChannel;
   }
 
   async deleteChannelById(id: number): Promise<void> {
-    await NotificationChannelsTable.destroy({ where: { [NotificationChannelsTable.col.id]: id } as never });
+    const where: WhereOptions<ChannelAttributes> = { [NotificationChannelsTable.col.id]: id };
+    await NotificationChannelsTable.destroy({ where });
   }
 
   async createNotification(input: {
     name: string;
     description: string | null;
     enabled: boolean;
-    condition: unknown;
+    condition: ConditionNode;
     threshold: { count: number; windowSeconds: number; cooldownSeconds?: number } | null;
     message: string;
     includeAlertInfo: boolean;
     channelIds: number[];
   }): Promise<UserNotification> {
-    const row = await NotificationsTable.create(input as UserNotification);
+    const row = await NotificationsTable.create(input);
     return row.toJSON() as UserNotification;
   }
 
-  async createChannel(input: { name: string; type: string; config: unknown }): Promise<UserNotificationChannel> {
+  async createChannel(input: {
+    name: string;
+    type: string;
+    config: NotificationChannelConfig;
+  }): Promise<UserNotificationChannel> {
     const row = await NotificationChannelsTable.create({
       ...input,
       created_at: new Date(),
       updated_at: new Date(),
-    } as never);
+    });
     return row.get({ plain: true }) as UserNotificationChannel;
   }
 
   async findChannelIdsByIds(ids: number[]): Promise<number[]> {
     if (ids.length === 0) return [];
-    const rows = await NotificationChannelsTable.findAll({ where: { id: ids } as never });
-    return rows.map((row) => row.get({ plain: true }).id as number);
+    const where: WhereOptions<ChannelAttributes> = { id: ids };
+    const rows = await NotificationChannelsTable.findAll({ where });
+    return rows.map((row) => row.get({ plain: true }).id);
   }
 
   async findNotificationsUsingChannel(channelId: number): Promise<number[]> {
     const all = await NotificationsTable.findAll();
-    return all
-      .map((row) => row.get({ plain: true }) as UserNotification)
-      .filter((n) => (n.channelIds ?? []).includes(channelId))
-      .map((n) => n.id);
+    const notifications: NotificationAttributes[] = all.map((row) => row.get({ plain: true }));
+    return notifications.filter((n) => (n.channelIds ?? []).includes(channelId)).map((n) => n.id);
   }
 }

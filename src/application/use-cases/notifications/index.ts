@@ -1,6 +1,14 @@
 import { NotFoundError, ValidationError } from '@/domain/errors';
-import type { UserNotification } from '@/domain/entities/notification.entity';
-import type { NotificationRepository } from '@/application/ports/notification-repository.port';
+import type {
+  ConditionNode,
+  NotificationHistoryEntry,
+  NotificationThreshold,
+  UserNotification,
+} from '@/domain/entities/notification.entity';
+import type {
+  NotificationRepository,
+  NotificationUpdateFields,
+} from '@/application/ports/notification-repository.port';
 import type { NotificationEnginePort, NotificationHistoryPort } from '@/application/ports/notification-engine.port';
 import { findMissingChannelIds } from '@/application/use-cases/notifications/channel-refs';
 import { withThresholdDefaults } from '@/application/use-cases/notifications/threshold-defaults';
@@ -10,7 +18,7 @@ import { isValidCondition } from '@/domain/value-objects/notification-condition'
 export class ListNotificationsUseCase {
   constructor(private readonly deps: { notificationRepository: NotificationRepository }) {}
 
-  execute(): Promise<unknown> {
+  execute(): Promise<UserNotification[]> {
     return this.deps.notificationRepository.listOrdered();
   }
 }
@@ -31,8 +39,8 @@ export interface CreateNotificationInput {
   name: string;
   description?: string | null;
   enabled?: boolean;
-  condition: unknown;
-  threshold?: unknown;
+  condition: ConditionNode;
+  threshold?: NotificationThreshold | null;
   message: string;
   includeAlertInfo?: boolean;
   channelIds: number[];
@@ -54,9 +62,7 @@ export class CreateNotificationUseCase {
     }
     const missing = await findMissingChannelIds(this.deps.notificationRepository, channelIds);
     if (missing.length > 0) {
-      const err = new ValidationError(`Unknown channel(s): ${missing.join(', ')}`);
-      (err as ValidationError & { status: number }).status = 422;
-      throw err;
+      throw validationStatusError(`Unknown channel(s): ${missing.join(', ')}`);
     }
 
     const row = await this.deps.notificationRepository.createNotification({
@@ -64,15 +70,18 @@ export class CreateNotificationUseCase {
       description: description?.trim() ? description.trim() : null,
       enabled: enabled ?? true,
       condition,
-      threshold: withThresholdDefaults(threshold as never),
+      threshold: withThresholdDefaults(threshold),
       message: message.trim(),
       includeAlertInfo: includeAlertInfo === true,
       channelIds: [...new Set(channelIds)],
     });
-    const plain = row;
-    this.deps.engine.upsertCache(plain as never);
-    return plain;
+    this.deps.engine.upsertCache(row);
+    return row;
   }
+}
+
+export interface UpdateNotificationInput extends NotificationUpdateFields {
+  channelIds?: number[];
 }
 
 export class UpdateNotificationUseCase {
@@ -83,38 +92,31 @@ export class UpdateNotificationUseCase {
     },
   ) {}
 
-  async execute(id: number, body: Record<string, unknown>): Promise<UserNotification> {
+  async execute(id: number, body: UpdateNotificationInput): Promise<UserNotification> {
     const row = await this.deps.notificationRepository.findById(id);
     if (!row) {
       throw new NotFoundError('Notification not found');
     }
 
-    const { channelIds, threshold, ...rest } = body as {
-      channelIds?: number[];
-      threshold?: unknown;
-      condition?: unknown;
-      [key: string]: unknown;
-    };
+    const { channelIds, threshold, ...rest } = body;
 
-    if (body.condition !== undefined && !isValidCondition(body.condition)) {
+    if (rest.condition !== undefined && !isValidCondition(rest.condition)) {
       throw new ValidationError('condition has an unsupported shape');
     }
     if (channelIds !== undefined) {
       const missing = await findMissingChannelIds(this.deps.notificationRepository, channelIds);
       if (missing.length > 0) {
-        const err = new ValidationError(`Unknown channel(s): ${missing.join(', ')}`);
-        (err as ValidationError & { status: number }).status = 422;
-        throw err;
+        throw validationStatusError(`Unknown channel(s): ${missing.join(', ')}`);
       }
     }
 
     const updated = await this.deps.notificationRepository.updateFields(id, {
       ...rest,
-      ...(threshold !== undefined ? { threshold: withThresholdDefaults(threshold as never) } : {}),
+      ...(threshold !== undefined ? { threshold: withThresholdDefaults(threshold) } : {}),
       ...(channelIds !== undefined ? { channelIds: [...new Set(channelIds)] } : {}),
     });
 
-    this.deps.engine.upsertCache(updated as never);
+    this.deps.engine.upsertCache(updated);
     return updated;
   }
 }
@@ -133,7 +135,7 @@ export class ToggleNotificationUseCase {
       throw new NotFoundError('Notification not found');
     }
     const updated = await this.deps.notificationRepository.updateFields(id, { enabled });
-    this.deps.engine.upsertCache(updated as never);
+    this.deps.engine.upsertCache(updated);
     return updated;
   }
 }
@@ -159,8 +161,13 @@ export class DeleteNotificationUseCase {
 export class GetNotificationHistoryUseCase {
   constructor(private readonly deps: { history: NotificationHistoryPort }) {}
 
-  execute(): { data: unknown[]; total: number } {
+  execute(): { data: NotificationHistoryEntry[]; total: number } {
     const data = this.deps.history.list();
     return { data, total: data.length };
   }
+}
+
+/** Validation failure mapped to 422 by the HTTP error middleware (legacy status). */
+function validationStatusError(detail: string): ValidationError & { status: number } {
+  return Object.assign(new ValidationError(detail), { status: 422 });
 }

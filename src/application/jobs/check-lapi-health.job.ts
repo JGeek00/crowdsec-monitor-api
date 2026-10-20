@@ -4,6 +4,9 @@ import type { LapiClient } from '@/application/ports/lapi-client.port';
 import type { StatusStore } from '@/application/ports/status-store.port';
 import type { SyncAlertsResult } from './sync-alerts.job';
 
+/** Outcome of one scheduled job run (jobs never throw on skip; they report it). */
+export type JobResult = { skipped: true } | { skipped?: false; [key: string]: number | boolean | undefined };
+
 export interface JobDefinition {
   /** Stable id (appDefaults.scheduler keys). */
   id: string;
@@ -13,7 +16,7 @@ export interface JobDefinition {
   timeoutMs?: number;
   /** Concurrency policy: skip the run if the previous one is still active. */
   overlap: 'skip';
-  run: () => Promise<unknown>;
+  run: () => Promise<JobResult | void>;
 }
 
 /**

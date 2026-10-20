@@ -1,6 +1,6 @@
 import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
-import { Optional } from '@/types/database.types';
+import { Optional } from '@/infrastructure/persistence/sequelize/db.types';
 import type { ConditionNode, NotificationThreshold, UserNotification } from '@/domain/entities';
 
 export type NotificationCreationAttributes = Optional<UserNotification, 'id' | 'created_at' | 'updated_at'>;

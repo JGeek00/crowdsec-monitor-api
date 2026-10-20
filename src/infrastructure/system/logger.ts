@@ -1,4 +1,4 @@
-import { LogLevel, LOG_LEVELS } from '@/types/log.types';
+import { LogLevel, LOG_LEVELS } from '@/config/log.types';
 
 let currentLevel: LogLevel = 'info';
 

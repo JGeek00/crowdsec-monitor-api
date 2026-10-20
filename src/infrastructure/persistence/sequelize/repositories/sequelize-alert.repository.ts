@@ -7,12 +7,26 @@ import type {
   AlertFilters,
   AlertPage,
   AlertRepository as AlertRepositoryPort,
+  GeneralStatistics,
 } from '@/application/ports/alert-repository.port';
 import { escapeLike } from '@/shared/utils/sql';
-import { DB_SORTING } from '@/types/database.types';
+import { DB_SORTING } from '@/infrastructure/persistence/sequelize/db.types';
 import { defaults } from '@/config/env-defaults';
 
 type Row = Alert<UnparsedMetaData>;
+
+/** Raw aggregated rows returned by `raw: true` Sequelize queries (ORM boundary). */
+interface DateCountRow {
+  date: string;
+  count: string | number;
+}
+interface ScenarioCountRow {
+  scenario: string;
+  count: string | number;
+}
+
+/** Single ORM-boundary cast: raw aggregation rows lose their model type. */
+const asRows = <T>(rows: readonly unknown[]): T[] => rows as T[];
 
 const asArray = (value: string | string[] | undefined): string[] =>
   value === undefined ? [] : Array.isArray(value) ? value : [value];
@@ -149,19 +163,20 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
 
   async findByIds(ids: number[]): Promise<Row[]> {
     if (ids.length === 0) return [];
-    const rows = await AlertsTable.findAll({ where: { [AlertsTable.col.id]: ids } as never });
+    const where: WhereOptions<Row> = { [AlertsTable.col.id]: ids };
+    const rows = await AlertsTable.findAll({ where });
     return rows.map((row) => row.toJSON() as Row);
   }
 
   /** Persists one LAPI alert and its decisions (sync write path). */
-  async upsertBatch(alerts: unknown[]): Promise<number> {
+  async upsertBatch(alerts: Row[]): Promise<number> {
     let count = 0;
-    for (const alert of alerts as Row[]) {
+    for (const alert of alerts) {
       const existing = await AlertsTable.findByPk(alert.id);
       if (existing) {
         await existing.update(alert);
       } else {
-        await AlertsTable.create(alert as Row);
+        await AlertsTable.create(alert);
       }
       count++;
     }
@@ -197,16 +212,23 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
     const total = (await AlertsTable.count()) as number;
     const simulated = (await AlertsTable.count({ where: { simulated: true } })) as number;
 
-    const topScenarios = (await AlertsTable.findAll({
-      attributes: [
-        AlertsTable.col.scenario,
-        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
-      ],
-      group: [AlertsTable.col.scenario],
-      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
-      limit: 10,
-      raw: true,
-    })) as unknown as { scenario: string; count: number }[];
+    const scenariosData = asRows<ScenarioCountRow>(
+      await AlertsTable.findAll({
+        attributes: [
+          AlertsTable.col.scenario,
+          [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
+        ],
+        group: [AlertsTable.col.scenario],
+        order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
+        limit: 10,
+        raw: true,
+      }),
+    );
+
+    const topScenarios = scenariosData.map((item) => ({
+      scenario: item.scenario,
+      amount: parseInt(String(item.count), 10),
+    }));
 
     const sourceRows = await AlertsTable.findAll({
       attributes: [AlertsTable.col.source],
@@ -241,7 +263,7 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.source],
       raw: true,
     });
-    return this.groupDatesBy(rows as unknown as Record<string, unknown>[], (alert) => {
+    return this.groupDatesBy(rows, (alert) => {
       const source = AlertMapper.parseJson<Alert_SourceInfo>(alert.source);
       return source.cn && source.cn.toUpperCase() === countryCode ? this.toDateKey(alert.crowdsec_created_at) : null;
     });
@@ -265,7 +287,7 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.source],
       raw: true,
     });
-    return this.groupDatesBy(rows as unknown as Record<string, unknown>[], (alert) => {
+    return this.groupDatesBy(rows, (alert) => {
       const source = AlertMapper.parseJson<Alert_SourceInfo>(alert.source);
       return source.as_name && source.as_name === ipOwner ? this.toDateKey(alert.crowdsec_created_at) : null;
     });
@@ -278,12 +300,12 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
         [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
       ],
       group: ['scenario'],
-      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'DESC' as never]],
+      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
       raw: true,
     });
-    return (rows as unknown as { scenario: string; count: string }[]).map((item) => ({
+    return asRows<ScenarioCountRow>(rows).map((item) => ({
       scenario: item.scenario,
-      amount: parseInt(item.count, 10),
+      amount: parseInt(String(item.count), 10),
     }));
   }
 
@@ -328,7 +350,7 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.events],
       raw: true,
     });
-    return this.groupDatesBy(rows as unknown as Record<string, unknown>[], (alert) => {
+    return this.groupDatesBy(rows, (alert) => {
       if (!alert.events) return null;
       const events = AlertMapper.parseJson<Alert_EventData<UnparsedMetaData>[]>(alert.events);
       let hasTarget = false;
@@ -349,11 +371,11 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
     });
   }
 
-  private toDateKey(value: unknown): string {
-    return new Date(value as Date | string).toISOString().split('T')[0];
+  private toDateKey(value: Date | string): string {
+    return new Date(value).toISOString().split('T')[0];
   }
 
-  private groupDatesBy<T extends Record<string, unknown>>(rows: T[], dateOf: (alert: T) => string | null) {
+  private groupDatesBy<T>(rows: readonly T[], dateOf: (alert: T) => string | null) {
     const dateMap = new Map<string, number>();
     rows.forEach((alert) => {
       const date = dateOf(alert);
@@ -364,7 +386,7 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  async getGeneralStats(since: string | undefined, limit: number | undefined) {
+  async getGeneralStats(since: string | undefined, limit: number | undefined): Promise<GeneralStatistics> {
     const topLimit = limit ?? defaults.statistics.topItemsLimit;
     let sinceDate: Date | undefined;
     if (since && typeof since === 'string') {
@@ -392,27 +414,31 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
     const dateFn = (table: typeof AlertsTable | typeof DecisionsTable, col: string) =>
       table.sequelize!.fn('DATE', table.sequelize!.col(col));
 
-    const alertsByDate = (await AlertsTable.findAll({
-      attributes: [
-        [dateFn(AlertsTable, AlertsTable.col.crowdsecCreatedAt), 'date'],
-        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
-      ],
-      where: whereClauseAlerts,
-      group: [dateFn(AlertsTable, AlertsTable.col.crowdsecCreatedAt)],
-      order: [[dateFn(AlertsTable, AlertsTable.col.crowdsecCreatedAt), 'ASC' as never]],
-      raw: true,
-    })) as unknown as { date: string; count: string }[];
+    const alertsByDate = asRows<DateCountRow>(
+      await AlertsTable.findAll({
+        attributes: [
+          [dateFn(AlertsTable, AlertsTable.col.crowdsecCreatedAt), 'date'],
+          [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
+        ],
+        where: whereClauseAlerts,
+        group: [dateFn(AlertsTable, AlertsTable.col.crowdsecCreatedAt)],
+        order: [[dateFn(AlertsTable, AlertsTable.col.crowdsecCreatedAt), DB_SORTING.ASC]],
+        raw: true,
+      }),
+    );
 
-    const decisionsByDate = (await DecisionsTable.findAll({
-      attributes: [
-        [dateFn(DecisionsTable, DecisionsTable.col.crowdsecCreatedAt), 'date'],
-        [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), 'count'],
-      ],
-      where: whereClauseDecisions,
-      group: [dateFn(DecisionsTable, DecisionsTable.col.crowdsecCreatedAt)],
-      order: [[dateFn(DecisionsTable, DecisionsTable.col.crowdsecCreatedAt), 'ASC' as never]],
-      raw: true,
-    })) as unknown as { date: string; count: string }[];
+    const decisionsByDate = asRows<DateCountRow>(
+      await DecisionsTable.findAll({
+        attributes: [
+          [dateFn(DecisionsTable, DecisionsTable.col.crowdsecCreatedAt), 'date'],
+          [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), 'count'],
+        ],
+        where: whereClauseDecisions,
+        group: [dateFn(DecisionsTable, DecisionsTable.col.crowdsecCreatedAt)],
+        order: [[dateFn(DecisionsTable, DecisionsTable.col.crowdsecCreatedAt), DB_SORTING.ASC]],
+        raw: true,
+      }),
+    );
 
     const activityMap = new Map<string, { amountAlerts: number; amountDecisions: number }>();
     alertsByDate.forEach((item) => {
@@ -466,18 +492,20 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
         .sort((a, b) => b.amount - a.amount)
         .slice(0, amount);
 
-    const scenariosData = (await AlertsTable.findAll({
-      attributes: ['scenario', [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col('id')), 'count']],
-      where: whereClauseAlerts,
-      group: ['scenario'],
-      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col('id')), 'DESC' as never]],
-      limit: topLimit,
-      raw: true,
-    })) as unknown as { scenario: string; count: string }[];
+    const scenariosData = asRows<ScenarioCountRow>(
+      await AlertsTable.findAll({
+        attributes: ['scenario', [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col('id')), 'count']],
+        where: whereClauseAlerts,
+        group: ['scenario'],
+        order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col('id')), DB_SORTING.DESC]],
+        limit: topLimit,
+        raw: true,
+      }),
+    );
 
     const topScenarios = scenariosData.map((item) => ({
       scenario: item.scenario,
-      amount: parseInt(item.count, 10),
+      amount: parseInt(String(item.count), 10),
     }));
 
     return {

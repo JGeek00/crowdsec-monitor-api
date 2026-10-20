@@ -1,5 +1,4 @@
-import type { Decision } from '@/domain/entities';
-import type { DecisionGroup, GetDecisionsQueryParams } from './decisions.dto';
+import type { DecisionGroup, DecisionWithAlert, GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
 import { applyJsFilters, groupDecisionsByIp, buildPaginatedResponse } from './list.helpers';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
@@ -8,20 +7,18 @@ import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 export class ListDecisionsByIpUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
-  async execute(query: GetDecisionsQueryParams): Promise<unknown> {
+  async execute(query: GetDecisionsQueryParams): Promise<Record<string, unknown>> {
     const { limit = 100, offset = 0, unpaged = false, only_active } = query;
-    const withDecisions = String((query as { include_decisions?: unknown }).include_decisions) === 'true';
+    const withDecisions = String(query.include_decisions) === 'true';
 
     const [filtering, rows] = await Promise.all([
       this.deps.decisionRepository.fetchFilteringOptions(),
       this.deps.decisionRepository.findByQuery(query, { withAlert: withDecisions, group: true }),
     ]);
 
-    const plainRows = rows as Decision[];
+    const jsFiltered = applyJsFilters(rows, query.country, query.ip_owner);
 
-    const jsFiltered = applyJsFilters(plainRows, query.country, query.ip_owner);
-
-    let groups = groupDecisionsByIp(jsFiltered, only_active as boolean | undefined, withDecisions);
+    let groups = groupDecisionsByIp(jsFiltered, only_active, withDecisions);
     if (only_active) groups = groups.filter((g) => g.active_decisions > 0);
 
     let paginatedGroups: DecisionGroup[] = groups;
@@ -29,20 +26,20 @@ export class ListDecisionsByIpUseCase {
       // Canonicalize embedded decisions before pagination (same as legacy).
       paginatedGroups = groups.map((group) => ({
         ...group,
-        decisions: ((group.decisions ?? []) as (Decision & { alert?: unknown })[]).map((decision) =>
+        decisions: (group.decisions ?? []).map((decision: DecisionWithAlert) =>
           canonicalizeFields(decision, ['expiration', 'crowdsec_created_at'], {
             kind: 'decision',
-            id: (decision as Decision).id,
+            id: decision.id,
           }),
         ),
-      })) as unknown as DecisionGroup[];
+      }));
     }
 
     const { items, pagination, total } = buildPaginatedResponse(
       paginatedGroups,
-      +(limit as number),
-      +(offset as number),
-      unpaged!,
+      Number(limit),
+      Number(offset),
+      unpaged ?? false,
     );
 
     return { filtering, groups: items, pagination, total };

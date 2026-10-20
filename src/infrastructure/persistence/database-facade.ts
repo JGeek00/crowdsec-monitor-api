@@ -3,7 +3,7 @@ import { alertsSyncService } from '@/infrastructure/sync/alerts-sync';
 import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 
 import { csBlocklistSyncService } from '@/infrastructure/sync/cs-blocklists-sync';
-import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
+import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/shared/process.types';
 
 /**
  * Facade that delegates to AlertsSyncService and BlocklistRefreshService.

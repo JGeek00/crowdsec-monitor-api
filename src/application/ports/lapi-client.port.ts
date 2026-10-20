@@ -1,3 +1,5 @@
+import type { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/shared/crowdsec.types';
+
 // Implemented by: infrastructure/crowdsec/http-lapi-client.ts
 // Called by: application/use-cases/alerts/*, application/use-cases/status/*, application/use-cases/blocklists/*, application/jobs/*
 export interface LapiAlertsParams {
@@ -6,7 +8,7 @@ export interface LapiAlertsParams {
   since?: string;
   until?: string;
   has_active_decision?: boolean;
-  [key: string]: unknown;
+  [key: string]: string | boolean | undefined;
 }
 
 export interface LapiClient {
@@ -15,15 +17,15 @@ export interface LapiClient {
   checkStatus(): Promise<boolean>;
   getLastLapiConnected(): boolean;
   /** Fetches alerts (and their decisions) from the LAPI. */
-  getAlerts(params?: LapiAlertsParams): Promise<unknown[]>;
+  getAlerts(params?: LapiAlertsParams): Promise<CrowdSecAlert[]>;
   deleteAlert(id: number): Promise<number>;
   /** Creates alerts (used by manual decisions and blocklist imports). */
-  createAlerts(payload: unknown): Promise<string[]>;
+  createAlerts(payload: CrowdSecCreateAlertPayload): Promise<string[]>;
   /** Deletes a decision from the LAPI; returns number of deleted rows. */
   deleteDecision(id: number): Promise<number>;
   /** Allowlists (CrowdSec LAPI). */
-  getAllowlists(): Promise<import('@/types/crowdsec.types').CrowdSecAllowlist[]>;
-  getAllowlistByName(name: string): Promise<import('@/types/crowdsec.types').CrowdSecAllowlist | null>;
+  getAllowlists(): Promise<import('@/shared/crowdsec.types').CrowdSecAllowlist[]>;
+  getAllowlistByName(name: string): Promise<import('@/shared/crowdsec.types').CrowdSecAllowlist | null>;
   checkAllowlist(ips: string[]): Promise<Array<{ ip: string; allowlist: string | null }>>;
   /** Allowlist entries for lookup checks. */
   fetchAllowlistEntries(): Promise<string[]>;

@@ -2,7 +2,7 @@ import { Sequelize } from '@sequelize/core';
 import { SqliteDialect } from '@sequelize/sqlite3';
 import { PostgresDialect } from '@sequelize/postgres';
 import { config } from '@/config/index';
-import { DB_MODE } from '@/types/database.types';
+import { DB_MODE } from '@/config/db-mode.types';
 import { MigrationService } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration.service';
 import { MigrationRunner } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service';
 
@@ -68,7 +68,7 @@ async function initSQLite(): Promise<void> {
   // One-time migration: if the old 'lists' table exists, drop it along with
   // 'blocklist_ips' so they get recreated with the new schema.
   const [oldLists] = await sequelize.query("SELECT name FROM sqlite_master WHERE type='table' AND name='lists'");
-  if ((oldLists as unknown[]).length > 0) {
+  if (Array.isArray(oldLists) && oldLists.length > 0) {
     console.log('⚙️  Migrating old blocklist tables to new schema...');
     await sequelize.query('DROP TABLE IF EXISTS blocklist_ips');
     await sequelize.query('DROP TABLE IF EXISTS lists');
@@ -111,7 +111,7 @@ async function initPostgres(): Promise<void> {
   const [oldLists] = await sequelize.query(
     "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename='lists'",
   );
-  if ((oldLists as unknown[]).length > 0) {
+  if (Array.isArray(oldLists) && oldLists.length > 0) {
     console.log('⚙️  Migrating old blocklist tables to new schema...');
     await sequelize.query('DROP TABLE IF EXISTS blocklist_ips');
     await sequelize.query('DROP TABLE IF EXISTS lists');

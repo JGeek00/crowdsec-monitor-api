@@ -125,7 +125,7 @@ describe('MigrationRunner', () => {
       (runner as any).migrationsCache.set('001_test', { up: upMock });
 
       await (runner as any).executeMigration('001_test');
-      expect(upMock).toHaveBeenCalledWith({});
+      expect(upMock).toHaveBeenCalledWith();
       expect(mockMigrationService.registerMigration).toHaveBeenCalledWith('001_test');
     });
 

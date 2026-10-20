@@ -3,7 +3,7 @@ import type { BlocklistRepository } from '@/application/ports/blocklist-reposito
 import type { Logger } from '@/application/ports/logger.port';
 import type { ProcessTrackerPort } from '@/application/ports/process-tracker.port';
 import type { BlocklistOpsPort } from '@/application/ports/blocklist-ops.port';
-import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
+import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/shared/process.types';
 
 // Called by: delivery/http controllers (blocklists delete endpoint)
 export class DeleteBlocklistUseCase {
