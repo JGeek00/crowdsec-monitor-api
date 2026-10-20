@@ -1,4 +1,4 @@
-import type { NotificationChannelConfig } from '@/domain/entities';
+import type { NotificationChannelConfig, NotificationChannelType } from '@/domain/entities';
 import {
   findProvider,
   type ProviderDefinition,
@@ -154,8 +154,7 @@ export function validateChannelConfig(type: string, config: unknown): string[] {
 
 export function withChannelDefaults(type: string, config: NotificationChannelConfig): NotificationChannelConfig {
   const provider = findProvider(type);
-  // Single boundary cast: field lookup by arbitrary provider key on a union type.
-  const source = config as Record<string, unknown>;
+  const source: Record<string, unknown> = config;
   const merged: Record<string, unknown> = {};
   if (provider) {
     for (const field of provider.fields) {
@@ -177,6 +176,11 @@ export function sanitizeChannelConfig(type: string, config: NotificationChannelC
     if (!secrets.has(key)) clean[key] = value;
   }
   return clean as NotificationChannelConfig;
+}
+
+/** Narrow a raw provider type string to the stored built-in union (null when unsupported). */
+export function parseChannelType(type: string): NotificationChannelType | null {
+  return type === 'ntfy' || type === 'email' ? type : null;
 }
 
 export function buildNtfyUrl(server: string, topic: string): string {

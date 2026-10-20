@@ -44,6 +44,8 @@ export interface NtfyChannelConfig {
   accessToken?: string;
   priority?: string;
   tags?: string;
+  /** Provider configs are validated against provider field definitions, so extra keys stay possible. */
+  [key: string]: string | undefined;
 }
 
 export interface EmailChannelConfig {
@@ -54,6 +56,7 @@ export interface EmailChannelConfig {
   password?: string;
   from: string;
   to: string;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export type NotificationChannelConfig = NtfyChannelConfig | EmailChannelConfig;

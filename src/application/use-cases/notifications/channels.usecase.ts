@@ -1,10 +1,5 @@
 import { NotFoundError, ValidationError, ConflictError } from '@/domain/errors';
-import type {
-  NotificationChannelConfig,
-  NotificationChannelType,
-  NotificationHistoryEntry,
-  UserNotificationChannel,
-} from '@/domain/entities';
+import type { NotificationChannelConfig, NotificationHistoryEntry, UserNotificationChannel } from '@/domain/entities';
 import type { Alert } from '@/domain/entities/alert.entity';
 import type { UnparsedMetaData } from '@/shared/meta-data';
 import type { AlertRepository } from '@/application/ports/alert-repository.port';
@@ -12,7 +7,7 @@ import type { NotificationRepository } from '@/application/ports/notification-re
 import type { NotificationEnginePort, NotificationHistoryPort } from '@/application/ports/notification-engine.port';
 import type { NotificationSender } from '@/application/ports/notification-sender.port';
 import { findNotificationsUsingChannel } from '@/application/use-cases/notifications/channel-refs';
-import { validateChannelConfig, isSecretKey } from '@/shared/utils/notification-channel';
+import { validateChannelConfig, isSecretKey, parseChannelType } from '@/shared/utils/notification-channel';
 import { notificationProviders, notificationProvidersVersion } from '@/constants/notification-providers';
 import { sanitizeProviderDefinitions } from '@/shared/utils/notification-channel';
 
@@ -52,14 +47,18 @@ export class CreateChannelUseCase {
     type: string;
     config: NotificationChannelConfig;
   }): Promise<UserNotificationChannel> {
-    const errors = validateChannelConfig(input.type, input.config);
+    const type = parseChannelType(input.type);
+    if (type === null) {
+      throw new ValidationError(`unknown channel type ${input.type}`);
+    }
+    const errors = validateChannelConfig(type, input.config);
     if (errors.length > 0) {
       throw new ValidationError(errors.join(', '));
     }
     const row = await this.deps.notificationRepository.createChannel({
       name: input.name.trim(),
       // Validated against the provider definition above; stored types are the built-ins for now.
-      type: input.type,
+      type,
       config: input.config,
     });
     this.deps.engine.upsertChannelCache(row);
@@ -112,10 +111,14 @@ export class UpdateChannelUseCase {
       }
       nextConfig = merged;
     }
+    // Validation above rejects unsupported provider types; narrow to the stored union.
+    const storedType = parseChannelType(nextType);
+    if (storedType === null) {
+      throw new ValidationError(`unknown channel type ${nextType}`);
+    }
     const updated = await this.deps.notificationRepository.updateChannel(id, {
       ...(body.name !== undefined ? { name: body.name.trim() } : {}),
-      // Validated against the provider definition above; stored types are the built-ins for now.
-      type: nextType as NotificationChannelType,
+      type: storedType,
       config: nextConfig as NotificationChannelConfig,
     });
     this.deps.engine.upsertChannelCache(updated);
@@ -176,19 +179,19 @@ export class TestInlineChannelUseCase {
 
   async execute(input: {
     type: string;
-    config: unknown;
+    config: NotificationChannelConfig;
     message?: string;
   }): Promise<{ channelId: null; ok: boolean; detail: string | null }> {
-    const errors = validateChannelConfig(input.type, input.config);
+    const type = parseChannelType(input.type);
+    if (type === null) {
+      throw new ValidationError(`unknown channel type ${input.type}`);
+    }
+    const errors = validateChannelConfig(type, input.config);
     if (errors.length > 0) {
       throw new ValidationError(errors.join(', '));
     }
     const text = input.message?.trim() || 'Test notification';
-    const [result] = await this.deps.sender.dispatch(
-      [{ type: input.type, config: input.config }],
-      text,
-      'Channel test',
-    );
+    const [result] = await this.deps.sender.dispatch([{ type, config: input.config }], text, 'Channel test');
     return { channelId: null, ok: result?.ok ?? false, detail: result?.detail ?? 'no result' };
   }
 }

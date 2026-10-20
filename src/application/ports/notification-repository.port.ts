@@ -1,6 +1,7 @@
 import type {
   ConditionNode,
   NotificationChannelConfig,
+  NotificationChannelType,
   UserNotification,
   UserNotificationChannel,
 } from '@/domain/entities/notification.entity';
@@ -20,7 +21,7 @@ export interface NotificationUpdateFields {
 /** Updatable channel fields (partial update payload). */
 export interface ChannelUpdateFields {
   name?: string;
-  type?: string;
+  type?: NotificationChannelType;
   config?: NotificationChannelConfig;
 }
 

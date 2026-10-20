@@ -8,7 +8,7 @@ import type {
   NotificationRepository as NotificationRepositoryPort,
   NotificationUpdateFields,
 } from '@/application/ports/notification-repository.port';
-import type { ConditionNode, NotificationChannelConfig } from '@/domain/entities';
+import type { ConditionNode, NotificationChannelConfig, NotificationChannelType } from '@/domain/entities';
 
 /**
  * Sequelize implementation of the NotificationRepository port.
@@ -84,7 +84,7 @@ export class SequelizeNotificationRepository implements NotificationRepositoryPo
 
   async createChannel(input: {
     name: string;
-    type: string;
+    type: NotificationChannelType;
     config: NotificationChannelConfig;
   }): Promise<UserNotificationChannel> {
     const row = await NotificationChannelsTable.create({
