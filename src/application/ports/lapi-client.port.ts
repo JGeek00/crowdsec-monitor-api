@@ -17,6 +17,10 @@ export interface LapiClient {
   /** Fetches alerts (and their decisions) from the LAPI. */
   getAlerts(params?: LapiAlertsParams): Promise<unknown[]>;
   deleteAlert(id: number): Promise<number>;
+  /** Creates alerts (used by manual decisions and blocklist imports). */
+  createAlerts(payload: unknown): Promise<string[]>;
+  /** Deletes a decision from the LAPI; returns number of deleted rows. */
+  deleteDecision(id: number): Promise<number>;
   /** Allowlist entries for lookup checks. */
   fetchAllowlistEntries(): Promise<string[]>;
 }

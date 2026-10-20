@@ -43,4 +43,11 @@ export interface AlertRepository {
   /** Decisions belonging to one alert (part of the alert aggregate). */
   findDecisionsByAlertId(alertId: number): Promise<Decision[]>;
   findDecisions(): Promise<Decision[]>;
+  /** Aggregate counters for the alerts stats endpoint. */
+  getStats(): Promise<{
+    total: number;
+    simulated: number;
+    topScenarios: { scenario: string; count: number }[];
+    sources: { cn: string | undefined; as_name: string | undefined }[];
+  }>;
 }

@@ -1,25 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Request, Response } from 'express';
 
-vi.mock('@/services', () => {
-  const mockCrowdSecAPI = {
-    decisions: { deleteDecision: vi.fn() },
-  };
-  const mockDatabaseService = { syncAlerts: vi.fn() };
-  return { crowdSecAPI: mockCrowdSecAPI, databaseService: mockDatabaseService };
-});
+const { mockExecute } = vi.hoisted(() => ({
+  mockExecute: vi.fn(),
+}));
+
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      decisions: { deleteDecision: { execute: mockExecute } },
+    },
+  },
+}));
 
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
-vi.mock('@/models', () => ({
-  DecisionsTable: { update: vi.fn().mockResolvedValue([1]) },
-  DeleteDecisionParams: {},
-  DeleteDecisionResponse: {} as any,
-  ResponseWithError: {} as any,
-}));
-
+import { Request, Response } from 'express';
 import { deleteDecision } from '@/controllers/decisions/delete.controller';
-import { crowdSecAPI } from '@/services';
+import { NotFoundError } from '@/domain/errors';
 
 describe('deleteDecision', () => {
   let req: Partial<Request>;
@@ -28,6 +25,7 @@ describe('deleteDecision', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
     req = { params: { id: '1' } };
@@ -35,13 +33,13 @@ describe('deleteDecision', () => {
   });
 
   it('returns 200 on successful deletion', async () => {
-    vi.mocked(crowdSecAPI.decisions.deleteDecision).mockResolvedValue(1);
+    mockExecute.mockResolvedValue({ nbDeleted: 1 });
     await deleteDecision(req as Request, res as Response);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'DecisionsTable deleted successfully' }));
   });
 
   it('returns 404 when not found', async () => {
-    vi.mocked(crowdSecAPI.decisions.deleteDecision).mockResolvedValue(0);
+    mockExecute.mockRejectedValue(new NotFoundError('DecisionsTable with ID 1 was not found'));
     await deleteDecision(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
@@ -53,7 +51,7 @@ describe('deleteDecision', () => {
   });
 
   it('returns 500 on LAPI failure', async () => {
-    vi.mocked(crowdSecAPI.decisions.deleteDecision).mockRejectedValue(new Error('LAPI error'));
+    mockExecute.mockRejectedValue(new Error('LAPI error'));
     await deleteDecision(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });

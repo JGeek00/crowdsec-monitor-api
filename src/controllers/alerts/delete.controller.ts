@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI, databaseService } from '@/services';
+import { container } from '@/application/container';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { DeleteAlertParams, DeleteAlertResponse, AlertsTable, ResponseWithError } from '@/models';
+import { NotFoundError } from '@/domain/errors';
+import type { DeleteAlertParams, DeleteAlertResponse, ResponseWithError } from '@/models';
 
 /**
  * Delete an alert by ID from CrowdSec LAPI
@@ -19,18 +20,7 @@ export const deleteAlert = async (req: Request<DeleteAlertParams, Res>, res: Res
       return;
     }
 
-    const nbDeleted = await crowdSecAPI.alerts.deleteAlert(id);
-
-    if (nbDeleted === 0) {
-      res.status(404).json(errorResponse('Alert not found', `Alert with ID ${id} was not found`));
-      return;
-    }
-
-    // Delete from local database immediately after successful deletion from LAPI
-    await AlertsTable.destroy({ where: { id } });
-
-    // Sync alerts from LAPI after successful deletion
-    await databaseService.syncAlerts();
+    const { nbDeleted } = await container.useCases.alerts.deleteAlert.execute(id);
 
     res.json({
       message: 'Alert deleted successfully',
@@ -40,7 +30,7 @@ export const deleteAlert = async (req: Request<DeleteAlertParams, Res>, res: Res
     const typedErr = err as { message?: string; response?: { status?: number } };
     log.error('Error deleting alert:', typedErr.message);
 
-    if (typedErr.response?.status === 404) {
+    if (err instanceof NotFoundError || typedErr.response?.status === 404) {
       res.status(404).json(errorResponse('Alert not found', `Alert with ID ${req.params.id} was not found`));
       return;
     }

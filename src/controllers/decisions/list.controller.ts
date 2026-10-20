@@ -1,15 +1,9 @@
 import { Request, Response } from 'express';
-import { DecisionsTable, Decision, GetDecisionsQueryParams, GetDecisionsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { canonicalizeFields } from '@/utils/timestamp-format';
-import {
-  buildDecisionsWhere,
-  buildPaginatedResponse,
-  fetchFilteringOptions,
-  PaginationError,
-  DECISIONS_QUERY,
-} from '@/helpers/decisions/list.helpers';
+import { container } from '@/application/container';
+import { PaginationError } from '@/application/use-cases/decisions/list.helpers';
+import type { GetDecisionsQueryParams, GetDecisionsResponse, ResponseWithError } from '@/models';
 
 /**
  * Get all decisions with filtering and pagination
@@ -21,28 +15,8 @@ export async function getAllDecisions(
 ): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const { limit = 100, offset = 0, unpaged = false } = req.query;
-
-    const where = buildDecisionsWhere(req.query, false);
-
-    const [filtering, decisions] = await Promise.all([
-      fetchFilteringOptions(),
-      DecisionsTable.findAll({ where, ...DECISIONS_QUERY }),
-    ]);
-
-    const { items, pagination, total } = buildPaginatedResponse(
-      decisions,
-      +(limit as number),
-      +(offset as number),
-      unpaged!,
-    );
-
-    const delivery = items.map((item) => {
-      const plain = item.toJSON() as Decision;
-      return canonicalizeFields(plain, ['expiration', 'crowdsec_created_at'], { kind: 'decision', id: plain.id });
-    });
-
-    res.json({ filtering, items: delivery, pagination, total } as GetDecisionsResponse);
+    const result = await container.useCases.decisions.listDecisions.execute(req.query);
+    res.json(result as GetDecisionsResponse);
   } catch (error) {
     if (signal.aborted) return;
     if (error instanceof PaginationError) {

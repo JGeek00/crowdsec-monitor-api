@@ -1,27 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockDeleteAlert, mockSyncAlerts, mockDestroy } = vi.hoisted(() => ({
-  mockDeleteAlert: vi.fn(),
-  mockSyncAlerts: vi.fn(),
-  mockDestroy: vi.fn(),
+const { mockExecute } = vi.hoisted(() => ({
+  mockExecute: vi.fn(),
 }));
 
-vi.mock('@/services', () => ({
-  crowdSecAPI: {
-    alerts: { deleteAlert: mockDeleteAlert },
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      alerts: { deleteAlert: { execute: mockExecute } },
+    },
   },
-  databaseService: { syncAlerts: mockSyncAlerts },
 }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
-vi.mock('@/models', () => ({
-  AlertsTable: { destroy: mockDestroy },
-  DeleteAlertParams: {},
-  DeleteAlertResponse: {} as any,
-  ResponseWithError: {} as any,
-}));
 
 import { Request, Response } from 'express';
 import { deleteAlert } from '@/controllers/alerts/delete.controller';
+import { NotFoundError } from '@/domain/errors';
 
 describe('deleteAlert unit', () => {
   let req: Partial<Request>;
@@ -45,31 +39,30 @@ describe('deleteAlert unit', () => {
   });
 
   it('returns 404 when LAPI returns 0', async () => {
-    mockDeleteAlert.mockResolvedValue(0);
+    mockExecute.mockRejectedValue(new NotFoundError('Alert with ID 1 was not found'));
     await deleteAlert(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Alert not found' }));
   });
 
   it('returns 200 on successful delete and syncs', async () => {
-    mockDeleteAlert.mockResolvedValue(1);
+    mockExecute.mockResolvedValue({ nbDeleted: 1 });
     await deleteAlert(req as Request, res as Response);
-    expect(mockDestroy).toHaveBeenCalledWith({ where: { id: 1 } });
-    expect(mockSyncAlerts).toHaveBeenCalled();
+    expect(mockExecute).toHaveBeenCalledWith(1);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'Alert deleted successfully' }));
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ nbDeleted: '1' }));
   });
 
   it('returns 404 on LAPI 404 error', async () => {
     const lapiError = Object.assign(new Error('Not found'), { response: { status: 404 } });
-    mockDeleteAlert.mockRejectedValue(lapiError);
+    mockExecute.mockRejectedValue(lapiError);
     await deleteAlert(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Alert not found' }));
   });
 
   it('returns 500 on generic LAPI error', async () => {
-    mockDeleteAlert.mockRejectedValue(new Error('LAPI down'));
+    mockExecute.mockRejectedValue(new Error('LAPI down'));
     await deleteAlert(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Failed to delete alert' }));

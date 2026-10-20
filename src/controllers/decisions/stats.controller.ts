@@ -1,14 +1,8 @@
 import { Request, Response } from 'express';
-import {
-  DecisionsTable,
-  GetDecisionsStatsResponse,
-  GetDecisionsStatsResponse_ByScope,
-  GetDecisionsStatsResponse_ByType,
-  ResponseWithError,
-} from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { DB_SORTING } from '@/types/database.types';
+import { container } from '@/application/container';
+import type { GetDecisionsStatsResponse, ResponseWithError } from '@/models';
 
 /**
  * Get decisions statistics
@@ -17,35 +11,8 @@ type Res = ResponseWithError<GetDecisionsStatsResponse>;
 export async function getDecisionStats(req: Request<object, Res>, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const total = (await DecisionsTable.count()) as number;
-
-    const byType = (await DecisionsTable.findAll({
-      attributes: [
-        'type',
-        [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), 'count'],
-      ],
-      group: ['type'],
-      order: [
-        [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), DB_SORTING.DESC],
-      ],
-    })) as unknown as GetDecisionsStatsResponse_ByType[];
-
-    const byScope = (await DecisionsTable.findAll({
-      attributes: [
-        'scope',
-        [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), 'count'],
-      ],
-      group: ['scope'],
-      order: [
-        [DecisionsTable.sequelize!.fn('COUNT', DecisionsTable.sequelize!.col(DecisionsTable.col.id)), DB_SORTING.DESC],
-      ],
-    })) as unknown as GetDecisionsStatsResponse_ByScope[];
-
-    res.json({
-      total,
-      byType,
-      byScope,
-    });
+    const stats = await container.useCases.decisions.getDecisionsStats.execute();
+    res.json(stats as GetDecisionsStatsResponse);
   } catch (error) {
     if (signal.aborted) return;
     res

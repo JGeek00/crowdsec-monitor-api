@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI, databaseService } from '@/services';
+import { container } from '@/application/container';
 import { log } from '@/services/log.service';
 import { errorResponse } from '@/utils/error-response';
-import { DecisionsTable, DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/models';
+import { NotFoundError } from '@/domain/errors';
+import type { DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/models';
 
 /**
  * Delete a decision by ID from CrowdSec LAPI
@@ -23,18 +24,7 @@ export const deleteDecision = async (
       return;
     }
 
-    const nbDeleted = await crowdSecAPI.decisions.deleteDecision(id);
-
-    if (nbDeleted === 0) {
-      res.status(404).json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${id} was not found`));
-      return;
-    }
-
-    // Set expiration to current time in local database instead of deleting
-    await DecisionsTable.update({ expiration: new Date(), updated_at: new Date() }, { where: { id } });
-
-    // Sync alerts from LAPI after successful deletion
-    await databaseService.syncAlerts();
+    const { nbDeleted } = await container.useCases.decisions.deleteDecision.execute(id);
 
     res.json({
       message: 'DecisionsTable deleted successfully',
@@ -44,7 +34,7 @@ export const deleteDecision = async (
     const typedErr = err as { message?: string; response?: { status?: number } };
     log.error('Error deleting decision:', typedErr.message);
 
-    if (typedErr.response?.status === 404) {
+    if (err instanceof NotFoundError || typedErr.response?.status === 404) {
       res
         .status(404)
         .json(errorResponse('DecisionsTable not found', `DecisionsTable with ID ${req.params.id} was not found`));

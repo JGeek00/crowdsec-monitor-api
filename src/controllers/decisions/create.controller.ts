@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
-import { crowdSecAPI, databaseService } from '@/services';
-import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
-import { config } from '@/config';
-import { MANUAL_DECISION } from '@/constants/scenarios';
+import { container } from '@/application/container';
 import { errorResponse } from '@/utils/error-response';
-import { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/models';
+import type { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/models';
 
 /**
  * Create a decision in CrowdSec LAPI
@@ -15,57 +12,9 @@ export async function createDecision(req: Request<object, Res, PostDecisionBody>
   try {
     const { ip, duration, reason, type } = req.body;
 
-    // Get current timestamp in ISO format
-    const now = new Date().toISOString();
+    const result = await container.useCases.decisions.createDecision.execute({ ip, duration, reason, type });
 
-    // Build the alert payload for LAPI
-    const alertPayload: CrowdSecCreateAlertPayload = [
-      {
-        scenario: MANUAL_DECISION,
-        campaign_name: MANUAL_DECISION,
-        message: reason,
-        events_count: 1,
-        start_at: now,
-        stop_at: now,
-        capacity: 0,
-        leakspeed: '0',
-        simulated: false,
-        events: [],
-        scenario_hash: '',
-        scenario_version: '',
-        source: {
-          scope: 'ip',
-          value: ip,
-        },
-        decisions: [
-          {
-            type: type,
-            duration: duration,
-            value: ip,
-            origin: config.crowdsec.user,
-            scenario: MANUAL_DECISION,
-            scope: 'ip',
-          },
-        ],
-      },
-    ];
-
-    // Create alert with decision in CrowdSec LAPI
-    const createdIds = await crowdSecAPI.alerts.createAlerts(alertPayload);
-
-    // Sync alerts from LAPI after successful creation
-    await databaseService.syncAlerts();
-
-    res.status(201).json({
-      message: 'Decision created successfully',
-      alert_ids: createdIds,
-      decision: {
-        ip,
-        type,
-        duration,
-        reason,
-      },
-    });
+    res.status(201).json(result);
   } catch (error) {
     res
       .status(500)

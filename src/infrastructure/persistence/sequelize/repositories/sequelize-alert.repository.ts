@@ -183,4 +183,33 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
   async findDecisions() {
     return DecisionsTable.findAll();
   }
+
+  /** Aggregations for the alerts stats endpoint (same queries as legacy controller). */
+  async getStats() {
+    const total = (await AlertsTable.count()) as number;
+    const simulated = (await AlertsTable.count({ where: { simulated: true } })) as number;
+
+    const topScenarios = (await AlertsTable.findAll({
+      attributes: [
+        AlertsTable.col.scenario,
+        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
+      ],
+      group: [AlertsTable.col.scenario],
+      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
+      limit: 10,
+      raw: true,
+    })) as unknown as { scenario: string; count: number }[];
+
+    const sourceRows = await AlertsTable.findAll({
+      attributes: [AlertsTable.col.source],
+      raw: true,
+    });
+
+    const sources = sourceRows.map((row) => {
+      const source = AlertMapper.parseJson<Alert_SourceInfo | null>(row.source);
+      return { cn: source?.cn, as_name: source?.as_name };
+    });
+
+    return { total, simulated, topScenarios, sources };
+  }
 }
