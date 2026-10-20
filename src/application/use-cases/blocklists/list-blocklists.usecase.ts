@@ -1,11 +1,10 @@
 import type {
   BlocklistListItem,
   BlocklistListResult,
+  BlocklistMergedRow,
   BlocklistRepository,
-  BlocklistRow,
 } from '@/application/ports/blocklist-repository.port';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
-import type { BlocklistIp } from '@/domain/entities';
 import type { GetBlocklistsQueryParams } from './blocklists.dto';
 import { BLOCKLIST_TYPE, type BlocklistType } from '@/domain/entities/blocklist.entity';
 
@@ -31,15 +30,15 @@ export class ListBlocklistsUseCase {
       onlyCs,
     });
 
-    const mapItem = (item: BlocklistRow, type: BlocklistType): BlocklistListItem => {
-      const obj = item.toJSON() as BlocklistListItem & { blocklistIps?: BlocklistIp[] };
-      obj.id = String(obj.id);
-      obj.type = type;
-      const canonical = canonicalizeFields(obj, ['added_date', 'last_refresh_attempt', 'last_successful_refresh']);
-      if (onlyIps && Array.isArray(canonical.blocklistIps)) {
-        canonical.blocklistIps = canonical.blocklistIps.map((ip) => ip.value);
-      }
-      return canonical;
+    const mapItem = (item: BlocklistMergedRow, type: BlocklistType): BlocklistListItem => {
+      const canonical = canonicalizeFields(item, ['added_date', 'last_refresh_attempt', 'last_successful_refresh']);
+      const mapped: BlocklistListItem = {
+        ...canonical,
+        id: String(item.id),
+        type,
+        ...(onlyIps && item.blocklistIps ? { blocklistIps: item.blocklistIps.map((ip) => ip.value) } : {}),
+      };
+      return mapped;
     };
 
     const items = [

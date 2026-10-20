@@ -1,4 +1,4 @@
-import type { Blocklist } from '@/domain/entities/blocklist.entity';
+import type { Blocklist, BlocklistType } from '@/domain/entities/blocklist.entity';
 import type { BlocklistIp } from '@/domain/entities/blocklist-ip.entity';
 import type { CsBlocklist } from '@/domain/entities/cs-blocklist.entity';
 
@@ -18,13 +18,32 @@ export interface BlocklistWithIps extends Blocklist {
   ips: BlocklistIp[];
 }
 
-/** A persistence row exposing its plain object (Sequelize models satisfy this structurally). */
-export interface BlocklistRow {
-  toJSON(): Record<string, unknown>;
+/** Plain JSON row of an api or cs blocklist table (count attribute included; IPs attached when queried). */
+export type BlocklistMergedRow = BlocklistMergedData & {
+  blocklistIps?: BlocklistIp[];
+};
+
+/** Merged-list item after canonicalization (delivered shape of the blocklist list/detail endpoints). */
+export interface BlocklistListItem {
+  id: string;
+  name: string;
+  type: BlocklistType;
+  enabled?: boolean;
+  url?: string;
+  added_date?: string | null;
+  last_refresh_attempt?: string | null;
+  last_successful_refresh?: string | null;
+  last_refresh_failed?: boolean | null;
+  count_ips?: number | string;
+  blocklistIps?: BlocklistIp[] | string[];
 }
 
-/** Merged-list item after canonicalization (dynamic delivered shape). */
-export type BlocklistListItem = Record<string, unknown>;
+/** Plain JSON row of a merged blocklist detail (api or cs table, with its computed count attribute). */
+export type BlocklistMergedData = Partial<Blocklist> & {
+  id: number | string;
+  name: string;
+  count_ips?: number | string;
+};
 
 export interface BlocklistListPagination {
   page: number;
@@ -36,7 +55,7 @@ export type BlocklistListResult =
   { total: number; items: BlocklistListItem[] } | { items: BlocklistListItem[]; pagination: BlocklistListPagination };
 
 export interface BlocklistIpsResult {
-  items: BlocklistListItem[];
+  items: BlocklistIp[] | string[];
   total?: number;
   pagination?: BlocklistListPagination;
 }
@@ -78,13 +97,13 @@ export interface BlocklistRepository {
     includeIps: boolean;
     onlyApi: boolean;
     onlyCs: boolean;
-  }): Promise<{ apiRows: BlocklistRow[]; csRows: BlocklistRow[]; total: number }>;
+  }): Promise<{ apiRows: BlocklistMergedRow[]; csRows: BlocklistMergedRow[]; total: number }>;
 
   /** Detail by id (numeric → api-managed, 'crowdsec-' prefix → cs-managed). */
   findByIdMerged(
     id: string,
     opts: { includeIps: boolean },
-  ): Promise<{ type: 'api' | 'cs'; data: Record<string, unknown>; ips: BlocklistIp[] | null } | null>;
+  ): Promise<{ type: 'api' | 'cs'; data: BlocklistMergedData; ips: BlocklistIp[] | null } | null>;
 
   /** Paginated IP rows of one blocklist (api or cs). */
   getIpsPage(

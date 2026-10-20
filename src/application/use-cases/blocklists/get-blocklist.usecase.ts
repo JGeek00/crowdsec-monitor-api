@@ -17,15 +17,11 @@ export class GetBlocklistUseCase {
       'added_date',
       'last_refresh_attempt',
       'last_successful_refresh',
-    ]) as BlocklistListItem;
-
-    if (result.type === 'api') {
-      canonical.id = String(canonical.id);
-    }
-    canonical.type = result.type;
+    ]);
+    const item: BlocklistListItem = { ...canonical, id: String(canonical.id), type: result.type };
     if (result.ips !== null) {
-      canonical.blocklistIps = onlyIps ? result.ips.map((ip: BlocklistIp) => ip.value) : result.ips;
+      item.blocklistIps = onlyIps ? result.ips.map((ip: BlocklistIp) => ip.value) : result.ips;
     }
-    return canonical;
+    return item;
   }
 }

@@ -28,7 +28,7 @@ export async function getBlocklists(
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const response = await container.useCases.blocklists.listBlocklists.execute(req.query);
-    res.status(200).json(response as GetBlocklistsResponse);
+    res.status(200).json(response);
   } catch (err) {
     if (signal.aborted) return;
     log.error('Error fetching blocklists:', err);

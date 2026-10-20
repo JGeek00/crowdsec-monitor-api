@@ -10,7 +10,11 @@ import {
 import type { Blocklist } from '@/domain/entities/blocklist.entity';
 import type { BlocklistIp } from '@/domain/entities/blocklist-ip.entity';
 import type { CsBlocklist } from '@/domain/entities/cs-blocklist.entity';
-import type { BlocklistWithIps } from '@/application/ports/blocklist-repository.port';
+import type {
+  BlocklistMergedData,
+  BlocklistMergedRow,
+  BlocklistWithIps,
+} from '@/application/ports/blocklist-repository.port';
 import { sequelize } from '@/config/database';
 import { defaults } from '@/config/env-defaults';
 import appDefaults from '@/constants/app-defaults';
@@ -228,7 +232,11 @@ export class SequelizeBlocklistRepository implements BlocklistRepositoryPort {
       ]);
     }
 
-    return { apiRows, csRows, total };
+    return {
+      apiRows: apiRows.map((row) => row.toJSON() as BlocklistMergedRow),
+      csRows: csRows.map((row) => row.toJSON() as BlocklistMergedRow),
+      total,
+    };
   }
 
   /** Detail by id ('crowdsec-' prefix → cs-managed); includes ips when requested. */
@@ -249,7 +257,7 @@ export class SequelizeBlocklistRepository implements BlocklistRepositoryPort {
           })
         : null;
 
-      return { type: 'cs' as const, data: csBlocklist.toJSON(), ips };
+      return { type: 'cs' as const, data: csBlocklist.toJSON() as BlocklistMergedData, ips };
     }
 
     const numId = Number(id);
@@ -266,7 +274,7 @@ export class SequelizeBlocklistRepository implements BlocklistRepositoryPort {
         })
       : null;
 
-    return { type: 'api' as const, data: apiBlocklist.toJSON(), ips };
+    return { type: 'api' as const, data: apiBlocklist.toJSON() as BlocklistMergedData, ips };
   }
 
   /** Paginated IP rows of one blocklist (api or cs); null when the parent does not exist. */

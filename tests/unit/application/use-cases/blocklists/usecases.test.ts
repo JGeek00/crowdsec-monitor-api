@@ -259,12 +259,10 @@ describe('ListBlocklistsUseCase', () => {
 
   function row(overrides: Record<string, unknown> = {}) {
     return {
-      toJSON: () => ({
-        id: 3,
-        name: 'merged',
-        blocklistIps: [{ value: '10.0.0.9' }],
-        ...overrides,
-      }),
+      id: 3,
+      name: 'merged',
+      blocklistIps: [{ value: '10.0.0.9' }],
+      ...overrides,
     };
   }
 
