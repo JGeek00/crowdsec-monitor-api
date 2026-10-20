@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   BlocklistsTable: { findAll: vi.fn() },
   BlocklistIpsTable: { create: vi.fn(), bulkCreate: vi.fn() },
 }));

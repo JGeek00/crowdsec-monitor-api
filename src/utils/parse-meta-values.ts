@@ -1,6 +1,7 @@
 import { toCanonicalFromUnknown } from '@/utils/timestamp-format';
-import type { AlertDelivery } from '@/models';
-import { Alert, ParsedMetaData, UnparsedMetaData } from '@/models';
+import type { AlertDelivery } from '@/delivery/http/presenters/alerts/AlertDelivery.model';
+import type { Alert } from '@/domain/entities';
+import type { ParsedMetaData, UnparsedMetaData } from '@/shared/models';
 
 /**
  * Parse meta array values that might be JSON strings

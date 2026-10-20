@@ -2,14 +2,14 @@ import type {
   Alert,
   Alert_SourceInfo,
   Alert_EventData,
-  UnparsedMetaData,
   Decision,
   Blocklist,
   BlocklistIp,
   CsBlocklist,
-  GetAlertsQueryParams,
-  GetDecisionsQueryParams,
-} from '@/models';
+} from '@/domain/entities';
+import type { UnparsedMetaData } from '@/shared/models';
+import type { GetAlertsQueryParams } from '@/delivery/http/schemas/alerts/GetAlertsQueryParams.model';
+import type { GetDecisionsQueryParams } from '@/application/use-cases/decisions/decisions.dto';
 import type { CrowdSecAllowlist, CrowdSecLoginResponse } from '@/types/crowdsec.types';
 
 export type Factory<T> = (overrides?: Partial<T>) => T;

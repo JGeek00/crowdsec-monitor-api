@@ -4,7 +4,7 @@ import type {
   NotificationAlertSnapshot,
   NotificationChannelRef,
   NtfyChannelConfig,
-} from '@/models';
+} from '@/domain/entities';
 import { buildNtfyUrl, splitRecipients, withChannelDefaults } from '@/utils/notification-channel';
 import { buildAlertInfoEmailHtml } from '@/infrastructure/notifications/alert-info-body';
 import { findProvider } from '@/constants/notification-providers';

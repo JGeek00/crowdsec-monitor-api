@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   DecisionsTable: {
     findAll: vi.fn(),
     col: { createdAt: 'created_at', updatedAt: 'updated_at', crowdsecCreatedAt: 'crowdsec_created_at' },
@@ -9,32 +9,32 @@ vi.mock('@/models', () => ({
 
 describe('buildDecisionsWhere', () => {
   it('returns empty where with no params', async () => {
-    const { buildDecisionsWhere } = await import('@/application/use-cases/decisions/list.helpers');
+    const { buildDecisionsWhere } = await import('@/infrastructure/persistence/sequelize/decisions-query');
     const result = buildDecisionsWhere({}, false);
     expect(result).toEqual({});
   });
 
   it('filters by type and scope', async () => {
-    const { buildDecisionsWhere } = await import('@/application/use-cases/decisions/list.helpers');
+    const { buildDecisionsWhere } = await import('@/infrastructure/persistence/sequelize/decisions-query');
     const result = buildDecisionsWhere({ type: 'ban', scope: 'Ip' }, false);
     expect(result.type).toBe('ban');
     expect(result.scope).toBe('Ip');
   });
 
   it('filters by value with LIKE', async () => {
-    const { buildDecisionsWhere } = await import('@/application/use-cases/decisions/list.helpers');
+    const { buildDecisionsWhere } = await import('@/infrastructure/persistence/sequelize/decisions-query');
     const result = buildDecisionsWhere({ value: '1.2.3' }, false) as any;
     expect(result.value).toBeDefined();
   });
 
   it('filters only_active when not grouping', async () => {
-    const { buildDecisionsWhere } = await import('@/application/use-cases/decisions/list.helpers');
+    const { buildDecisionsWhere } = await import('@/infrastructure/persistence/sequelize/decisions-query');
     const result = buildDecisionsWhere({ only_active: true }, false) as any;
     expect(result.expiration).toBeDefined();
   });
 
   it('skips only_active when grouping', async () => {
-    const { buildDecisionsWhere } = await import('@/application/use-cases/decisions/list.helpers');
+    const { buildDecisionsWhere } = await import('@/infrastructure/persistence/sequelize/decisions-query');
     const result = buildDecisionsWhere({ only_active: true }, true);
     expect((result as any).expiration).toBeUndefined();
   });
@@ -125,7 +125,7 @@ describe('buildPaginatedResponse', () => {
 
 describe('DECISIONS_QUERY', () => {
   it('has attributes and order', async () => {
-    const { DECISIONS_QUERY } = await import('@/application/use-cases/decisions/list.helpers');
+    const { DECISIONS_QUERY } = await import('@/infrastructure/persistence/sequelize/decisions-query');
     expect(DECISIONS_QUERY.attributes).toBeDefined();
     expect(DECISIONS_QUERY.order).toBeDefined();
   });

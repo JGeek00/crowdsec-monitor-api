@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   CsBlocklistsTable: { destroy: vi.fn(), create: vi.fn() },
   BLOCKLIST_IP_ORIGIN: { CS_BLOCKLIST: 'cs_blocklist' },
   BlocklistIpsTable: { bulkCreate: vi.fn() },
@@ -32,7 +32,7 @@ describe('CsBlocklistSyncService', () => {
     const { sequelize } = await import('@/config/database');
     vi.mocked(sequelize.transaction).mockImplementation(async (cb: any) => cb({}));
 
-    const { CsBlocklistsTable, BlocklistIpsTable } = await import('@/models');
+    const { CsBlocklistsTable, BlocklistIpsTable } = await import('@/infrastructure/persistence/sequelize/models');
     vi.mocked(CsBlocklistsTable.destroy).mockResolvedValue(0);
     vi.mocked(CsBlocklistsTable.create).mockResolvedValue({} as any);
     vi.mocked(BlocklistIpsTable.bulkCreate).mockResolvedValue([] as any);
@@ -66,7 +66,7 @@ describe('CsBlocklistSyncService', () => {
     const { sequelize } = await import('@/config/database');
     vi.mocked(sequelize.transaction).mockImplementation(async (cb: any) => cb({}));
 
-    const { CsBlocklistsTable, BlocklistIpsTable } = await import('@/models');
+    const { CsBlocklistsTable, BlocklistIpsTable } = await import('@/infrastructure/persistence/sequelize/models');
     vi.mocked(CsBlocklistsTable.destroy).mockResolvedValue(0);
     vi.mocked(CsBlocklistsTable.create).mockResolvedValue({} as any);
     vi.mocked(BlocklistIpsTable.bulkCreate).mockResolvedValue([] as any);

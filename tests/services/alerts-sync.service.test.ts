@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   AlertsTable: { findByPk: vi.fn(), create: vi.fn(), destroy: vi.fn() },
   DecisionsTable: {
     findByPk: vi.fn(),
@@ -86,7 +86,7 @@ describe('AlertsSyncService', () => {
         stop_at: new Date().toISOString(),
       },
     ] as any);
-    const { AlertsTable } = await import('@/models');
+    const { AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
     vi.mocked(AlertsTable.findByPk).mockResolvedValue(null);
     vi.mocked(AlertsTable.create).mockResolvedValue({ id: 1 } as any);
 
@@ -166,7 +166,7 @@ describe('AlertsSyncService', () => {
         stop_at: new Date().toISOString(),
       },
     ] as any);
-    const { AlertsTable } = await import('@/models');
+    const { AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
     vi.mocked(AlertsTable.findByPk).mockResolvedValue(null);
     vi.mocked(AlertsTable.create).mockResolvedValue({ id: 2 } as any);
 
@@ -207,7 +207,7 @@ describe('AlertsSyncService', () => {
         stop_at: new Date().toISOString(),
       },
     ] as any);
-    const { AlertsTable } = await import('@/models');
+    const { AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
     const updateMock = vi.fn().mockResolvedValue({});
     vi.mocked(AlertsTable.findByPk).mockResolvedValue({ id: 3, update: updateMock } as any);
 
@@ -235,7 +235,7 @@ describe('AlertsSyncService', () => {
 
     it('deletes old data within retention period', async () => {
       mockCalculateRetentionCutoff.mockReturnValue(new Date(Date.now() - 30 * 86400000));
-      const { DecisionsTable, AlertsTable } = await import('@/models');
+      const { DecisionsTable, AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
       vi.mocked(DecisionsTable.destroy).mockResolvedValue(5);
       vi.mocked(AlertsTable.destroy).mockResolvedValue(3);
 
@@ -248,7 +248,7 @@ describe('AlertsSyncService', () => {
 
     it('handles destroy error gracefully', async () => {
       mockCalculateRetentionCutoff.mockReturnValue(new Date(Date.now() - 30 * 86400000));
-      const { DecisionsTable } = await import('@/models');
+      const { DecisionsTable } = await import('@/infrastructure/persistence/sequelize/models');
       vi.mocked(DecisionsTable.destroy).mockRejectedValue(new Error('db error'));
 
       const { alertsSyncService: svc } = await import('@/infrastructure/sync/alerts-sync');
@@ -293,7 +293,7 @@ describe('AlertsSyncService', () => {
         stop_at: new Date().toISOString(),
       },
     ] as any);
-    const { AlertsTable } = await import('@/models');
+    const { AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
     const mockUpdate = vi.fn();
     vi.mocked(AlertsTable.findByPk).mockResolvedValue({ id: 1, update: mockUpdate } as any);
 
@@ -340,7 +340,7 @@ describe('AlertsSyncService', () => {
         stop_at: new Date().toISOString(),
       },
     ] as any);
-    const { AlertsTable } = await import('@/models');
+    const { AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
     vi.mocked(AlertsTable.findByPk).mockRejectedValue(new Error('find error'));
 
     const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');

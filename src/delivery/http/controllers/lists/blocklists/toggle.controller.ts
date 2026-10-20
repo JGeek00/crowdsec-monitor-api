@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
 import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
-import type { PostToggleBlocklistParams, PostToggleBlocklistResponse, ResponseWithError } from '@/models';
+import type {
+  PostToggleBlocklistParams,
+  PostToggleBlocklistResponse,
+  ResponseWithError,
+} from '@/delivery/http/contracts';
 import { sendBlocklistError } from './send-blocklist-error';
 
 /**

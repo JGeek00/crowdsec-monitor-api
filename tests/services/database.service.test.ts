@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   BlocklistsTable: { findAll: vi.fn() },
 }));
 

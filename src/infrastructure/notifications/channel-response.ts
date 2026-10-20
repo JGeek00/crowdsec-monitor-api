@@ -1,4 +1,4 @@
-import type { NotificationChannelResponse, UserNotificationChannel } from '@/models';
+import type { NotificationChannelResponse, UserNotificationChannel } from '@/domain/entities';
 import { findProvider } from '@/constants/notification-providers';
 import { sanitizeChannelConfig } from '@/utils/notification-channel';
 

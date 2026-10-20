@@ -3,7 +3,11 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';
 import { PaginationError } from '@/application/use-cases/decisions/list.helpers';
-import type { GetDecisionsByIpQueryParams, GetDecisionsByIpResponse, ResponseWithError } from '@/models';
+import type {
+  GetDecisionsByIpQueryParams,
+  GetDecisionsByIpResponse,
+  ResponseWithError,
+} from '@/delivery/http/contracts';
 
 /**
  * Get decisions grouped by IP, with filtering and pagination.

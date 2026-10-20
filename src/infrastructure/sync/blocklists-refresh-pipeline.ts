@@ -1,4 +1,4 @@
-import { BlocklistsTable } from '@/models';
+import { BlocklistsTable } from '@/infrastructure/persistence/sequelize/models';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import { blocklistDbService } from '@/infrastructure/persistence/sequelize/blocklist-db-writes';
 import { blocklistCrowdSecService } from '@/infrastructure/crowdsec/http-bouncer-client';

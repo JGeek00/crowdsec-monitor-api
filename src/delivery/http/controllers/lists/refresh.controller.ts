@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ResponseWithError } from '@/models';
+import { ResponseWithError } from '@/delivery/http/contracts';
 import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';

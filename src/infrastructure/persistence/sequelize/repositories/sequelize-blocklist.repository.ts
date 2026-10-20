@@ -1,6 +1,6 @@
 import { FindAndCountOptions } from '@sequelize/core';
-import { BlocklistsTable, BlocklistIpsTable, CsBlocklistsTable } from '@/models/db';
-import { BLOCKLIST_IP_ORIGIN } from '@/models';
+import { BlocklistsTable, BlocklistIpsTable, CsBlocklistsTable } from '@/infrastructure/persistence/sequelize/models';
+import { BLOCKLIST_IP_ORIGIN } from '@/domain/entities/blocklist-ip.entity';
 import { DB_SORTING } from '@/types/database.types';
 import {
   BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE,

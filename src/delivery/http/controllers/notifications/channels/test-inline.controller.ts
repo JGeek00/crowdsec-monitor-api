@@ -4,7 +4,7 @@ import {
   PostChannelTestInlineBody,
   PostChannelTestResponse,
   ResponseWithError,
-} from '@/models';
+} from '@/delivery/http/contracts';
 import { dispatchChannels } from '@/infrastructure/notifications/sender';
 import { validateChannelConfig } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';

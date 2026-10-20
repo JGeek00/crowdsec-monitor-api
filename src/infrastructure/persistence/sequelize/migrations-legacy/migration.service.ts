@@ -1,4 +1,4 @@
-import { Migration } from '@/models/db/Migration';
+import { Migration } from '@/infrastructure/persistence/sequelize/models/Migration';
 
 export class MigrationService {
   /**

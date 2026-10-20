@@ -1,4 +1,4 @@
-import type { Decision, Alert } from '@/models';
+import type { Decision, Alert } from '@/domain/entities';
 import type { UnparsedMetaData } from '@/shared/meta-data';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 import { canonicalizeFields } from '@/utils/timestamp-format';

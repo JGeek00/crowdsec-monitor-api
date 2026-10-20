@@ -1,6 +1,7 @@
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
 import { canonicalizeFields } from '@/utils/timestamp-format';
-import type { BlocklistIp, GetBlocklistsQueryParams } from '@/models';
+import type { BlocklistIp } from '@/domain/entities';
+import type { GetBlocklistsQueryParams } from './blocklists.dto';
 import { BLOCKLIST_TYPE, type BlocklistType } from '@/domain/entities/blocklist.entity';
 
 // Called by: delivery/http controllers (blocklists merged list endpoint)

@@ -1,4 +1,4 @@
-import type { NotificationHistoryEntry } from '@/models';
+import type { NotificationHistoryEntry } from '@/domain/entities';
 
 const MAX_ENTRIES = 200;
 

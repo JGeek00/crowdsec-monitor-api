@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import type { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } from '@/models';
+import type { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } from '@/delivery/http/contracts';
 import { isIpv4 } from '@/shared/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
 import { log } from '@/infrastructure/system/logger';

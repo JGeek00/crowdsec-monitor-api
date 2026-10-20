@@ -30,7 +30,7 @@ vi.mock('fs', () => ({
   ...mockFs,
 }));
 vi.mock('@/infrastructure/system/logger', () => ({ log: mockLog }));
-vi.mock('@/models/db/Migration', () => ({ Migration: mockMigration }));
+vi.mock('@/infrastructure/persistence/sequelize/models/Migration', () => ({ Migration: mockMigration }));
 
 describe('MigrationRunner', () => {
   let MigrationRunner: typeof import('@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service').MigrationRunner;

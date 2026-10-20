@@ -3,7 +3,7 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';
 import { ValidationError } from '@/domain/errors';
-import type { GetAlertsResponse, ResponseWithError, GetAlertsQueryParams } from '@/models';
+import type { GetAlertsResponse, ResponseWithError, GetAlertsQueryParams } from '@/delivery/http/contracts';
 
 /**
  * Get all alerts with filtering and pagination

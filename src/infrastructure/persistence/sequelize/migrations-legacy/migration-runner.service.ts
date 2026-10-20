@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Migration } from '@/models/db/Migration';
+import { Migration } from '@/infrastructure/persistence/sequelize/models/Migration';
 import { MigrationService } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration.service';
 import { MigrationTask } from '@/types/migration-task.types';
 import { log } from '@/infrastructure/system/logger';

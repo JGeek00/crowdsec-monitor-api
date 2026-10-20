@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   BlocklistIpsTable: {
     findAll: vi.fn(),
   },
@@ -12,7 +12,7 @@ vi.mock('@sequelize/core', () => ({
   Op: { or: 'OR', like: 'LIKE' },
 }));
 
-import { BlocklistIpsTable } from '@/models';
+import { BlocklistIpsTable } from '@/infrastructure/persistence/sequelize/models';
 
 const mockFindAll = BlocklistIpsTable.findAll as ReturnType<typeof vi.fn>;
 

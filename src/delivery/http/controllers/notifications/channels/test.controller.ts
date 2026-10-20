@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
-import { ChannelIdParams, PostChannelTestBody, PostChannelTestResponse, ResponseWithError } from '@/models';
-import { NotificationChannelsTable } from '@/models';
+import {
+  ChannelIdParams,
+  PostChannelTestBody,
+  PostChannelTestResponse,
+  ResponseWithError,
+} from '@/delivery/http/contracts';
+import { NotificationChannelsTable } from '@/delivery/http/contracts';
 import { dispatchChannels } from '@/infrastructure/notifications/sender';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/infrastructure/system/logger';

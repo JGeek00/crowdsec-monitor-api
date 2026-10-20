@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GetProvidersResponse, ResponseWithError } from '@/models';
+import { GetProvidersResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { notificationProviders, notificationProvidersVersion } from '@/constants/notification-providers';
 import { sanitizeProviderDefinitions } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';

@@ -6,7 +6,7 @@ import {
   GetNotificationHistoryAlertsResponse,
   ResponseWithError,
   UnparsedMetaData,
-} from '@/models';
+} from '@/delivery/http/contracts';
 import { notificationHistoryService } from '@/infrastructure/notifications/history';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 import { errorResponse } from '@/utils/error-response';

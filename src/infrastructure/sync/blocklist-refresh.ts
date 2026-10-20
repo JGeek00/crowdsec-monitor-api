@@ -1,4 +1,4 @@
-import { BlocklistsTable } from '@/models';
+import { BlocklistsTable } from '@/infrastructure/persistence/sequelize/models';
 import { log } from '@/infrastructure/system/logger';
 import { runBlocklistRefreshPipeline } from '@/infrastructure/sync/blocklists-refresh-pipeline';
 import { statusBlocklistService, BulkRefreshReporter } from '@/infrastructure/status/memory-process-tracker';

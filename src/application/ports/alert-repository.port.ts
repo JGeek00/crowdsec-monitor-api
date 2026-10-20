@@ -24,7 +24,7 @@ export interface AlertFilteringOptions {
 }
 
 export interface AlertPage {
-  items: import('@/models').AlertDelivery[];
+  items: import('@/delivery/http/presenters/alerts/AlertDelivery.model').AlertDelivery[];
   total: number;
   filtering: AlertFilteringOptions;
 }

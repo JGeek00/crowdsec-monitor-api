@@ -4,7 +4,7 @@ import type {
   GetBlocklistIpsQueryParams,
   GetBlocklistIpsResponse,
   ResponseWithError,
-} from '@/models';
+} from '@/delivery/http/contracts';
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';

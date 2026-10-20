@@ -1,5 +1,5 @@
-import { NotificationsTable, NotificationChannelsTable } from '@/models/db';
-import type { UserNotification, UserNotificationChannel } from '@/models';
+import { NotificationsTable, NotificationChannelsTable } from '@/infrastructure/persistence/sequelize/models';
+import type { UserNotification, UserNotificationChannel } from '@/domain/entities';
 import type { NotificationRepository as NotificationRepositoryPort } from '@/application/ports/notification-repository.port';
 
 /**

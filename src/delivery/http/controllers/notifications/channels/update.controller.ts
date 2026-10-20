@@ -6,8 +6,8 @@ import {
   PutChannelBody,
   PutChannelResponse,
   ResponseWithError,
-} from '@/models';
-import { NotificationChannelsTable } from '@/models';
+} from '@/delivery/http/contracts';
+import { NotificationChannelsTable } from '@/delivery/http/contracts';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { isSecretKey, validateChannelConfig } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';

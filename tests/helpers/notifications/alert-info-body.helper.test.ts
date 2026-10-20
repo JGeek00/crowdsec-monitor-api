@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NotificationAlertSnapshot } from '@/models';
+import type { NotificationAlertSnapshot } from '@/domain/entities';
 import {
   buildAlertInfoEmailHtml,
   buildAlertInfoHtml,

@@ -1,6 +1,6 @@
 import { body, param, ValidationChain } from 'express-validator';
 import { ipv4Regex, ipv6Regex } from '@/constants/regexps';
-import { DECISION_TYPE } from '@/models';
+import { DECISION_TYPE } from './decisions/PostDecisionBody.model';
 
 /**
  * Validation rules for creating a decision (POST /v1/decisions)

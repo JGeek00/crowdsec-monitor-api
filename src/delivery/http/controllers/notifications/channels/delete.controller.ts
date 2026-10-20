@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { ChannelIdParams, DeleteChannelResponse, ResponseWithError } from '@/models';
-import { NotificationChannelsTable } from '@/models';
+import { ChannelIdParams, DeleteChannelResponse, ResponseWithError } from '@/delivery/http/contracts';
+import { NotificationChannelsTable } from '@/delivery/http/contracts';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { findNotificationsUsingChannel } from '@/application/use-cases/notifications/channel-refs';
 import { errorResponse } from '@/utils/error-response';

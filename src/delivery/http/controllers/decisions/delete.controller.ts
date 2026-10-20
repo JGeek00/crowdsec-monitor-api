@@ -3,7 +3,7 @@ import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { NotFoundError } from '@/domain/errors';
-import type { DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/models';
+import type { DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**
  * Delete a decision by ID from CrowdSec LAPI

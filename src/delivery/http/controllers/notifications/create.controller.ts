@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import type { PostNotificationBody, PostNotificationResponse, ResponseWithError } from '@/models';
+import type { PostNotificationBody, PostNotificationResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/infrastructure/system/logger';
 import { container } from '@/container';

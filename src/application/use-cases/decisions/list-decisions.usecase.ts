@@ -1,7 +1,8 @@
 import { canonicalizeFields } from '@/utils/timestamp-format';
-import type { Decision, GetDecisionsQueryParams } from '@/models';
+import type { Decision } from '@/domain/entities';
+import type { GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
-import { buildDecisionsWhere, fetchFilteringOptions, buildPaginatedResponse } from './list.helpers';
+import { buildPaginatedResponse } from './list.helpers';
 
 // Called by: delivery/http controllers (decisions list endpoint)
 export class ListDecisionsUseCase {
@@ -9,11 +10,9 @@ export class ListDecisionsUseCase {
 
   async execute(query: GetDecisionsQueryParams): Promise<unknown> {
     const { limit = 100, offset = 0, unpaged = false } = query;
-    const where = buildDecisionsWhere(query, false);
-
     const [filtering, decisions] = await Promise.all([
-      fetchFilteringOptions(),
-      this.deps.decisionRepository.findWithQuery(where),
+      this.deps.decisionRepository.fetchFilteringOptions(),
+      this.deps.decisionRepository.findByQuery(query),
     ]);
 
     const { items, pagination, total } = buildPaginatedResponse(

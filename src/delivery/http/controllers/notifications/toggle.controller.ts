@@ -4,7 +4,7 @@ import type {
   PostToggleNotificationBody,
   PutNotificationResponse,
   ResponseWithError,
-} from '@/models';
+} from '@/delivery/http/contracts';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/infrastructure/system/logger';
 import { container } from '@/container';

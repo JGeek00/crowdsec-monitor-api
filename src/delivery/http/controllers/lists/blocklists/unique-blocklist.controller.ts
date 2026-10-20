@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
-import type { GetBlocklistParams, GetBlocklistQueryParams, GetBlocklistResponse, ResponseWithError } from '@/models';
+import type {
+  GetBlocklistParams,
+  GetBlocklistQueryParams,
+  GetBlocklistResponse,
+  ResponseWithError,
+} from '@/delivery/http/contracts';
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';

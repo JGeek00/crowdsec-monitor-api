@@ -1,4 +1,4 @@
-import { BlocklistsTable } from '@/models';
+import { BlocklistsTable } from './sequelize/models';
 import { alertsSyncService } from '@/infrastructure/sync/alerts-sync';
 import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 

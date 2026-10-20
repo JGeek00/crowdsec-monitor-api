@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import type { NotificationIdParams, GetNotificationResponse, ResponseWithError } from '@/models';
+import type { NotificationIdParams, GetNotificationResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/infrastructure/system/logger';
 import { container } from '@/container';

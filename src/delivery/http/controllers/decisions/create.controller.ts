@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '@/container';
 import { errorResponse } from '@/utils/error-response';
-import type { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/models';
+import type { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**
  * Create a decision in CrowdSec LAPI

@@ -1,4 +1,4 @@
-import type { Alert_SourceInfo, ConditionNode, NotificationField, NotificationOperator } from '@/models';
+import type { Alert_SourceInfo, ConditionNode, NotificationField, NotificationOperator } from '@/domain/entities';
 
 export interface AlertLike {
   scenario: string;

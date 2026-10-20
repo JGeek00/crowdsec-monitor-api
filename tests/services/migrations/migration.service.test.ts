@@ -5,7 +5,7 @@ const mockFindAll = vi.fn();
 const mockCreate = vi.fn();
 const mockEnsureInitialized = vi.fn();
 
-vi.mock('@/models/db/Migration', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models/Migration', () => ({
   Migration: {
     ensureInitialized: mockEnsureInitialized,
     findOne: mockFindOne,

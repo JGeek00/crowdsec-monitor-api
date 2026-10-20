@@ -1,4 +1,4 @@
-import { BlocklistsTable } from '@/models';
+import { BlocklistsTable } from '@/infrastructure/persistence/sequelize/models';
 import { sequelize } from '@/config/database';
 import { config } from '@/config';
 import { DB_MODE } from '@/types/database.types';

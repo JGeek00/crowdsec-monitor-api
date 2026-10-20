@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/models', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   BLOCKLIST_IP_ORIGIN: { BLOCKLIST: 'blocklist' },
   BlocklistIpsTable: {
     destroy: vi.fn(),
@@ -33,7 +33,7 @@ describe('BlocklistDbService', () => {
     const mockTransaction = vi.fn();
     vi.mocked(sequelize.transaction).mockImplementation(async (cb: any) => cb({}));
 
-    const { BlocklistIpsTable } = await import('@/models');
+    const { BlocklistIpsTable } = await import('@/infrastructure/persistence/sequelize/models');
     vi.mocked(BlocklistIpsTable.destroy).mockResolvedValue(0);
     vi.mocked(BlocklistIpsTable.bulkCreate).mockResolvedValue([] as any);
 
@@ -47,7 +47,7 @@ describe('BlocklistDbService', () => {
   it('deleteBlocklistIps deletes in chunks', async () => {
     const { sequelize } = await import('@/config/database');
     vi.mocked(sequelize.transaction).mockImplementation(async (cb: any) => cb({}));
-    const { BlocklistIpsTable } = await import('@/models');
+    const { BlocklistIpsTable } = await import('@/infrastructure/persistence/sequelize/models');
 
     const mockChunk = [{ id: 1 }, { id: 2 }];
     vi.mocked(BlocklistIpsTable.findAll)

@@ -1,5 +1,5 @@
 import appDefaults from '@/constants/app-defaults';
-import type { NotificationThreshold } from '@/models';
+import type { NotificationThreshold } from '@/domain/entities';
 
 export function withThresholdDefaults(
   threshold: NotificationThreshold | null | undefined,

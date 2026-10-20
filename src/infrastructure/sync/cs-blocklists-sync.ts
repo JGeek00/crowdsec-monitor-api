@@ -1,4 +1,5 @@
-import { CsBlocklistsTable, BLOCKLIST_IP_ORIGIN, BlocklistIpsTable } from '@/models';
+import { CsBlocklistsTable, BlocklistIpsTable } from '@/infrastructure/persistence/sequelize/models';
+import { BLOCKLIST_IP_ORIGIN } from '@/domain/entities/blocklist-ip.entity';
 import { sequelize } from '@/config/database';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import appDefaults from '@/constants/app-defaults';

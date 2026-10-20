@@ -1,12 +1,7 @@
-import type { Decision, DecisionGroup, GetDecisionsQueryParams } from '@/models';
+import type { Decision } from '@/domain/entities';
+import type { DecisionGroup, GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
-import {
-  applyJsFilters,
-  fetchFilteringOptions,
-  buildDecisionsWhere,
-  groupDecisionsByIp,
-  buildPaginatedResponse,
-} from './list.helpers';
+import { applyJsFilters, groupDecisionsByIp, buildPaginatedResponse } from './list.helpers';
 import { canonicalizeFields } from '@/utils/timestamp-format';
 
 // Called by: delivery/http controllers (decisions by-ip list endpoint)
@@ -17,11 +12,9 @@ export class ListDecisionsByIpUseCase {
     const { limit = 100, offset = 0, unpaged = false, only_active } = query;
     const withDecisions = String((query as { include_decisions?: unknown }).include_decisions) === 'true';
 
-    const where = buildDecisionsWhere(query, true);
-
     const [filtering, rows] = await Promise.all([
-      fetchFilteringOptions(),
-      this.deps.decisionRepository.findWithQuery(where, { withAlert: withDecisions }),
+      this.deps.decisionRepository.fetchFilteringOptions(),
+      this.deps.decisionRepository.findByQuery(query, { withAlert: withDecisions, group: true }),
     ]);
 
     const plainRows = rows as Decision[];

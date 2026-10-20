@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
-import type { PostBlocklistBody, PostBlocklistResponse, ResponseWithError } from '@/models';
+import type { PostBlocklistBody, PostBlocklistResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { sendBlocklistError } from './send-blocklist-error';
 
 /**

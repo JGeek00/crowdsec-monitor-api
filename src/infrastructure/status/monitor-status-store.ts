@@ -1,4 +1,4 @@
-import { StatusSnapshot } from '@/models';
+import type { StatusSnapshot } from '@/shared/models';
 import { makeReactive } from '@/utils/make-reactive';
 import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
 import packageJson from '../../../package.json';

@@ -3,7 +3,7 @@ import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { NotFoundError } from '@/domain/errors';
-import type { DeleteAlertParams, DeleteAlertResponse, ResponseWithError } from '@/models';
+import type { DeleteAlertParams, DeleteAlertResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**
  * Delete an alert by ID from CrowdSec LAPI

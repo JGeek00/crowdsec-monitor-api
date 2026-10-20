@@ -5,7 +5,12 @@ import { resolveIps } from '@/utils/dns-resolve';
 import { config } from '@/config';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { PostCheckDomainBody, PostCheckDomainResponse, PostCheckDomainResponse_IP, ResponseWithError } from '@/models';
+import {
+  PostCheckDomainBody,
+  PostCheckDomainResponse,
+  PostCheckDomainResponse_IP,
+  ResponseWithError,
+} from '@/delivery/http/contracts';
 
 /**
  * Resolve DNS for a domain using the configured DNS server and check if any

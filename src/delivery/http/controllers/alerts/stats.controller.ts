@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';
-import type { GetAlertsStatsResponse, ResponseWithError } from '@/models';
+import type { GetAlertsStatsResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**
  * Get alerts statistics

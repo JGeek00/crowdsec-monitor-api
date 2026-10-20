@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import type { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/models';
+import type { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';

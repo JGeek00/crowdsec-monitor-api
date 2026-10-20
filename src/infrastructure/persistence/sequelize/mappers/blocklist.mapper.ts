@@ -1,4 +1,4 @@
-import type { Blocklist, BlocklistIp } from '@/models';
+import type { Blocklist, BlocklistIp } from '@/domain/entities';
 
 /**
  * Table ↔ Entity mapper for the blocklist aggregate (blocklist + its IP rows).

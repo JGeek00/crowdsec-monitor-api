@@ -3,7 +3,7 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';
 import { NotFoundError } from '@/domain/errors';
-import type { GetDecisionByIpParams, GetDecisionByIpResponse, ResponseWithError } from '@/models';
+import type { GetDecisionByIpParams, GetDecisionByIpResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 type Res = ResponseWithError<GetDecisionByIpResponse>;
 export async function getDecisionByIp(req: Request<GetDecisionByIpParams, Res>, res: Response<Res>): Promise<void> {

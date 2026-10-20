@@ -1,6 +1,6 @@
 import { Op } from '@sequelize/core';
 import { isIpv4, isIpv4InCidr } from '@/utils/ip';
-import { BlocklistIpsTable } from '@/models';
+import { BlocklistIpsTable } from '@/infrastructure/persistence/sequelize/models';
 
 /**
  * Look up which blocklist each IP belongs to (if any).

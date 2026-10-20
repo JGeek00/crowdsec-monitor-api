@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
-import { NotificationChannelType, PostChannelBody, PostChannelResponse, ResponseWithError } from '@/models';
-import { NotificationChannelsTable } from '@/models';
+import {
+  NotificationChannelType,
+  PostChannelBody,
+  PostChannelResponse,
+  ResponseWithError,
+} from '@/delivery/http/contracts';
+import { NotificationChannelsTable } from '@/delivery/http/contracts';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { validateChannelConfig } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';

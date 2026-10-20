@@ -1,5 +1,7 @@
 import { Op } from '@sequelize/core';
-import { Alert, AlertsTable, Decision, DecisionsTable, UnparsedMetaData } from '@/models';
+import { AlertsTable, DecisionsTable } from '@/infrastructure/persistence/sequelize/models';
+import type { Alert, Decision } from '@/domain/entities';
+import type { UnparsedMetaData } from '@/shared/models';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { toCanonicalTimestamp } from '@/utils/timestamp-format';

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import type { GetTopCountriesResponse, ResponseWithError } from '@/models';
+import type { GetTopCountriesResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';

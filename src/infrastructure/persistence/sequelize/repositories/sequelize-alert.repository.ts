@@ -1,6 +1,7 @@
 import { Op, WhereOptions, QueryTypes } from '@sequelize/core';
-import { AlertsTable, DecisionsTable } from '@/models/db';
-import type { Alert, Alert_EventData, Alert_SourceInfo, UnparsedMetaData } from '@/models';
+import { AlertsTable, DecisionsTable } from '@/infrastructure/persistence/sequelize/models';
+import type { Alert, Alert_EventData, Alert_SourceInfo } from '@/domain/entities';
+import type { UnparsedMetaData } from '@/shared/models';
 import { AlertMapper } from '../mappers/alert.mapper';
 import type {
   AlertFilters,

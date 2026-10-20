@@ -1,4 +1,4 @@
-import { NotificationChannelsTable, NotificationsTable } from '@/models';
+import { NotificationChannelsTable, NotificationsTable } from '@/infrastructure/persistence/sequelize/models';
 import type {
   ConditionNode,
   NotificationAlertEventMeta,
@@ -6,7 +6,7 @@ import type {
   NotificationChannelRef,
   UserNotification,
   UserNotificationChannel,
-} from '@/models';
+} from '@/domain/entities';
 import { evaluateCondition, type AlertLike } from '@/domain/value-objects/notification-condition';
 import { resolveCooldownSeconds } from '@/application/use-cases/notifications/threshold-defaults';
 import { dispatchChannels } from '@/infrastructure/notifications/sender';

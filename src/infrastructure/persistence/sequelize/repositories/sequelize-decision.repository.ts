@@ -1,10 +1,16 @@
-import { DecisionsTable, AlertsTable } from '@/models/db';
-import type { Decision } from '@/models';
+import { DecisionsTable, AlertsTable } from '@/infrastructure/persistence/sequelize/models';
+import type { Decision } from '@/domain/entities';
 import { DB_SORTING } from '@/types/database.types';
+import {
+  buildDecisionsWhere,
+  fetchFilteringOptions as fetchFilteringOptionsQuery,
+  DECISIONS_QUERY,
+} from '@/infrastructure/persistence/sequelize/decisions-query';
 import type {
   DecisionRepository as DecisionRepositoryPort,
   DecisionQueryOptions,
 } from '@/application/ports/decision-repository.port';
+import type { FilteringInfo } from '@/application/use-cases/decisions/decisions.dto';
 
 /**
  * Sequelize implementation of the DecisionRepository port.
@@ -28,13 +34,11 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
     return row ? (row.toJSON() as Decision) : null;
   }
 
-  async findWithQuery(where: unknown, options?: DecisionQueryOptions): Promise<Decision[]> {
+  async findByQuery(query: Record<string, unknown>, options?: DecisionQueryOptions): Promise<Decision[]> {
+    const where = buildDecisionsWhere(query, options?.group ?? false);
     const rows = await DecisionsTable.findAll({
       where: where as never,
-      ...{
-        attributes: { exclude: [DecisionsTable.col.createdAt, DecisionsTable.col.updatedAt] },
-        order: [[DecisionsTable.col.crowdsecCreatedAt, DB_SORTING.DESC]],
-      },
+      ...DECISIONS_QUERY,
       include: options?.withAlert
         ? [
             {
@@ -46,6 +50,10 @@ export class SequelizeDecisionRepository implements DecisionRepositoryPort {
         : undefined,
     });
     return rows.map((row) => row.toJSON() as unknown as Decision);
+  }
+
+  async fetchFilteringOptions(): Promise<FilteringInfo> {
+    return fetchFilteringOptionsQuery();
   }
 
   async findByIp(ip: string, options?: DecisionQueryOptions): Promise<Decision[]> {

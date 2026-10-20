@@ -3,7 +3,8 @@ import type { Application } from 'express';
 import type { SuperTest, Test } from 'supertest';
 import supertest from 'supertest';
 import type { Sequelize } from '@sequelize/core';
-import type { Alert, Decision, Blocklist, BlocklistIp, CsBlocklist, UnparsedMetaData } from '@/models';
+import type { Alert, Decision, Blocklist, BlocklistIp, CsBlocklist } from '@/domain/entities';
+import type { UnparsedMetaData } from '@/shared/models';
 
 export interface TestApp {
   app: Application;
@@ -95,7 +96,7 @@ export async function setupApp(): Promise<TestApp> {
 
   const { createApp } = await import('@/app');
   const { AlertsTable, DecisionsTable, BlocklistsTable, BlocklistIpsTable, CsBlocklistsTable } =
-    await import('@/models');
+    await import('@/infrastructure/persistence/sequelize/models');
 
   const app = createApp();
 

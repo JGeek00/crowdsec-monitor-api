@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
 import appDefaults from '@/constants/app-defaults';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { notificationHistoryService } from '@/infrastructure/notifications/history';
-import type { NotificationAlertSnapshot, UserNotification, UserNotificationChannel } from '@/models';
+import type { NotificationAlertSnapshot, UserNotification, UserNotificationChannel } from '@/domain/entities';
 import { registerNotificationChannel } from '@/infrastructure/notifications/sender';
 
 registerNotificationChannel('test-ok', async () => null);

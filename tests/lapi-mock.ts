@@ -1,5 +1,6 @@
 import type { CrowdSecLoginResponse } from '@/types/crowdsec.types';
-import type { Alert, UnparsedMetaData, Decision } from '@/models';
+import type { Alert, Decision } from '@/domain/entities';
+import type { UnparsedMetaData } from '@/shared/models';
 import type { CrowdSecAllowlist } from '@/types/crowdsec.types';
 
 export interface LapiMockState {

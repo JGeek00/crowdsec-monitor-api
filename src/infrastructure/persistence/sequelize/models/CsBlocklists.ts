@@ -1,0 +1,41 @@
+import { DataTypes, Model } from '@sequelize/core';
+import { sequelize } from '@/config/database';
+import { Optional } from '@/types/database.types';
+import type { BlocklistIp, CsBlocklist } from '@/domain/entities';
+
+export type CsBlocklistCreationAttributes = Optional<CsBlocklist, 'id' | 'name'>;
+
+class CsBlocklistsTable extends Model<CsBlocklist, CsBlocklistCreationAttributes> implements CsBlocklist {
+  public id!: string;
+  public name!: string;
+
+  // Associations set in models/index.ts
+  public readonly blocklistIps?: BlocklistIp[];
+
+  // Column name references for use in Sequelize queries instead of string literals
+  static readonly col = {
+    id: 'id',
+    name: 'name',
+  } as const;
+}
+
+CsBlocklistsTable.init(
+  {
+    id: {
+      type: DataTypes.STRING(50),
+      primaryKey: true,
+      allowNull: false,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    tableName: 'cs_blocklists',
+    timestamps: false,
+  },
+);
+
+export default CsBlocklistsTable;

@@ -1,4 +1,4 @@
-import type { NotificationChannelConfig } from '@/models';
+import type { NotificationChannelConfig } from '@/domain/entities';
 import {
   findProvider,
   type ProviderDefinition,

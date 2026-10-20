@@ -3,7 +3,7 @@ import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/container';
 import { NotFoundError } from '@/domain/errors';
-import type { GetDecisionParams, GetDecisionResponse, ResponseWithError } from '@/models';
+import type { GetDecisionParams, GetDecisionResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**
  * Get decision by ID with associated alert

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import Handlebars from 'handlebars';
-import type { NotificationAlertEventMeta, NotificationAlertSnapshot } from '@/models';
+import type { NotificationAlertEventMeta, NotificationAlertSnapshot } from '@/domain/entities';
 
 /** Row of an event table: only the meta fields that have a value. */
 export interface AlertInfoEventRow {

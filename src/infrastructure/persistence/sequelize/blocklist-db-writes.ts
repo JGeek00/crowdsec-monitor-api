@@ -1,4 +1,5 @@
-import { BLOCKLIST_IP_ORIGIN, BlocklistIpsTable, BlocklistsTable } from '@/models';
+import { BlocklistIpsTable, BlocklistsTable } from '@/infrastructure/persistence/sequelize/models';
+import { BLOCKLIST_IP_ORIGIN } from '@/domain/entities/blocklist-ip.entity';
 import { sequelize } from '@/config/database';
 import { defaults } from '@/config/env-defaults';
 import appDefaults from '@/constants/app-defaults';
