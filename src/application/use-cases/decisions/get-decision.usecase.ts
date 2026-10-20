@@ -4,13 +4,13 @@ import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import { NotFoundError } from '@/domain/errors';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
-import type { DecisionWithAlert } from './decisions.dto';
+import type { DecisionsDetailResult, DecisionWithAlert } from './decisions.dto';
 
 // Called by: delivery/http controllers (decisions detail endpoint)
 export class GetDecisionUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
-  async execute(id: number): Promise<Record<string, unknown>> {
+  async execute(id: number): Promise<DecisionsDetailResult> {
     const decision: DecisionWithAlert | null = await this.deps.decisionRepository.findById(id, { withAlert: true });
     if (!decision) {
       throw new NotFoundError('DecisionsTable not found');

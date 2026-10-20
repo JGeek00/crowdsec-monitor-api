@@ -21,8 +21,13 @@ export async function listDecisionsByIp(
 ): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const result = await container.useCases.decisions.listDecisionsByIp.execute(req.query);
-    res.json(result as GetDecisionsByIpResponse);
+    // Transport adapts to the input DTO: query params may arrive as raw strings.
+    const rawIncludeDecisions = req.query.include_decisions as boolean | string | undefined;
+    const result = await container.useCases.decisions.listDecisionsByIp.execute({
+      ...req.query,
+      include_decisions: String(rawIncludeDecisions) === 'true',
+    });
+    res.json(result);
   } catch (error) {
     if (signal.aborted) return;
     if (error instanceof PaginationError) {

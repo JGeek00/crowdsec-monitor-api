@@ -1,5 +1,5 @@
 import type { Alert_SourceInfo, Decision } from '@/domain/entities';
-import type { DecisionGroup } from './decisions.dto';
+import type { RawDecisionGroup } from './decisions.dto';
 import type { Pagination } from '@/shared/models';
 
 // ─── Error ────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ export function groupDecisionsByIp(
   decisions: Decision[],
   onlyActive: boolean | undefined,
   withDecisions: boolean,
-): DecisionGroup[] {
+): RawDecisionGroup[] {
   const now = new Date();
   const map = new Map<string, { source: Alert_SourceInfo; decisions: Decision[]; activeCount: number }>();
 
@@ -61,10 +61,10 @@ export function groupDecisionsByIp(
     }
   }
 
-  const groups: DecisionGroup[] = [];
+  const groups: RawDecisionGroup[] = [];
   for (const [ip, entry] of map) {
     const s = entry.source;
-    const group: DecisionGroup = {
+    const group: RawDecisionGroup = {
       ip,
       country: s.cn,
       owner: s.as_name,

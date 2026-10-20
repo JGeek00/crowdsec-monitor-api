@@ -1,5 +1,5 @@
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
-import type { GetDecisionsQueryParams } from './decisions.dto';
+import type { CanonicalDecision, DecisionsListResult, GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
 import { buildPaginatedResponse } from './list.helpers';
 
@@ -7,7 +7,7 @@ import { buildPaginatedResponse } from './list.helpers';
 export class ListDecisionsUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
-  async execute(query: GetDecisionsQueryParams): Promise<Record<string, unknown>> {
+  async execute(query: GetDecisionsQueryParams): Promise<DecisionsListResult> {
     const { limit = 100, offset = 0, unpaged = false } = query;
     const [filtering, decisions] = await Promise.all([
       this.deps.decisionRepository.fetchFilteringOptions(),
@@ -21,7 +21,7 @@ export class ListDecisionsUseCase {
       unpaged ?? false,
     );
 
-    const delivery = items.map((item) =>
+    const delivery: CanonicalDecision[] = items.map((item) =>
       canonicalizeFields(item, ['expiration', 'crowdsec_created_at'], { kind: 'decision', id: item.id }),
     );
 

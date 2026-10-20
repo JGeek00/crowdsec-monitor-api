@@ -4,14 +4,14 @@ import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import { NotFoundError } from '@/domain/errors';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
-import type { DecisionWithAlert } from './decisions.dto';
+import type { DecisionsByIpDetailResult, DecisionWithAlert } from './decisions.dto';
 import { groupDecisionsByIp } from './list.helpers';
 
 // Called by: delivery/http controllers (decisions by-ip detail endpoint)
 export class GetDecisionByIpUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
-  async execute(ip: string, onlyActive: boolean): Promise<Record<string, unknown>> {
+  async execute(ip: string, onlyActive: boolean): Promise<DecisionsByIpDetailResult> {
     const rows: DecisionWithAlert[] = await this.deps.decisionRepository.findByIp(ip, { withAlert: true });
 
     const groups = groupDecisionsByIp(rows, onlyActive || undefined, true);

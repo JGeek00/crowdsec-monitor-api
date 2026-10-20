@@ -1,4 +1,9 @@
-import type { DecisionGroup, DecisionWithAlert, GetDecisionsQueryParams } from './decisions.dto';
+import type {
+  DecisionsByIpListResult,
+  DecisionGroup,
+  DecisionWithAlert,
+  GetDecisionsQueryParams,
+} from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
 import { applyJsFilters, groupDecisionsByIp, buildPaginatedResponse } from './list.helpers';
 import { canonicalizeFields } from '@/shared/utils/timestamp-format';
@@ -7,9 +12,9 @@ import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 export class ListDecisionsByIpUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
-  async execute(query: GetDecisionsQueryParams): Promise<Record<string, unknown>> {
+  async execute(query: GetDecisionsQueryParams): Promise<DecisionsByIpListResult> {
     const { limit = 100, offset = 0, unpaged = false, only_active } = query;
-    const withDecisions = String(query.include_decisions) === 'true';
+    const withDecisions = query.include_decisions === true;
 
     const [filtering, rows] = await Promise.all([
       this.deps.decisionRepository.fetchFilteringOptions(),
@@ -21,22 +26,21 @@ export class ListDecisionsByIpUseCase {
     let groups = groupDecisionsByIp(jsFiltered, only_active, withDecisions);
     if (only_active) groups = groups.filter((g) => g.active_decisions > 0);
 
-    let paginatedGroups: DecisionGroup[] = groups;
-    if (withDecisions) {
-      // Canonicalize embedded decisions before pagination (same as legacy).
-      paginatedGroups = groups.map((group) => ({
-        ...group,
-        decisions: (group.decisions ?? []).map((decision: DecisionWithAlert) =>
-          canonicalizeFields(decision, ['expiration', 'crowdsec_created_at'], {
-            kind: 'decision',
-            id: decision.id,
-          }),
-        ),
-      }));
-    }
+    // Canonicalize embedded decisions before pagination (same as legacy).
+    const delivered: DecisionGroup[] = groups.map((group) => ({
+      ...group,
+      decisions: withDecisions
+        ? (group.decisions ?? []).map((decision: DecisionWithAlert) =>
+            canonicalizeFields(decision, ['expiration', 'crowdsec_created_at'], {
+              kind: 'decision',
+              id: decision.id,
+            }),
+          )
+        : undefined,
+    }));
 
     const { items, pagination, total } = buildPaginatedResponse(
-      paginatedGroups,
+      delivered,
       Number(limit),
       Number(offset),
       unpaged ?? false,
