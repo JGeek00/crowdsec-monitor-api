@@ -1,7 +1,7 @@
 import { IncomingMessage, Server } from 'http';
 import { WsChannel } from '@/utils/ws-channel';
 import { AuthMiddleware } from '@/delivery/http/middlewares/auth.middleware';
-import { statusSocket } from '@/sockets/routes/status.socket';
+import { statusSocket } from './channels/status.channel';
 
 export class WebSocketApp {
   private channels: Map<string, WsChannel> = new Map();

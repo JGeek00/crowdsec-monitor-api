@@ -51,10 +51,10 @@ vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
 });
 
 import { setupApp, type TestApp } from '@tests/setup-app';
-import type { WebSocketApp } from '@/sockets';
+import type { WebSocketApp } from '@/delivery/websocket/gateway';
 
 // NOTE: vitest 5 no comparte las factories de vi.mock con la cadena de imports
-// estáticos de '@/sockets' (se evalúan antes de registrar el mock). Hay que
+// estáticos de '@/delivery/websocket/gateway' (se evalúan antes de registrar el mock). Hay que
 // importarlos dinámicamente dentro de beforeAll.
 describe('e2e status ws', () => {
   let app: TestApp;
@@ -89,7 +89,7 @@ describe('e2e status ws', () => {
   });
 
   it('ws receives snapshot when state changes after connect', async () => {
-    ({ webSocketApp } = await import('@/sockets'));
+    ({ webSocketApp } = await import('@/delivery/websocket/gateway'));
     ({ statusService } = await import('@/services/status.service'));
     webSocketApp.setup(server);
     const ws = new WebSocket(`ws://localhost:${port}/api/v1/status`);

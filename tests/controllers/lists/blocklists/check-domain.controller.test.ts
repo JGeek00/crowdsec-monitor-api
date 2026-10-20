@@ -48,4 +48,10 @@ describe('checkDomainBlocklist', () => {
     await checkDomainBlocklist(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });
+
+  it('returns 500 when DNS resolution throws', async () => {
+    mocks.mockExecute.mockRejectedValue(new Error('DNS timeout'));
+    await checkDomainBlocklist(req as Request, res as Response);
+    expect(statusSpy).toHaveBeenCalledWith(500);
+  });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/sockets', () => ({
+vi.mock('@/delivery/websocket/gateway', () => ({
   webSocketApp: { setup: vi.fn() },
 }));
 

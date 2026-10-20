@@ -3,7 +3,7 @@ import { initDatabase } from '@/config/database';
 import { buildApp, buildJobRegistry } from '@/app';
 import { databaseService, schedulerService, statusService, notificationEngineService, log } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { webSocketApp } from '@/sockets';
+import { webSocketApp } from '@/delivery/websocket/gateway';
 import { setLevel as initLogger } from '@/services/log.service';
 import { LogLevel } from '@/types/log.types';
 import { formatInterval } from '@/application/jobs/format-interval';

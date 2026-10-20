@@ -32,10 +32,10 @@ vi.mock('@/services/status.service', () => ({
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import http from 'http';
 import WebSocket from 'ws';
-import type { WebSocketApp } from '@/sockets';
+import type { WebSocketApp } from '@/delivery/websocket/gateway';
 
 // NOTE: vitest 5 no comparte las factories de vi.mock con la cadena de imports
-// estáticos de '@/sockets' (se evalúan antes de registrar el mock). Hay que
+// estáticos de '@/delivery/websocket/gateway' (se evalúan antes de registrar el mock). Hay que
 // importarlos dinámicamente dentro de beforeAll.
 
 function listen(server: http.Server): Promise<number> {
@@ -60,7 +60,7 @@ describe('status socket integration', () => {
   });
 
   it('client connects and receives snapshot after state change', async () => {
-    ({ webSocketApp } = await import('@/sockets'));
+    ({ webSocketApp } = await import('@/delivery/websocket/gateway'));
     ({ statusService } = await import('@/services/status.service'));
     webSocketApp.setup(server);
     const ws = new WebSocket(`ws://localhost:${port}/api/v1/status`);

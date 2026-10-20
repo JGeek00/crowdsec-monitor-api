@@ -32,7 +32,7 @@ vi.mock('@/services/status.service', () => ({
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import http from 'http';
 import WebSocket from 'ws';
-import { WebSocketApp } from '@/sockets';
+import { WebSocketApp } from '@/delivery/websocket/gateway';
 import { config } from '@/config';
 
 function listen(server: http.Server): Promise<number> {
