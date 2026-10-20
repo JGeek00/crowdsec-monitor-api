@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-vi.mock('@/infrastructure/status/memory-process-tracker', () => ({
-  statusBlocklistService: { getProcessesSnapshot: vi.fn() },
-}));
-
 describe('StatusService', () => {
   afterEach(() => {
     vi.resetModules();

@@ -101,6 +101,10 @@ const buildContainer = () => {
   const ops = blocklistOpsService;
   const syncAlerts = new SyncAlertsUseCase({ alertsSync: alertsSyncService });
 
+  // Break the store↔tracker cycle at the composition root: the store pulls
+  // process snapshots through this provider instead of a circular require.
+  statusService.setProcessSnapshotProvider(() => statusBlocklistService.getProcessesSnapshot());
+
   // Use cases (application)
   const listAlerts = new ListAlertsUseCase({ alertRepository });
   const getAlert = new GetAlertUseCase({ alertRepository });

@@ -3,6 +3,7 @@ import { setupApp, type TestApp } from '@tests/setup-app';
 
 vi.mock('@/infrastructure/status/monitor-status-store', () => ({
   statusService: {
+    setProcessSnapshotProvider: vi.fn(),
     getCleanSnapshot: vi.fn(function () {
       return {
         csLapi: { lapiConnected: false, lastSuccessfulSync: null, timestamp: new Date().toISOString() },

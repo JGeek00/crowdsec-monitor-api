@@ -1,10 +1,12 @@
 import type { StatusSnapshot } from '@/shared/models';
+import type { Process } from '@/types/process.types';
 import { makeReactive } from '@/infrastructure/status/make-reactive';
 import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/shared/utils/timestamp-format';
 import packageJson from '../../../package.json';
 
 export class StatusService {
   private onStateChange: (() => void) | null = null;
+  private processSnapshotProvider: (() => Process[]) | null = null;
   private broadcastPending = false;
   private readonly state: StatusSnapshot = makeReactive(
     {
@@ -25,6 +27,14 @@ export class StatusService {
 
   registerStateChangeCallback(fn: () => void): void {
     this.onStateChange = fn;
+  }
+
+  /**
+   * Composition-root wiring: the process snapshot comes from the tracker
+   * without a module-level dependency (breaks the store↔tracker cycle).
+   */
+  setProcessSnapshotProvider(fn: () => Process[]): void {
+    this.processSnapshotProvider = fn;
   }
 
   updateLapiStatus(lapiConnected: boolean, lastSuccessfulSync: string | null): void {
@@ -48,18 +58,15 @@ export class StatusService {
 
   /**
    * Returns a clean snapshot for serialization (HTTP/WebSocket).
-   * Processes come from StatusBlocklistService via deep clone — zero proxy involvement.
-   * Lazy-require avoids circular dependency with StatusBlocklistService.
+   * Processes come from the process tracker via the provider wired by the
+   * composition root — zero proxy involvement, no circular require.
    */
   getCleanSnapshot(): StatusSnapshot {
-    const { statusBlocklistService } = require('./memory-process-tracker') as {
-      statusBlocklistService: { getProcessesSnapshot(): import('@/types/process.types').Process[] };
-    };
     return {
       csLapi: this.state.csLapi,
       csBouncer: this.state.csBouncer,
       csMonitorApi: this.state.csMonitorApi,
-      processes: statusBlocklistService.getProcessesSnapshot(),
+      processes: this.processSnapshotProvider?.() ?? [],
     };
   }
 
