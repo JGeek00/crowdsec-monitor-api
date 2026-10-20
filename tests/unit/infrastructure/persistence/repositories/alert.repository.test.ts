@@ -312,3 +312,33 @@ describe('facet extraction on malformed rows', () => {
     expect(stats.topCountries).toHaveLength(1);
   });
 });
+
+describe('event edge rows and top-list ties', () => {
+  let repo: SequelizeAlertRepository;
+  beforeAll(() => {
+    repo = new SequelizeAlertRepository();
+  });
+  beforeEach(cleanRepoDb);
+
+  it('events without a meta key are tolerated everywhere', async () => {
+    const seq = getRepoSequelize();
+    await seq.query(
+      `INSERT INTO alerts (id, uuid, scenario, scenario_version, scenario_hash, message, capacity, leakspeed, simulated, remediation, events_count, machine_id, source, labels, meta, events, crowdsec_created_at, start_at, stop_at, created_at, updated_at)
+       VALUES (1, 'edge-1', 'crowdsec/ssh-bf', '0.1', 'h', 'm', 0, '0', 0, 1, 0, 'm', '{"cn":"US","as_name":"EXAMPLE-AS","ip":"1.2.3.4"}', NULL, '[]', '[{}]', '2026-07-23T00:00:00', '2026-07-23T00:00:00', '2026-07-23T01:00:00', '2026-07-23T00:00:00', '2026-07-23T00:00:00')`,
+    );
+
+    const page = await repo.findWithFilters({});
+    expect(page.total).toBe(1);
+    expect((await repo.getTopTargets())).toEqual([]);
+    expect(await repo.getTargetHistory('example.com')).toEqual([]);
+  });
+
+  it('top lists break ties deterministically', async () => {
+    await repo.upsertBatch([makeAlert({ id: 1 }), makeAlert({ id: 2, source: { ...makeAlert().source, cn: 'FR', as_name: 'OTHER-AS' } })]);
+
+    const stats = await repo.getGeneralStats(undefined, 10);
+    // two countries with amount 1: comparator returns 0 on ties
+    expect(stats.topCountries).toHaveLength(2);
+    expect(stats.topIpOwners).toHaveLength(2);
+  });
+});

@@ -219,3 +219,24 @@ describe('validator branches on real providers', () => {
     expect(isSecretKey('nope-type', 'password')).toBe(false);
   });
 });
+
+describe('isPresent branches through withChannelDefaults', () => {
+  it('defaults fill only completely absent keys; present values pass through as-is', () => {
+    expect(withChannelDefaults('email', { host: 'h', from: 'a@b.c', to: 'd@e.f' })['port']).toBe(587);
+    // absent-shaped values still count as present keys for the final spread
+    for (const port of [null, undefined, '', '   ', []]) {
+      expect(withChannelDefaults('email', { host: 'h', from: 'a@b.c', to: 'd@e.f', port } as never)['port']).toBe(port);
+    }
+  });
+
+  it('keeps present values of any type (numbers, non-empty arrays)', () => {
+    expect(withChannelDefaults('email', { host: 'h', from: 'a@b.c', to: 'd@e.f', port: 6000 } as never)['port']).toBe(6000);
+    expect(withChannelDefaults('email', { host: 'h', from: 'a@b.c', to: 'd@e.f', port: [1] } as never)['port']).toEqual([1]);
+  });
+
+  it('rejects non-string select values', () => {
+    expect(validateChannelConfig('ntfy', { topic: 't', priority: 5 })).toContainEqual(
+      'config.priority must be one of min, low, default, high, urgent, max',
+    );
+  });
+});
