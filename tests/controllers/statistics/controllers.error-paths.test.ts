@@ -1,14 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockFindAll } = vi.hoisted(() => ({ mockFindAll: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  getTopCountries: vi.fn(),
+  getCountryHistory: vi.fn(),
+  getTopIpOwners: vi.fn(),
+  getIpOwnerHistory: vi.fn(),
+  getTopTargets: vi.fn(),
+  getTargetHistory: vi.fn(),
+}));
 
-vi.mock('@/models/db', () => ({ AlertsTable: { findAll: mockFindAll } }));
-vi.mock('@/models', () => ({
-  AlertsTable: {
-    findAll: mockFindAll,
-    col: { crowdsecCreatedAt: 'crowdsec_created_at', source: 'source', events: 'events' },
+vi.mock('@/application/container', () => ({
+  container: {
+    useCases: {
+      statistics: {
+        getTopCountries: { execute: mocks.getTopCountries },
+        getCountryHistory: { execute: mocks.getCountryHistory },
+        getTopIpOwners: { execute: mocks.getTopIpOwners },
+        getIpOwnerHistory: { execute: mocks.getIpOwnerHistory },
+        getTopTargets: { execute: mocks.getTopTargets },
+        getTargetHistory: { execute: mocks.getTargetHistory },
+      },
+    },
   },
-  ResponseWithError: {} as any,
 }));
 vi.mock('@/utils/request-signal', () => ({
   createRequestSignal: vi.fn(function () {
@@ -42,14 +55,14 @@ describe('statistics controllers - error paths', () => {
   });
 
   it('getTopCountries returns 500 on DB error', async () => {
-    mockFindAll.mockRejectedValue(new Error('db error'));
+    mocks.getTopCountries.mockRejectedValue(new Error('db error'));
     await getTopCountries(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching countries statistics' }));
   });
 
   it('getCountryHistory returns 500 on DB error', async () => {
-    mockFindAll.mockRejectedValue(new Error('db error'));
+    mocks.getCountryHistory.mockRejectedValue(new Error('db error'));
     req = { params: { item: 'US' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
     await getCountryHistory(req as Request, res as Response);
@@ -58,14 +71,14 @@ describe('statistics controllers - error paths', () => {
   });
 
   it('getTopIpOwners returns 500 on DB error', async () => {
-    mockFindAll.mockRejectedValue(new Error('db error'));
+    mocks.getTopIpOwners.mockRejectedValue(new Error('db error'));
     await getTopIpOwners(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching IP owners statistics' }));
   });
 
   it('getIpOwnerHistory returns 500 on DB error', async () => {
-    mockFindAll.mockRejectedValue(new Error('db error'));
+    mocks.getIpOwnerHistory.mockRejectedValue(new Error('db error'));
     req = { params: { item: 'Example-AS' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
     await getIpOwnerHistory(req as Request, res as Response);
@@ -74,14 +87,14 @@ describe('statistics controllers - error paths', () => {
   });
 
   it('getTopTargets returns 500 on DB error', async () => {
-    mockFindAll.mockRejectedValue(new Error('db error'));
+    mocks.getTopTargets.mockRejectedValue(new Error('db error'));
     await getTopTargets(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching targets statistics' }));
   });
 
   it('getTargetHistory returns 500 on DB error', async () => {
-    mockFindAll.mockRejectedValue(new Error('db error'));
+    mocks.getTargetHistory.mockRejectedValue(new Error('db error'));
     req = { params: { item: 'example.com' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
     await getTargetHistory(req as Request, res as Response);

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { AlertsTable, Alert_SourceInfo, GetCountryHistoryParams, ResponseWithError, CountryHistory } from '@/models';
+import type { GetCountryHistoryParams, CountryHistory, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { container } from '@/application/container';
 
 /**
  * Get country history (alerts grouped by date for a specific country)
@@ -11,33 +12,8 @@ export async function getCountryHistory(req: Request<GetCountryHistoryParams>, r
   const { signal, cleanup } = createRequestSignal(req);
   try {
     const { item } = req.params;
-    const countryCode = String(item).toUpperCase();
-
-    // Get all alerts with their dates and sources
-    const alerts = await AlertsTable.findAll({
-      attributes: [AlertsTable.col.crowdsecCreatedAt, AlertsTable.col.source],
-      raw: true,
-    });
-
-    // Filter by country and group by date in JavaScript
-    const dateMap = new Map<string, number>();
-
-    alerts.forEach((alert) => {
-      if (alert.source) {
-        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
-        if (source.cn && source.cn.toUpperCase() === countryCode) {
-          const date = new Date(alert.crowdsec_created_at as Date | string).toISOString().split('T')[0];
-          dateMap.set(date, (dateMap.get(date) || 0) + 1);
-        }
-      }
-    });
-
-    // Convert to array and sort by date
-    const history = Array.from(dateMap.entries())
-      .map(([date, amount]) => ({ date, amount }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-
-    res.json(history);
+    const history = await container.useCases.statistics.getCountryHistory.execute(String(item).toUpperCase());
+    res.json(history as CountryHistory[]);
   } catch (error) {
     if (signal.aborted) return;
     res

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { AlertsTable, ResponseWithError, GetTopScenariosResponse, ScenarioCountRow } from '@/models';
+import type { GetTopScenariosResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { DB_SORTING } from '@/types/database.types';
+import { container } from '@/application/container';
 
 /**
  * Get top scenarios statistics
@@ -11,22 +11,8 @@ type Res = ResponseWithError<GetTopScenariosResponse[]>;
 export async function getTopScenarios(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const scenariosData = await AlertsTable.findAll({
-      attributes: [
-        'scenario',
-        [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
-      ],
-      group: ['scenario'],
-      order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
-      raw: true,
-    });
-
-    const scenarios = (scenariosData as unknown as ScenarioCountRow[]).map((item) => ({
-      scenario: item.scenario,
-      amount: parseInt(item.count, 10),
-    }));
-
-    res.json(scenarios);
+    const scenarios = await container.useCases.statistics.getTopScenarios.execute();
+    res.json(scenarios as GetTopScenariosResponse[]);
   } catch (error) {
     if (signal.aborted) return;
     res

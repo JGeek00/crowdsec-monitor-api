@@ -12,6 +12,29 @@ export class SequelizeNotificationRepository implements NotificationRepositoryPo
     return rows.map((row) => row.toJSON() as UserNotification);
   }
 
+  async listOrdered(): Promise<UserNotification[]> {
+    const rows = await NotificationsTable.findAll({ order: [['id', 'ASC']] });
+    return rows.map((row) => row.get({ plain: true }) as UserNotification);
+  }
+
+  async findById(id: number): Promise<UserNotification | null> {
+    const row = await NotificationsTable.findByPk(id);
+    return row ? (row.get({ plain: true }) as UserNotification) : null;
+  }
+
+  async updateFields(id: number, fields: Record<string, unknown>): Promise<UserNotification> {
+    const row = await NotificationsTable.findByPk(id);
+    if (!row) {
+      throw new Error('Notification not found');
+    }
+    await row.update({ ...fields, updated_at: new Date() } as never);
+    return row.get({ plain: true }) as UserNotification;
+  }
+
+  async deleteById(id: number): Promise<void> {
+    await NotificationsTable.destroy({ where: { [NotificationsTable.col.id]: id } });
+  }
+
   async listChannels(): Promise<UserNotificationChannel[]> {
     const rows = await NotificationChannelsTable.findAll();
     return rows.map((row) => row.toJSON() as UserNotificationChannel);

@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
-import {
-  NotificationsTable,
+import type {
   NotificationIdParams,
   PostToggleNotificationBody,
   PutNotificationResponse,
   ResponseWithError,
 } from '@/models';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/services/log.service';
+import { container } from '@/application/container';
+import { NotFoundError } from '@/domain/errors';
 
 type Res = ResponseWithError<PutNotificationResponse>;
 
@@ -17,16 +17,16 @@ export async function toggleNotification(
   res: Response<Res>,
 ): Promise<void> {
   try {
-    const row = await NotificationsTable.findByPk(Number(req.params.id));
-    if (!row) {
+    const plain = await container.useCases.notifications.toggleNotification.execute(
+      Number(req.params.id),
+      req.body.enabled,
+    );
+    res.status(200).json({ data: plain } as never);
+  } catch (err) {
+    if (err instanceof NotFoundError) {
       res.status(404).json(errorResponse('Not found', 'Notification not found'));
       return;
     }
-    await row.update({ enabled: req.body.enabled, updated_at: new Date() });
-    const plain = row.get({ plain: true });
-    notificationEngineService.upsertCache(plain);
-    res.status(200).json({ data: plain });
-  } catch (err) {
     log.error('Error toggling notification:', err);
     res
       .status(500)

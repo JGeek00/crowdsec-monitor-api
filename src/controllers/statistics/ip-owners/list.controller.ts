@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { Alert_SourceInfo, AlertsTable, GetTopIpOwnersResponse, ResponseWithError } from '@/models';
+import type { GetTopIpOwnersResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
+import { container } from '@/application/container';
 
 /**
  * Get top IP owners statistics
@@ -10,27 +11,8 @@ type Res = ResponseWithError<GetTopIpOwnersResponse[]>;
 export async function getTopIpOwners(req: Request, res: Response<Res>): Promise<void> {
   const { signal, cleanup } = createRequestSignal(req);
   try {
-    const alertsWithSource = await AlertsTable.findAll({
-      attributes: ['source'],
-      raw: true,
-    });
-
-    const ipOwnerMap = new Map<string, number>();
-
-    alertsWithSource.forEach((alert) => {
-      if (alert.source) {
-        const source = typeof alert.source === 'string' ? (JSON.parse(alert.source) as Alert_SourceInfo) : alert.source;
-        if (source.as_name) {
-          ipOwnerMap.set(source.as_name, (ipOwnerMap.get(source.as_name) || 0) + 1);
-        }
-      }
-    });
-
-    const ipOwners = Array.from(ipOwnerMap.entries())
-      .map(([ipOwner, amount]) => ({ ipOwner, amount }))
-      .sort((a, b) => b.amount - a.amount);
-
-    res.json(ipOwners);
+    const ipOwners = await container.useCases.statistics.getTopIpOwners.execute();
+    res.json(ipOwners as GetTopIpOwnersResponse[]);
   } catch (error) {
     if (signal.aborted) return;
     res

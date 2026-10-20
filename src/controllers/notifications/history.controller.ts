@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
-import { GetNotificationHistoryResponse, ResponseWithError } from '@/models';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
+import type { GetNotificationHistoryResponse, ResponseWithError } from '@/models';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/services/log.service';
+import { container } from '@/application/container';
 
 type Res = ResponseWithError<GetNotificationHistoryResponse>;
 
 export async function getNotificationHistory(_req: Request, res: Response<Res>): Promise<void> {
   try {
-    const data = notificationHistoryService.list();
-    res.status(200).json({ data, total: data.length });
+    const result = container.useCases.notifications.getNotificationHistory.execute();
+    res.status(200).json(result as never);
   } catch (err) {
     log.error('Error getting notification history:', err);
     res.status(500).json(errorResponse('Failed to get history', err instanceof Error ? err.message : 'Unknown error'));

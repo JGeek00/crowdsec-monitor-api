@@ -1,13 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/models', () => ({
-  AlertsTable: {
-    findAll: vi.fn(),
-    sequelize: { fn: vi.fn(), col: vi.fn() },
-    col: { id: 'id' },
-  },
-  ResponseWithError: {} as any,
-  GetTopScenariosResponse: {} as any,
+const mocks = vi.hoisted(() => ({ mockExecute: vi.fn() }));
+
+vi.mock('@/application/container', () => ({
+  container: { useCases: { statistics: { getTopScenarios: { execute: mocks.mockExecute } } } },
 }));
 vi.mock('@/utils/request-signal', () => ({
   createRequestSignal: vi.fn(function () {
@@ -20,7 +16,6 @@ vi.mock('@/utils/error-response', () => ({
 
 import { Request, Response } from 'express';
 import { getTopScenarios } from '@/controllers/statistics/scenarios/list.controller';
-import { AlertsTable } from '@/models';
 
 describe('getTopScenarios unit', () => {
   let req: Partial<Request>;
@@ -37,13 +32,13 @@ describe('getTopScenarios unit', () => {
   });
 
   it('returns 200 with scenarios', async () => {
-    vi.mocked(AlertsTable.findAll).mockResolvedValue([{ scenario: 'ssh-bf', count: '5' }] as any);
+    mocks.mockExecute.mockResolvedValue([{ scenario: 'ssh-bf', amount: 5 }]);
     await getTopScenarios(req as Request, res as Response);
     expect(jsonSpy).toHaveBeenCalledWith([{ scenario: 'ssh-bf', amount: 5 }]);
   });
 
   it('returns 500 on DB error', async () => {
-    vi.mocked(AlertsTable.findAll).mockRejectedValue(new Error('DB error'));
+    mocks.mockExecute.mockRejectedValue(new Error('DB error'));
     await getTopScenarios(req as Request, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching scenarios statistics' }));

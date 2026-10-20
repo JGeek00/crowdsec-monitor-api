@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 
-const mockGetCleanSnapshot = vi.hoisted(() => vi.fn());
+const mocks = vi.hoisted(() => ({ mockExecute: vi.fn() }));
 
-vi.mock('@/services', () => ({ statusService: { getCleanSnapshot: mockGetCleanSnapshot } }));
+vi.mock('@/application/container', () => ({
+  container: { useCases: { status: { getStatus: { execute: mocks.mockExecute } } } },
+}));
 
 import { getStatus } from '@/controllers/status/status.controller';
 
@@ -14,6 +16,7 @@ describe('getStatus', () => {
   let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     jsonSpy = vi.fn();
     statusSpy = vi.fn().mockReturnValue({ json: jsonSpy, send: vi.fn() });
     req = {};
@@ -21,14 +24,14 @@ describe('getStatus', () => {
   });
 
   it('returns 200 with snapshot shape', async () => {
-    mockGetCleanSnapshot.mockReturnValue({ csMonitorApi: { version: '1.0.0' } });
+    mocks.mockExecute.mockReturnValue({ csMonitorApi: { version: '1.0.0' } });
     await getStatus(req as Request, res as Response);
     expect(res.json).toHaveBeenCalled();
-    expect(mockGetCleanSnapshot).toHaveBeenCalled();
+    expect(mocks.mockExecute).toHaveBeenCalled();
   });
 
   it('returns 500 on error', async () => {
-    mockGetCleanSnapshot.mockImplementation(() => {
+    mocks.mockExecute.mockImplementation(() => {
       throw new Error('fail');
     });
     await getStatus(req as Request, res as Response);

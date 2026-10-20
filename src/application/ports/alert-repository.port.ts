@@ -50,4 +50,15 @@ export interface AlertRepository {
     topScenarios: { scenario: string; count: number }[];
     sources: { cn: string | undefined; as_name: string | undefined }[];
   }>;
+
+  // ── Statistics aggregations (moved from statistics controllers) ──
+  getTopCountries(): Promise<{ countryCode: string; amount: number }[]>;
+  getCountryHistory(countryCode: string): Promise<{ date: string; amount: number }[]>;
+  getTopIpOwners(): Promise<{ ipOwner: string; amount: number }[]>;
+  getIpOwnerHistory(ipOwner: string): Promise<{ date: string; amount: number }[]>;
+  getTopScenarios(): Promise<{ scenario: string; amount: number }[]>;
+  getScenarioHistory(scenario: string): Promise<{ date: string; amount: number }[]>;
+  getTopTargets(): Promise<{ target: string; amount: number }[]>;
+  getTargetHistory(target: string): Promise<{ date: string; amount: number }[]>;
+  getGeneralStats(since: string | undefined, limit: number | undefined): Promise<unknown>;
 }

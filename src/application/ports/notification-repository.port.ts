@@ -4,6 +4,11 @@ import type { UserNotification, UserNotificationChannel } from '@/domain/entitie
 // Called by: application/use-cases/notifications/*, application/use-cases/notifications/send-test
 export interface NotificationRepository {
   listNotifications(): Promise<UserNotification[]>;
+  /** All notifications ordered by id ASC (legacy list endpoint). */
+  listOrdered(): Promise<UserNotification[]>;
+  findById(id: number): Promise<UserNotification | null>;
+  updateFields(id: number, fields: Record<string, unknown>): Promise<UserNotification>;
+  deleteById(id: number): Promise<void>;
   listChannels(): Promise<UserNotificationChannel[]>;
   createNotification(input: {
     name: string;

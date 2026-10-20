@@ -1,6 +1,7 @@
 import { SequelizeAlertRepository } from '@/infrastructure/persistence/sequelize/repositories/sequelize-alert.repository';
 import { SequelizeDecisionRepository } from '@/infrastructure/persistence/sequelize/repositories/sequelize-decision.repository';
 import { SequelizeBlocklistRepository } from '@/infrastructure/persistence/sequelize/repositories/sequelize-blocklist.repository';
+import { SequelizeNotificationRepository } from '@/infrastructure/persistence/sequelize/repositories/sequelize-notification.repository';
 import { httpLapiClient } from '@/infrastructure/crowdsec/http-lapi-client';
 import { ListAlertsUseCase } from './use-cases/alerts/list-alerts.usecase';
 import { GetAlertUseCase } from './use-cases/alerts/get-alert.usecase';
@@ -31,6 +32,27 @@ import {
   CheckAllowlistUseCase,
 } from './use-cases/blocklists/check-blocklist.usecase';
 import { ListAllowlistsUseCase, GetAllowlistUseCase } from './use-cases/blocklists/allowlists.usecase';
+import {
+  GetGeneralStatisticsUseCase,
+  GetTopCountriesUseCase,
+  GetCountryHistoryUseCase,
+  GetTopIpOwnersUseCase,
+  GetIpOwnerHistoryUseCase,
+  GetTopScenariosUseCase,
+  GetScenarioHistoryUseCase,
+  GetTopTargetsUseCase,
+  GetTargetHistoryUseCase,
+} from './use-cases/statistics';
+import {
+  ListNotificationsUseCase,
+  GetNotificationUseCase,
+  CreateNotificationUseCase,
+  UpdateNotificationUseCase,
+  ToggleNotificationUseCase,
+  DeleteNotificationUseCase,
+  GetNotificationHistoryUseCase,
+} from './use-cases/notifications';
+import { getStatusUseCase } from './use-cases/status';
 
 /**
  * Manual DI container (D12): explicit factories, no framework.
@@ -60,8 +82,34 @@ const buildContainer = () => {
   const deleteDecision = new DeleteDecisionUseCase({ decisionRepository, lapiClient, syncAlerts: syncAlertsUseCase });
   const getDecisionsStats = new GetDecisionsStatsUseCase({ decisionRepository });
 
+  const notificationRepository = new SequelizeNotificationRepository();
+
+  const statistics = {
+    getGeneralStatistics: new GetGeneralStatisticsUseCase({ alertRepository }),
+    getTopCountries: new GetTopCountriesUseCase({ alertRepository }),
+    getCountryHistory: new GetCountryHistoryUseCase({ alertRepository }),
+    getTopIpOwners: new GetTopIpOwnersUseCase({ alertRepository }),
+    getIpOwnerHistory: new GetIpOwnerHistoryUseCase({ alertRepository }),
+    getTopScenarios: new GetTopScenariosUseCase({ alertRepository }),
+    getScenarioHistory: new GetScenarioHistoryUseCase({ alertRepository }),
+    getTopTargets: new GetTopTargetsUseCase({ alertRepository }),
+    getTargetHistory: new GetTargetHistoryUseCase({ alertRepository }),
+  };
+
+  const notifications = {
+    listNotifications: new ListNotificationsUseCase({ notificationRepository }),
+    getNotification: new GetNotificationUseCase({ notificationRepository }),
+    createNotification: new CreateNotificationUseCase({ notificationRepository }),
+    updateNotification: new UpdateNotificationUseCase({ notificationRepository }),
+    toggleNotification: new ToggleNotificationUseCase({ notificationRepository }),
+    deleteNotification: new DeleteNotificationUseCase({ notificationRepository }),
+    getNotificationHistory: new GetNotificationHistoryUseCase(),
+  };
+
+  const status = { getStatus: getStatusUseCase };
+
   return {
-    repositories: { alertRepository, decisionRepository, blocklistRepository },
+    repositories: { alertRepository, decisionRepository, blocklistRepository, notificationRepository },
     useCases: {
       alerts: { listAlerts, getAlert, deleteAlert, getAlertsStats, syncAlerts },
       decisions: {
@@ -89,6 +137,9 @@ const buildContainer = () => {
         listAllowlists: new ListAllowlistsUseCase({ lapiClient }),
         getAllowlist: new GetAllowlistUseCase({ lapiClient }),
       },
+      statistics,
+      notifications,
+      status,
     },
   };
 };

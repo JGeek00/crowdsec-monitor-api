@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
-import { NotificationsTable, GetNotificationsResponse, ResponseWithError } from '@/models';
+import type { GetNotificationsResponse, ResponseWithError } from '@/models';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/services/log.service';
+import { container } from '@/application/container';
 
 type Res = ResponseWithError<GetNotificationsResponse>;
 
 export async function listNotifications(_req: Request, res: Response<Res>): Promise<void> {
   try {
-    const rows = await NotificationsTable.findAll({ order: [['id', 'ASC']] });
-    res.status(200).json({ data: rows.map((r) => r.get({ plain: true })) });
+    const rows = await container.useCases.notifications.listNotifications.execute();
+    res.status(200).json({ data: rows } as never);
   } catch (err) {
     log.error('Error listing notifications:', err);
     res
