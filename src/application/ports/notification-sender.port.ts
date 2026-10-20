@@ -10,4 +10,6 @@ export interface DispatchResult {
 // Called by: application/use-cases/notifications/evaluate-alert, send-test
 export interface NotificationSender {
   send(config: unknown, title: string, message: string, alert?: NotificationAlertSnapshot): Promise<DispatchResult>;
+  /** Fire one or more unsaved channel refs (test endpoints); results are not stored in history. */
+  dispatch(channels: unknown[], message: string, name: string): Promise<DispatchResult[]>;
 }

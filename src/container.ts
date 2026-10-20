@@ -66,6 +66,18 @@ import {
   DeleteNotificationUseCase,
   GetNotificationHistoryUseCase,
 } from '@/application/use-cases/notifications';
+import {
+  ListChannelsUseCase,
+  GetChannelUseCase,
+  CreateChannelUseCase,
+  UpdateChannelUseCase,
+  DeleteChannelUseCase,
+  TestChannelUseCase,
+  TestInlineChannelUseCase,
+  ListProvidersUseCase,
+  GetHistoryAlertsUseCase,
+} from '@/application/use-cases/notifications/channels.usecase';
+import { channelDispatcher } from '@/infrastructure/notifications/dispatcher';
 import { CheckVersionUseCase } from '@/application/use-cases/status/version-check.usecase';
 import { GetStatusUseCase } from '@/application/use-cases/status';
 
@@ -123,6 +135,15 @@ const buildContainer = () => {
     toggleNotification: new ToggleNotificationUseCase({ notificationRepository, engine: notificationEngineService }),
     deleteNotification: new DeleteNotificationUseCase({ notificationRepository, engine: notificationEngineService }),
     getNotificationHistory: new GetNotificationHistoryUseCase({ history: notificationHistoryService }),
+    listChannels: new ListChannelsUseCase({ notificationRepository }),
+    getChannel: new GetChannelUseCase({ notificationRepository }),
+    createChannel: new CreateChannelUseCase({ notificationRepository, engine: notificationEngineService }),
+    updateChannel: new UpdateChannelUseCase({ notificationRepository, engine: notificationEngineService }),
+    deleteChannel: new DeleteChannelUseCase({ notificationRepository, engine: notificationEngineService }),
+    testChannel: new TestChannelUseCase({ notificationRepository, sender: channelDispatcher }),
+    testInlineChannel: new TestInlineChannelUseCase({ sender: channelDispatcher }),
+    listProviders: new ListProvidersUseCase(),
+    getHistoryAlerts: new GetHistoryAlertsUseCase({ history: notificationHistoryService, alertRepository }),
   };
 
   const status = {

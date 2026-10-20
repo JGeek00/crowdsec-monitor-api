@@ -10,6 +10,9 @@ export interface NotificationRepository {
   updateFields(id: number, fields: Record<string, unknown>): Promise<UserNotification>;
   deleteById(id: number): Promise<void>;
   listChannels(): Promise<UserNotificationChannel[]>;
+  findChannelById(id: number): Promise<UserNotificationChannel | null>;
+  updateChannel(id: number, fields: Record<string, unknown>): Promise<UserNotificationChannel>;
+  deleteChannelById(id: number): Promise<void>;
   createNotification(input: {
     name: string;
     description: string | null;

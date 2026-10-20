@@ -35,6 +35,8 @@ export interface AlertRepository {
   /** Lists alerts applying filters; includes the decisions of each alert (aggregate). */
   findWithFilters(filters: AlertFilters): Promise<AlertPage>;
   findById(id: number): Promise<Alert<UnparsedMetaData> | null>;
+  /** Alerts by explicit ids (notification history drill-down). */
+  findByIds(ids: number[]): Promise<Alert<UnparsedMetaData>[]>;
   /** Batch upsert keyed by CrowdSec alert UUID. */
   upsertBatch(alerts: unknown[]): Promise<number>;
   deleteById(id: number): Promise<boolean>;

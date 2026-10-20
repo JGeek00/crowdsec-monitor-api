@@ -1,35 +1,22 @@
-import { Op } from '@sequelize/core';
 import { Request, Response } from 'express';
-import {
-  Alert,
-  AlertsTable,
-  GetNotificationHistoryAlertsResponse,
-  ResponseWithError,
-  UnparsedMetaData,
-} from '@/delivery/http/contracts';
-import { notificationHistoryService } from '@/infrastructure/notifications/history';
-import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
+import type { GetNotificationHistoryAlertsResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { errorResponse } from '@/delivery/http/error-response';
+import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 import { log } from '@/infrastructure/system/logger';
+import { container } from '@/container';
 
 type Res = ResponseWithError<GetNotificationHistoryAlertsResponse>;
 
 /** Alerts that fired a sent notification, with full detail. */
 export async function getNotificationHistoryAlerts(req: Request<{ id: string }>, res: Response<Res>): Promise<void> {
   try {
-    const entry = notificationHistoryService.find(req.params.id);
-    if (!entry) {
+    const alerts = await container.useCases.notifications.getHistoryAlerts.execute(req.params.id);
+    if (alerts === null) {
       res.status(404).json(errorResponse('Not found', 'History entry not found'));
       return;
     }
-    if (entry.alertIds.length === 0) {
-      res.status(200).json({ data: [] });
-      return;
-    }
-    const rows = await AlertsTable.findAll({ where: { id: { [Op.in]: entry.alertIds } } });
     // Some JSON columns come back as strings; parse meta the same way as /alerts.
-    const data = rows.map((row) => parseAlertMeta(row.toJSON() as Alert<UnparsedMetaData>));
-    res.status(200).json({ data });
+    res.status(200).json({ data: alerts.map((a) => parseAlertMeta(a as never)) });
   } catch (err) {
     log.error('Error getting history entry alerts:', err);
     res

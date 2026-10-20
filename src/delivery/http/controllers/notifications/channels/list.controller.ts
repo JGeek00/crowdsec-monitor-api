@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import { NotificationChannelsTable, GetChannelsResponse, ResponseWithError } from '@/delivery/http/contracts';
+import type { GetChannelsResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { errorResponse } from '@/delivery/http/error-response';
-import { toChannelResponse } from '@/infrastructure/notifications/channel-response';
+import { toChannelResponse } from '@/delivery/http/presenters/notifications/channel-response';
 import { log } from '@/infrastructure/system/logger';
+import { container } from '@/container';
 
 type Res = ResponseWithError<GetChannelsResponse>;
 
 export async function listChannels(_req: Request, res: Response<Res>): Promise<void> {
   try {
-    const rows = await NotificationChannelsTable.findAll({ order: [['id', 'ASC']] });
-    res.status(200).json({ data: rows.map((r) => toChannelResponse(r.get({ plain: true }))) });
+    const rows = await container.useCases.notifications.listChannels.execute();
+    res.status(200).json({ data: rows.map((r) => toChannelResponse(r)) });
   } catch (err) {
     log.error('Error listing notification channels:', err);
     res

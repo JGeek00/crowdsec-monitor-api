@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
-import {
+import type {
   ChannelIdParams,
   PostChannelTestBody,
   PostChannelTestResponse,
   ResponseWithError,
 } from '@/delivery/http/contracts';
-import { NotificationChannelsTable } from '@/delivery/http/contracts';
-import { dispatchChannels } from '@/infrastructure/notifications/sender';
 import { errorResponse } from '@/delivery/http/error-response';
 import { log } from '@/infrastructure/system/logger';
+import { container } from '@/container';
+import { NotFoundError } from '@/domain/errors';
 
 type Res = ResponseWithError<PostChannelTestResponse>;
 
@@ -18,18 +18,13 @@ export async function testChannel(
   res: Response<Res>,
 ): Promise<void> {
   try {
-    const row = await NotificationChannelsTable.findByPk(Number(req.params.id));
-    if (!row) {
+    const result = await container.useCases.notifications.testChannel.execute(Number(req.params.id), req.body.message);
+    res.status(200).json({ data: result });
+  } catch (err) {
+    if (err instanceof NotFoundError) {
       res.status(404).json(errorResponse('Not found', 'Channel not found'));
       return;
     }
-    const plain = row.get({ plain: true });
-    const message = req.body.message?.trim() || `Test notification from "${plain.name}"`;
-    const [result] = await dispatchChannels([{ type: plain.type, config: plain.config }], message, plain.name);
-    res.status(200).json({
-      data: { channelId: plain.id, ok: result?.ok ?? false, detail: result?.detail ?? 'no result' },
-    });
-  } catch (err) {
     log.error('Error testing notification channel:', err);
     res.status(500).json(errorResponse('Failed to test channel', err instanceof Error ? err.message : 'Unknown error'));
   }

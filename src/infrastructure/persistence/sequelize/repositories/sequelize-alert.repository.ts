@@ -147,6 +147,12 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
     return row ? (row.toJSON() as Row) : null;
   }
 
+  async findByIds(ids: number[]): Promise<Row[]> {
+    if (ids.length === 0) return [];
+    const rows = await AlertsTable.findAll({ where: { [AlertsTable.col.id]: ids } as never });
+    return rows.map((row) => row.toJSON() as Row);
+  }
+
   /** Persists one LAPI alert and its decisions (sync write path). */
   async upsertBatch(alerts: unknown[]): Promise<number> {
     let count = 0;

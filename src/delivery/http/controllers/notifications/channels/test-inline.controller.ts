@@ -1,14 +1,9 @@
 import { Request, Response } from 'express';
-import {
-  NotificationChannelRef,
-  PostChannelTestInlineBody,
-  PostChannelTestResponse,
-  ResponseWithError,
-} from '@/delivery/http/contracts';
-import { dispatchChannels } from '@/infrastructure/notifications/sender';
-import { validateChannelConfig } from '@/shared/utils/notification-channel';
+import type { PostChannelTestInlineBody, PostChannelTestResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { errorResponse } from '@/delivery/http/error-response';
 import { log } from '@/infrastructure/system/logger';
+import { container } from '@/container';
+import { ValidationError } from '@/domain/errors';
 
 type Res = ResponseWithError<PostChannelTestResponse>;
 
@@ -18,20 +13,13 @@ export async function testInlineChannel(
   res: Response<Res>,
 ): Promise<void> {
   try {
-    const { type, config, message } = req.body;
-    const errors = validateChannelConfig(type, config);
-    if (errors.length > 0) {
-      res.status(400).json(errorResponse('Validation error', errors.join(', ')));
+    const result = await container.useCases.notifications.testInlineChannel.execute(req.body);
+    res.status(200).json({ data: result });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      res.status(400).json(errorResponse('Validation error', err.detail));
       return;
     }
-    const text = message?.trim() || 'Test notification';
-    // Validated against the provider definition above.
-    const ref = { type, config } as unknown as NotificationChannelRef;
-    const [result] = await dispatchChannels([ref], text, 'Channel test');
-    res.status(200).json({
-      data: { channelId: null, ok: result?.ok ?? false, detail: result?.detail ?? 'no result' },
-    });
-  } catch (err) {
     log.error('Error testing inline channel:', err);
     res.status(500).json(errorResponse('Failed to test channel', err instanceof Error ? err.message : 'Unknown error'));
   }

@@ -1,39 +1,22 @@
 import { Request, Response } from 'express';
-import {
-  NotificationChannelType,
-  PostChannelBody,
-  PostChannelResponse,
-  ResponseWithError,
-} from '@/delivery/http/contracts';
-import { NotificationChannelsTable } from '@/delivery/http/contracts';
-import { notificationEngineService } from '@/infrastructure/notifications/engine';
-import { validateChannelConfig } from '@/shared/utils/notification-channel';
+import type { PostChannelBody, PostChannelResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { errorResponse } from '@/delivery/http/error-response';
-import { toChannelResponse } from '@/infrastructure/notifications/channel-response';
+import { toChannelResponse } from '@/delivery/http/presenters/notifications/channel-response';
 import { log } from '@/infrastructure/system/logger';
+import { container } from '@/container';
+import { ValidationError } from '@/domain/errors';
 
 type Res = ResponseWithError<PostChannelResponse>;
 
 export async function createChannel(req: Request<object, Res, PostChannelBody>, res: Response<Res>): Promise<void> {
   try {
-    const { name, type, config } = req.body;
-    const errors = validateChannelConfig(type, config);
-    if (errors.length > 0) {
-      res.status(400).json(errorResponse('Validation error', errors.join(', ')));
+    const channel = await container.useCases.notifications.createChannel.execute(req.body);
+    res.status(201).json({ data: toChannelResponse(channel) });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      res.status(400).json(errorResponse('Validation error', err.detail));
       return;
     }
-    const row = await NotificationChannelsTable.create({
-      name: name.trim(),
-      // Validated against the provider definition above; stored types are the built-ins for now.
-      type: type as NotificationChannelType,
-      config,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-    const plain = row.get({ plain: true });
-    notificationEngineService.upsertChannelCache(plain);
-    res.status(201).json({ data: toChannelResponse(plain) });
-  } catch (err) {
     log.error('Error creating notification channel:', err);
     res
       .status(500)
