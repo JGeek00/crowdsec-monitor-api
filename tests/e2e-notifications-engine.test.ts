@@ -130,12 +130,12 @@ describe('e2e notifications engine and history', () => {
   });
 
   it('one burst matching two notifications fires both (independent pipelines)', async () => {
-    await app.request.post('/api/v1/notifications').send(
-      payload({ name: 'five-in-10s', threshold: { count: 5, windowSeconds: 10 }, message: 'five' }),
-    );
-    await app.request.post('/api/v1/notifications').send(
-      payload({ name: 'three-in-10s', threshold: { count: 3, windowSeconds: 10 }, message: 'three' }),
-    );
+    await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ name: 'five-in-10s', threshold: { count: 5, windowSeconds: 10 }, message: 'five' }));
+    await app.request
+      .post('/api/v1/notifications')
+      .send(payload({ name: 'three-in-10s', threshold: { count: 3, windowSeconds: 10 }, message: 'three' }));
     for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(sshAlert);
     const res = await app.request.get('/api/v1/notifications/history');
     expect(res.body.total).toBe(2);
@@ -146,10 +146,18 @@ describe('e2e notifications engine and history', () => {
       .post('/api/v1/notifications')
       .send(payload({ name: 'grouped', threshold: { count: 2, windowSeconds: 10 }, message: 'grouped' }));
     await AlertsTable.create(
-      makeAlert({ id: 9001, scenario: 'crowdsecurity/ssh-bf', source: { ...makeAlert().source, ip: '9.9.9.9', value: '9.9.9.9', cn: 'ES' } }),
+      makeAlert({
+        id: 9001,
+        scenario: 'crowdsecurity/ssh-bf',
+        source: { ...makeAlert().source, ip: '9.9.9.9', value: '9.9.9.9', cn: 'ES' },
+      }),
     );
     await AlertsTable.create(
-      makeAlert({ id: 9002, scenario: 'crowdsecurity/ssh-bf', source: { ...makeAlert().source, ip: '8.8.8.8', value: '8.8.8.8', cn: 'ES' } }),
+      makeAlert({
+        id: 9002,
+        scenario: 'crowdsecurity/ssh-bf',
+        source: { ...makeAlert().source, ip: '8.8.8.8', value: '8.8.8.8', cn: 'ES' },
+      }),
     );
     await notificationEngineService.handleAlert({ ...sshAlert, alertId: 9001 });
     await notificationEngineService.handleAlert({ ...sshAlert, alertId: 9002 });
@@ -215,15 +223,13 @@ describe('e2e notifications engine and history', () => {
   });
 
   it('history returns newest first with channel failure detail', async () => {
-    const deadRes = await app.request
-      .post('/api/v1/notification-channels')
-      .send(
-        makeChannelPayload({
-          name: 'dead',
-          type: 'ntfy',
-          config: { server: 'http://127.0.0.1:1', topic: 'dead-topic' },
-        }),
-      );
+    const deadRes = await app.request.post('/api/v1/notification-channels').send(
+      makeChannelPayload({
+        name: 'dead',
+        type: 'ntfy',
+        config: { server: 'http://127.0.0.1:1', topic: 'dead-topic' },
+      }),
+    );
     const brokenRes = await app.request.post('/api/v1/notifications').send(
       payload({
         name: 'broken ntfy',

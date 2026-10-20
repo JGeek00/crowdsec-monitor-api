@@ -56,7 +56,9 @@ describe('validateChannelConfig ntfy', () => {
   it('treats empty strings as absent and rejects unknown keys', () => {
     expect(validateChannelConfig('ntfy', { topic: 'ok', tags: '' })).toEqual([]);
     expect(validateChannelConfig('ntfy', { topic: 'ok', nope: 1 }).length).toBeGreaterThan(0);
-    expect(validateChannelConfig('email', { host: 'h', from: 'a@b.c', to: 'd@e.f', nope: 1 }).length).toBeGreaterThan(0);
+    expect(validateChannelConfig('email', { host: 'h', from: 'a@b.c', to: 'd@e.f', nope: 1 }).length).toBeGreaterThan(
+      0,
+    );
   });
 });
 
@@ -68,9 +70,9 @@ describe('validateChannelConfig email', () => {
   });
 
   it('accepts a full authenticated config', () => {
-    expect(
-      validateChannelConfig('email', { ...valid, port: 465, secure: true, username: 'u', password: 'p' }),
-    ).toEqual([]);
+    expect(validateChannelConfig('email', { ...valid, port: 465, secure: true, username: 'u', password: 'p' })).toEqual(
+      [],
+    );
   });
 
   it('rejects missing host, bad emails and bad port', () => {

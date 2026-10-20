@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { container } from '@/application/container';
+import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 import type { DeleteBlocklistParams, DeleteBlocklistResponse, ResponseWithError } from '@/models';
 import { sendBlocklistError } from './send-blocklist-error';

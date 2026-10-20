@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   mockExecute: vi.fn(),
 }));
 
-vi.mock('@/application/container', () => ({
+vi.mock('@/container', () => ({
   container: {
     useCases: {
       blocklists: { getAllowlist: { execute: mocks.mockExecute } },

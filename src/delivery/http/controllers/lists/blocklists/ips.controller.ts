@@ -8,7 +8,7 @@ import type {
 import { createRequestSignal } from '@/utils/request-signal';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 import { NotFoundError } from '@/domain/errors';
 
 /**

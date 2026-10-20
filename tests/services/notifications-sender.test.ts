@@ -139,20 +139,13 @@ describe('notification-sender', () => {
   it('sends ntfy with basic auth', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal('fetch', fetchMock);
-    await dispatchChannels(
-      [{ type: 'ntfy', config: { topic: 't', username: 'u', password: 'p' } }],
-      'hello',
-      'title',
-    );
+    await dispatchChannels([{ type: 'ntfy', config: { topic: 't', username: 'u', password: 'p' } }], 'hello', 'title');
     const [, init] = fetchMock.mock.calls[0] as [string, { headers: Record<string, string> }];
     expect(init.headers['Authorization']).toBe(`Basic ${Buffer.from('u:p').toString('base64')}`);
   });
 
   it('reports ntfy http errors', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     const results = await dispatchChannels([{ type: 'ntfy', config: { topic: 't' } }], 'hello', 'title');
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.detail).toContain('500');

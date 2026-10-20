@@ -1,31 +1,15 @@
-import { alertsSyncService } from '@/infrastructure/sync/alerts-sync';
+import type { AlertsSyncPort, SyncAlertsSummary } from '@/application/ports/alerts-sync.port';
 
-export interface SyncAlertsResult {
-  synced: number;
-  updated: number;
-  errors: number;
-  decisions: number;
-}
-
-/**
- * Syncs alerts (and their decisions) from the CrowdSec LAPI into the local DB.
- *
- * Strangler note (T7): the fetch → upsert → notify → cleanup pipeline still
- * lives in the legacy alerts-sync.service (writeLock, notification engine and
- * retention cleanup move behind ports/UoW in T10). This use case is the
- * application-facing entry point so jobs and controllers already depend on
- * the port-shaped API.
- */
 // Called by: delivery/http controllers (alerts/decisions delete), application/jobs/sync-alerts.job
 export class SyncAlertsUseCase {
-  execute(): Promise<SyncAlertsResult> {
-    return alertsSyncService.syncAlerts();
+  constructor(private readonly deps: { alertsSync: AlertsSyncPort }) {}
+
+  execute(): Promise<SyncAlertsSummary> {
+    return this.deps.alertsSync.syncAlerts();
   }
 
   /** Timestamp of the last successful LAPI pull (drives the status snapshot). */
   getLastSuccessfulSync(): Date | null {
-    return alertsSyncService.getLastSuccessfulSync();
+    return this.deps.alertsSync.getLastSuccessfulSync();
   }
 }
-
-export const syncAlertsUseCase = new SyncAlertsUseCase();

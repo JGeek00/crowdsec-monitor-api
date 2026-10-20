@@ -110,9 +110,7 @@ describe('notification-engine', () => {
   });
 
   it('honours frequency thresholds (x times in y seconds)', async () => {
-    notificationEngineService.upsertCache(
-      makeNotification({ id: 9, threshold: { count: 3, windowSeconds: 60 } }),
-    );
+    notificationEngineService.upsertCache(makeNotification({ id: 9, threshold: { count: 3, windowSeconds: 60 } }));
     await notificationEngineService.handleAlert(alert);
     await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.count()).toBe(0);
@@ -121,9 +119,7 @@ describe('notification-engine', () => {
   });
 
   it('fires once for 5 alerts in the window (window-reset + default cooldown)', async () => {
-    notificationEngineService.upsertCache(
-      makeNotification({ id: 20, threshold: { count: 3, windowSeconds: 10 } }),
-    );
+    notificationEngineService.upsertCache(makeNotification({ id: 20, threshold: { count: 3, windowSeconds: 10 } }));
     for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.count()).toBe(1);
   });
@@ -153,10 +149,12 @@ describe('notification-engine', () => {
     );
     for (let i = 0; i < 5; i++) await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.count()).toBe(2);
-    expect(notificationHistoryService.list().map((e) => e.notificationName).sort()).toEqual([
-      'five-in-10s',
-      'three-ssh',
-    ]);
+    expect(
+      notificationHistoryService
+        .list()
+        .map((e) => e.notificationName)
+        .sort(),
+    ).toEqual(['five-in-10s', 'three-ssh']);
   });
 
   it('rate-limits count=1 with cooldown (at most once per cooldown)', async () => {
@@ -179,9 +177,7 @@ describe('notification-engine', () => {
     const cooldownMs = appDefaults.notifications.defaultCooldownSeconds * 1000;
     let now = 3_000_000;
     vi.spyOn(Date, 'now').mockImplementation(() => now);
-    notificationEngineService.upsertCache(
-      makeNotification({ id: 25, threshold: { count: 3, windowSeconds: 10 } }),
-    );
+    notificationEngineService.upsertCache(makeNotification({ id: 25, threshold: { count: 3, windowSeconds: 10 } }));
     for (let i = 0; i < 3; i++) await notificationEngineService.handleAlert(alert);
     expect(notificationHistoryService.count()).toBe(1);
     now += cooldownMs - 10_000;
@@ -193,18 +189,14 @@ describe('notification-engine', () => {
   });
 
   it('records the group of alert ids that fired the notification', async () => {
-    notificationEngineService.upsertCache(
-      makeNotification({ id: 26, threshold: { count: 3, windowSeconds: 10 } }),
-    );
+    notificationEngineService.upsertCache(makeNotification({ id: 26, threshold: { count: 3, windowSeconds: 10 } }));
     await notificationEngineService.handleAlert({ ...alert, alertId: 101 });
     await notificationEngineService.handleAlert({ ...alert, alertId: 102 });
     await notificationEngineService.handleAlert({ ...alert, alertId: 103 });
     const entry = notificationHistoryService.list()[0];
     expect(entry?.alertIds).toEqual([101, 102, 103]);
 
-    notificationEngineService.upsertCache(
-      makeNotification({ id: 27, threshold: null }),
-    );
+    notificationEngineService.upsertCache(makeNotification({ id: 27, threshold: null }));
     await notificationEngineService.handleAlert({ ...alert, alertId: 55 });
     expect(notificationHistoryService.list()[0]?.alertIds).toEqual([55]);
 
@@ -230,9 +222,7 @@ describe('notification-engine', () => {
       created_at: new Date(),
       updated_at: new Date(),
     });
-    notificationEngineService.upsertCache(
-      makeNotification({ id: 31, channelIds: [12, 13], includeAlertInfo: true }),
-    );
+    notificationEngineService.upsertCache(makeNotification({ id: 31, channelIds: [12, 13], includeAlertInfo: true }));
     await notificationEngineService.handleAlert({ ...alert, alertId: 201 });
     expect(emailAlertInfo.at(-1)).toEqual([
       {

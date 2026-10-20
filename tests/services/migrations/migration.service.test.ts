@@ -17,7 +17,8 @@ vi.mock('@/models/db/Migration', () => ({
 describe('MigrationService', () => {
   it('isMigrationApplied returns true when found', async () => {
     mockFindOne.mockResolvedValue({ name: '001_test' });
-    const { MigrationService } = await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
+    const { MigrationService } =
+      await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
     const svc = new MigrationService();
     const result = await svc.isMigrationApplied('001_test');
     expect(result).toBe(true);
@@ -25,7 +26,8 @@ describe('MigrationService', () => {
 
   it('isMigrationApplied returns false when not found', async () => {
     mockFindOne.mockResolvedValue(null);
-    const { MigrationService } = await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
+    const { MigrationService } =
+      await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
     const svc = new MigrationService();
     const result = await svc.isMigrationApplied('001_test');
     expect(result).toBe(false);
@@ -33,7 +35,8 @@ describe('MigrationService', () => {
 
   it('registerMigration creates a migration record', async () => {
     mockCreate.mockResolvedValue({} as any);
-    const { MigrationService } = await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
+    const { MigrationService } =
+      await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
     const svc = new MigrationService();
     await svc.registerMigration('001_test');
     expect(mockCreate).toHaveBeenCalledWith({
@@ -44,7 +47,8 @@ describe('MigrationService', () => {
 
   it('getAppliedMigrations returns all names', async () => {
     mockFindAll.mockResolvedValue([{ name: '001_a' }, { name: '002_b' }]);
-    const { MigrationService } = await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
+    const { MigrationService } =
+      await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
     const svc = new MigrationService();
     const result = await svc.getAppliedMigrations();
     expect(result).toEqual(['001_a', '002_b']);
@@ -52,7 +56,8 @@ describe('MigrationService', () => {
 
   it('getPendingMigrations filters out applied ones', async () => {
     mockFindAll.mockResolvedValue([{ name: '001_a' }]);
-    const { MigrationService } = await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
+    const { MigrationService } =
+      await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service');
     const svc = new MigrationService();
     const result = await svc.getPendingMigrations(['001_a', '002_b', '003_c']);
     expect(result).toEqual(['002_b', '003_c']);

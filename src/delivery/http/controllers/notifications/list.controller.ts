@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import type { GetNotificationsResponse, ResponseWithError } from '@/models';
 import { errorResponse } from '@/utils/error-response';
 import { log } from '@/infrastructure/system/logger';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 type Res = ResponseWithError<GetNotificationsResponse>;
 

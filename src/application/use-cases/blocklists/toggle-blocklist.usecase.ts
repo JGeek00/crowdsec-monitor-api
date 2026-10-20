@@ -7,20 +7,28 @@ import {
 } from '@/domain/errors';
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
 import type { Blocklist } from '@/domain/entities/blocklist.entity';
-import { log } from '@/infrastructure/system/logger';
-import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
-import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
-import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
+import type { Logger } from '@/application/ports/logger.port';
+import type { LapiClient } from '@/application/ports/lapi-client.port';
+import type { ProcessTrackerPort } from '@/application/ports/process-tracker.port';
+import type { BlocklistOpsPort } from '@/application/ports/blocklist-ops.port';
 import { PROCESS_FIELD_BLOCKLIST, PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
 
 // Called by: delivery/http controllers (blocklists toggle endpoint)
 export class ToggleBlocklistUseCase {
-  constructor(private readonly deps: { blocklistRepository: BlocklistRepository }) {}
+  constructor(
+    private readonly deps: {
+      blocklistRepository: BlocklistRepository;
+      bouncer: Pick<LapiClient, 'checkBouncerConnection' | 'isBouncerConnected'>;
+      tracker: ProcessTrackerPort;
+      ops: BlocklistOpsPort;
+      logger: Logger;
+    },
+  ) {}
 
   async execute(id: number, enabled: boolean): Promise<Blocklist> {
-    const { blocklistRepository } = this.deps;
+    const { blocklistRepository, bouncer, tracker, ops, logger } = this.deps;
 
-    if (statusBlocklistService.isSyncingBlocklists()) {
+    if (tracker.isSyncingBlocklists()) {
       throw new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.');
     }
 
@@ -33,16 +41,16 @@ export class ToggleBlocklistUseCase {
       throw new NotFoundError('BlocklistsTable not found');
     }
 
-    if (statusBlocklistService.isBlocklistBusy(blocklist.id)) {
+    if (tracker.isBlocklistBusy(blocklist.id)) {
       throw new ConflictError(
         'A process is already running for this blocklist. Wait for it to complete before performing another action.',
       );
     }
 
     if (enabled) {
-      await crowdSecAPI.checkBouncerConnection();
-      if (!crowdSecAPI.isBouncerConnected()) {
-        log.warn(
+      await bouncer.checkBouncerConnection();
+      if (!bouncer.isBouncerConnected()) {
+        logger.warn(
           '[Blocklists] Cannot enable blocklist: CrowdSec bouncer API key is not valid or CrowdSec LAPI is unreachable. Check the CROWDSEC_BOUNCER_KEY configuration and restart the API.',
         );
         throw new UpstreamUnavailableError(
@@ -61,28 +69,19 @@ export class ToggleBlocklistUseCase {
     let crowdsecOp: Promise<unknown>;
 
     if (enabled) {
-      processId = statusBlocklistService.createBlocklistEnableProcess(blocklist.id, blocklist.name);
-      crowdsecOp = blocklistOpsService.activateBlocklist(
-        updated as never,
-        undefined,
-        processId,
-        PROCESS_FIELD_BLOCKLIST.ENABLE,
-      );
+      processId = tracker.createBlocklistEnableProcess(blocklist.id, blocklist.name);
+      crowdsecOp = ops.activateBlocklist(updated, undefined, processId, PROCESS_FIELD_BLOCKLIST.ENABLE);
     } else {
       const totalIps = (await blocklistRepository.getIps(blocklist.id)).length;
-      processId = statusBlocklistService.createBlocklistDisableProcess(totalIps, blocklist.id, blocklist.name);
-      crowdsecOp = blocklistOpsService.deleteBlocklistAlerts(
-        updated as never,
-        processId,
-        PROCESS_FIELD_BLOCKLIST_OPS.DISABLE,
-      );
+      processId = tracker.createBlocklistDisableProcess(totalIps, blocklist.id, blocklist.name);
+      crowdsecOp = ops.deleteBlocklistAlerts(updated, processId, PROCESS_FIELD_BLOCKLIST_OPS.DISABLE);
     }
 
     void crowdsecOp
-      .then(() => statusBlocklistService.completeProcess(processId, true))
+      .then(() => tracker.completeProcess(processId, true))
       .catch((err: unknown) => {
-        statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        log.error(
+        tracker.completeProcess(processId, false, err instanceof Error ? err.message : null);
+        logger.error(
           `Background CrowdSec sync failed for blocklist "${blocklist.name}": ${err instanceof Error ? err.message : String(err)}`,
         );
       });

@@ -1,8 +1,7 @@
 import { NotFoundError, ValidationError } from '@/domain/errors';
 import type { UserNotification } from '@/domain/entities/notification.entity';
 import type { NotificationRepository } from '@/application/ports/notification-repository.port';
-import { notificationEngineService } from '@/infrastructure/notifications/engine';
-import { notificationHistoryService } from '@/infrastructure/notifications/history';
+import type { NotificationEnginePort, NotificationHistoryPort } from '@/application/ports/notification-engine.port';
 import { findMissingChannelIds } from '@/application/use-cases/notifications/channel-refs';
 import { withThresholdDefaults } from '@/application/use-cases/notifications/threshold-defaults';
 import { isValidCondition } from '@/domain/value-objects/notification-condition';
@@ -40,7 +39,12 @@ export interface CreateNotificationInput {
 }
 
 export class CreateNotificationUseCase {
-  constructor(private readonly deps: { notificationRepository: NotificationRepository }) {}
+  constructor(
+    private readonly deps: {
+      notificationRepository: NotificationRepository;
+      engine: NotificationEnginePort;
+    },
+  ) {}
 
   async execute(input: CreateNotificationInput): Promise<UserNotification> {
     const { name, description, enabled, condition, threshold, message, includeAlertInfo, channelIds } = input;
@@ -48,7 +52,7 @@ export class CreateNotificationUseCase {
     if (!isValidCondition(condition)) {
       throw new ValidationError('condition has an unsupported shape');
     }
-    const missing = await findMissingChannelIds(channelIds);
+    const missing = await findMissingChannelIds(this.deps.notificationRepository, channelIds);
     if (missing.length > 0) {
       const err = new ValidationError(`Unknown channel(s): ${missing.join(', ')}`);
       (err as ValidationError & { status: number }).status = 422;
@@ -66,13 +70,18 @@ export class CreateNotificationUseCase {
       channelIds: [...new Set(channelIds)],
     });
     const plain = row;
-    await notificationEngineService.upsertCache(plain as never);
+    this.deps.engine.upsertCache(plain as never);
     return plain;
   }
 }
 
 export class UpdateNotificationUseCase {
-  constructor(private readonly deps: { notificationRepository: NotificationRepository }) {}
+  constructor(
+    private readonly deps: {
+      notificationRepository: NotificationRepository;
+      engine: NotificationEnginePort;
+    },
+  ) {}
 
   async execute(id: number, body: Record<string, unknown>): Promise<UserNotification> {
     const row = await this.deps.notificationRepository.findById(id);
@@ -91,7 +100,7 @@ export class UpdateNotificationUseCase {
       throw new ValidationError('condition has an unsupported shape');
     }
     if (channelIds !== undefined) {
-      const missing = await findMissingChannelIds(channelIds);
+      const missing = await findMissingChannelIds(this.deps.notificationRepository, channelIds);
       if (missing.length > 0) {
         const err = new ValidationError(`Unknown channel(s): ${missing.join(', ')}`);
         (err as ValidationError & { status: number }).status = 422;
@@ -105,13 +114,18 @@ export class UpdateNotificationUseCase {
       ...(channelIds !== undefined ? { channelIds: [...new Set(channelIds)] } : {}),
     });
 
-    notificationEngineService.upsertCache(updated as never);
+    this.deps.engine.upsertCache(updated as never);
     return updated;
   }
 }
 
 export class ToggleNotificationUseCase {
-  constructor(private readonly deps: { notificationRepository: NotificationRepository }) {}
+  constructor(
+    private readonly deps: {
+      notificationRepository: NotificationRepository;
+      engine: NotificationEnginePort;
+    },
+  ) {}
 
   async execute(id: number, enabled: boolean): Promise<UserNotification> {
     const row = await this.deps.notificationRepository.findById(id);
@@ -119,13 +133,18 @@ export class ToggleNotificationUseCase {
       throw new NotFoundError('Notification not found');
     }
     const updated = await this.deps.notificationRepository.updateFields(id, { enabled });
-    notificationEngineService.upsertCache(updated as never);
+    this.deps.engine.upsertCache(updated as never);
     return updated;
   }
 }
 
 export class DeleteNotificationUseCase {
-  constructor(private readonly deps: { notificationRepository: NotificationRepository }) {}
+  constructor(
+    private readonly deps: {
+      notificationRepository: NotificationRepository;
+      engine: NotificationEnginePort;
+    },
+  ) {}
 
   async execute(id: number): Promise<void> {
     const row = await this.deps.notificationRepository.findById(id);
@@ -133,13 +152,15 @@ export class DeleteNotificationUseCase {
       throw new NotFoundError('Notification not found');
     }
     await this.deps.notificationRepository.deleteById(id);
-    notificationEngineService.removeFromCache(id);
+    this.deps.engine.removeFromCache(id);
   }
 }
 
 export class GetNotificationHistoryUseCase {
+  constructor(private readonly deps: { history: NotificationHistoryPort }) {}
+
   execute(): { data: unknown[]; total: number } {
-    const data = notificationHistoryService.list() as unknown[];
+    const data = this.deps.history.list();
     return { data, total: data.length };
   }
 }

@@ -4,7 +4,7 @@ const { mockExecute } = vi.hoisted(() => ({
   mockExecute: vi.fn(),
 }));
 
-vi.mock('@/application/container', () => ({
+vi.mock('@/container', () => ({
   container: {
     useCases: {
       decisions: { deleteDecision: { execute: mockExecute } },

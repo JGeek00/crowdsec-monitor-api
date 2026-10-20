@@ -1,16 +1,20 @@
-import { NotificationChannelsTable, NotificationsTable } from '@/models';
+import type { NotificationRepository } from '@/application/ports/notification-repository.port';
 
 /** Returns the subset of ids with no matching channel row. */
-export async function findMissingChannelIds(ids: number[]): Promise<number[]> {
+export async function findMissingChannelIds(
+  notificationRepository: Pick<NotificationRepository, 'findChannelIdsByIds'>,
+  ids: number[],
+): Promise<number[]> {
   const unique = [...new Set(ids)];
   if (unique.length === 0) return [];
-  const rows = await NotificationChannelsTable.findAll({ where: { id: unique } });
-  const found = new Set(rows.map((r) => r.id));
+  const found = new Set(await notificationRepository.findChannelIdsByIds(unique));
   return unique.filter((id) => !found.has(id));
 }
 
 /** Returns the ids of notifications referencing the channel. */
-export async function findNotificationsUsingChannel(channelId: number): Promise<number[]> {
-  const all = await NotificationsTable.findAll();
-  return all.filter((n) => (n.channelIds ?? []).includes(channelId)).map((n) => n.id);
+export async function findNotificationsUsingChannel(
+  notificationRepository: Pick<NotificationRepository, 'findNotificationsUsingChannel'>,
+  channelId: number,
+): Promise<number[]> {
+  return notificationRepository.findNotificationsUsingChannel(channelId);
 }

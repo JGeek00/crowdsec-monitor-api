@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { container } from '@/application/container';
+import { container } from '@/container';
 import { errorResponse } from '@/utils/error-response';
 import type { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/models';
 

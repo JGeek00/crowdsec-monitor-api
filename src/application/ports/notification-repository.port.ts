@@ -21,4 +21,8 @@ export interface NotificationRepository {
     channelIds: number[];
   }): Promise<UserNotification>;
   createChannel(input: { name: string; type: string; config: unknown }): Promise<UserNotificationChannel>;
+  /** Ids among `ids` that exist as channel rows (legacy channel-refs helper). */
+  findChannelIdsByIds(ids: number[]): Promise<number[]>;
+  /** Ids of notifications whose channelIds include `channelId`. */
+  findNotificationsUsingChannel(channelId: number): Promise<number[]>;
 }

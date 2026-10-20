@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import type { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/models';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 import { NotFoundError } from '@/domain/errors';
 
 /**

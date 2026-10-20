@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import type { GetStatisticsQueryParams, GetStatisticsResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 /**
  * Get comprehensive statistics

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ mockExecute: vi.fn() }));
 
-vi.mock('@/application/container', () => ({
+vi.mock('@/container', () => ({
   container: { useCases: { statistics: { getTopScenarios: { execute: mocks.mockExecute } } } },
 }));
 vi.mock('@/utils/request-signal', () => ({

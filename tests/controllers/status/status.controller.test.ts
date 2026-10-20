@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 const mocks = vi.hoisted(() => ({ mockExecute: vi.fn() }));
 
-vi.mock('@/application/container', () => ({
+vi.mock('@/container', () => ({
   container: { useCases: { status: { getStatus: { execute: mocks.mockExecute } } } },
 }));
 

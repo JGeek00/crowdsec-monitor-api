@@ -7,4 +7,3 @@ export * from './get-blocklist.usecase';
 export * from './get-blocklist-ips.usecase';
 export * from './check-blocklist.usecase';
 export * from './allowlists.usecase';
-export * from './blocklists-db-queries';

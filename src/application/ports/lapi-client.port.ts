@@ -1,5 +1,5 @@
 // Implemented by: infrastructure/crowdsec/http-lapi-client.ts
-// Called by: application/use-cases/alerts/*, application/use-cases/status/*, application/jobs/*
+// Called by: application/use-cases/alerts/*, application/use-cases/status/*, application/use-cases/blocklists/*, application/jobs/*
 export interface LapiAlertsParams {
   origin?: string;
   scenario?: string;
@@ -27,4 +27,7 @@ export interface LapiClient {
   checkAllowlist(ips: string[]): Promise<Array<{ ip: string; allowlist: string | null }>>;
   /** Allowlist entries for lookup checks. */
   fetchAllowlistEntries(): Promise<string[]>;
+  /** Bouncer-key reachability probe (legacy crowdSecAPI surface). */
+  checkBouncerConnection(): Promise<void>;
+  isBouncerConnected(): boolean;
 }

@@ -26,6 +26,14 @@ export class HttpLapiClient implements LapiClient {
     return this.api.getLastLapiConnected();
   }
 
+  checkBouncerConnection(): Promise<void> {
+    return this.api.checkBouncerConnection();
+  }
+
+  isBouncerConnected(): boolean {
+    return this.api.isBouncerConnected();
+  }
+
   async getAlerts(params?: LapiAlertsParams): Promise<CrowdSecAlert[]> {
     return this.api.alerts.getAlerts(params ?? {});
   }

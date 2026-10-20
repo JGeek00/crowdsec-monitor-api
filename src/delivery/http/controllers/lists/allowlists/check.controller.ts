@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 /**
  * Check if IPs are in any allowlist

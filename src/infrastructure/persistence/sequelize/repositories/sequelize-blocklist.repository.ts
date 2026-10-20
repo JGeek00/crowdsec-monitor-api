@@ -6,7 +6,7 @@ import {
   BLOCKLISTS_COUNT_API_IPS_ATTRIBUTE,
   BLOCKLISTS_COUNT_CS_IPS_ATTRIBUTE,
   BLOCKLISTS_IPS_INCLUDE_OPTION,
-} from '@/application/use-cases/blocklists/blocklists-db-queries';
+} from '@/infrastructure/persistence/sequelize/blocklist-db-queries';
 import type { Blocklist } from '@/domain/entities/blocklist.entity';
 import type { BlocklistIp } from '@/domain/entities/blocklist-ip.entity';
 import type { CsBlocklist } from '@/domain/entities/cs-blocklist.entity';

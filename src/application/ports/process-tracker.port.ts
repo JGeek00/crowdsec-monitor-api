@@ -6,14 +6,20 @@ export interface ProcessStep {
 }
 
 // Implemented by: infrastructure/status/memory-process-tracker.ts
-// Called by: application/use-cases/blocklists/*, application/jobs/refresh-blocklists.job.ts
+// Called by: application/use-cases/blocklists/*, application/jobs/refresh-blocklists.job
+// Note: the fetch/parse/import step marks are still driven by the infra
+// refresh pipeline directly; they move behind this port when the
+// orchestration is rewritten (feature Log debt (a)).
 export interface ProcessTrackerPort {
-  start(kind: string, payload: Record<string, unknown>): string;
-  markFetched(processId: string, ok: boolean, detail?: string | null): void;
-  markParsed(processId: string, ok: boolean, detail?: string | null): void;
-  addImportedIps(processId: string, count: number): void;
-  markComplete(processId: string, ok: boolean, detail?: string | null): void;
-  completeProcess(processId: string): void;
-  getSnapshot(): unknown[];
+  createBlocklistImportProcess(blocklistId: number, blocklistName: string): string;
+  createBlocklistEnableProcess(blocklistId: number, blocklistName: string): string;
+  createBlocklistSingleRefreshProcess(blocklistId: number, blocklistName: string): string;
+  createBlocklistDisableProcess(blocklistIps: number, blocklistId: number, blocklistName: string): string;
+  createBlocklistDeleteProcess(blocklistIps: number, blocklistId: number, blocklistName: string): string;
+  createBlocklistRefreshProcess(blocklists: { number: number; name: string }[]): string;
+  completeProcess(id: string, successful: boolean, error?: string | null): void;
+  getProcessesSnapshot(): unknown[];
+  isBlocklistBusy(blocklistId: number): boolean;
   isSyncingBlocklists(): boolean;
+  isAnyBlocklistProcessRunning(): boolean;
 }

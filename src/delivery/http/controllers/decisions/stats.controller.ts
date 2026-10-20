@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { createRequestSignal } from '@/utils/request-signal';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 import type { GetDecisionsStatsResponse, ResponseWithError } from '@/models';
 
 /**

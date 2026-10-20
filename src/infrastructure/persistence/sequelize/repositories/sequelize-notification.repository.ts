@@ -58,4 +58,18 @@ export class SequelizeNotificationRepository implements NotificationRepositoryPo
     const row = await NotificationChannelsTable.create(input as UserNotificationChannel);
     return row.toJSON() as UserNotificationChannel;
   }
+
+  async findChannelIdsByIds(ids: number[]): Promise<number[]> {
+    if (ids.length === 0) return [];
+    const rows = await NotificationChannelsTable.findAll({ where: { id: ids } as never });
+    return rows.map((row) => row.get({ plain: true }).id as number);
+  }
+
+  async findNotificationsUsingChannel(channelId: number): Promise<number[]> {
+    const all = await NotificationsTable.findAll();
+    return all
+      .map((row) => row.get({ plain: true }) as UserNotification)
+      .filter((n) => (n.channelIds ?? []).includes(channelId))
+      .map((n) => n.id);
+  }
 }

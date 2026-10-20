@@ -1,18 +1,25 @@
 import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
-import { log } from '@/infrastructure/system/logger';
-import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
-import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
+import type { Logger } from '@/application/ports/logger.port';
+import type { ProcessTrackerPort } from '@/application/ports/process-tracker.port';
+import type { BlocklistOpsPort } from '@/application/ports/blocklist-ops.port';
 import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
 
 // Called by: delivery/http controllers (blocklists delete endpoint)
 export class DeleteBlocklistUseCase {
-  constructor(private readonly deps: { blocklistRepository: BlocklistRepository }) {}
+  constructor(
+    private readonly deps: {
+      blocklistRepository: BlocklistRepository;
+      tracker: ProcessTrackerPort;
+      ops: BlocklistOpsPort;
+      logger: Logger;
+    },
+  ) {}
 
   async execute(id: number): Promise<void> {
-    const { blocklistRepository } = this.deps;
+    const { blocklistRepository, tracker, ops, logger } = this.deps;
 
-    if (statusBlocklistService.isSyncingBlocklists()) {
+    if (tracker.isSyncingBlocklists()) {
       throw new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.');
     }
 
@@ -21,23 +28,23 @@ export class DeleteBlocklistUseCase {
       throw new NotFoundError('BlocklistsTable not found');
     }
 
-    if (statusBlocklistService.isBlocklistBusy(blocklist.id)) {
+    if (tracker.isBlocklistBusy(blocklist.id)) {
       throw new ConflictError(
         'A process is already running for this blocklist. Wait for it to complete before performing another action.',
       );
     }
 
     const totalIps = (await blocklistRepository.getIps(blocklist.id)).length;
-    const processId = statusBlocklistService.createBlocklistDeleteProcess(totalIps, blocklist.id, blocklist.name);
+    const processId = tracker.createBlocklistDeleteProcess(totalIps, blocklist.id, blocklist.name);
 
     await blocklistRepository.deleteById(blocklist.id);
 
-    void blocklistOpsService
-      .deleteBlocklistAlerts(blocklist as never, processId, PROCESS_FIELD_BLOCKLIST_OPS.DELETE)
-      .then(() => statusBlocklistService.completeProcess(processId, true))
+    void ops
+      .deleteBlocklistAlerts(blocklist, processId, PROCESS_FIELD_BLOCKLIST_OPS.DELETE)
+      .then(() => tracker.completeProcess(processId, true))
       .catch((err: unknown) => {
-        statusBlocklistService.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        log.error(`Error deleting blocklist alerts "${blocklist.name}":`, err);
+        tracker.completeProcess(processId, false, err instanceof Error ? err.message : null);
+        logger.error(`Error deleting blocklist alerts "${blocklist.name}":`, err);
       });
   }
 }

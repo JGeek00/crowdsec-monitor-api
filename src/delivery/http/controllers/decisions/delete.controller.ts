@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { container } from '@/application/container';
+import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { NotFoundError } from '@/domain/errors';

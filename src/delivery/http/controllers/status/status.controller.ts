@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { StatusSnapshot } from '@/models';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 export const getStatus = async (_: Request, res: Response<StatusSnapshot>) => {
   try {

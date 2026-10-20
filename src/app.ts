@@ -13,9 +13,7 @@ import { statusService } from '@/infrastructure/status/monitor-status-store';
 import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
 import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 import { log } from '@/infrastructure/system/logger';
-import { syncAlertsUseCase } from '@/application/use-cases/alerts/sync-alerts.usecase';
-import { checkVersionUseCase } from '@/application/use-cases/status/version-check.usecase';
-import { syncCsBlocklistsUseCase } from '@/application/use-cases/blocklists/sync-cs-blocklists.usecase';
+import { container } from '@/container';
 import {
   buildLapiHealthJob,
   buildSyncAlertsJob,
@@ -48,7 +46,7 @@ export const buildJobRegistry = (): JobRegistryLike => {
       statusService.updateLapiStatus(connected, lastSuccessfulSync);
     },
   };
-  const syncAlerts = syncAlertsUseCase;
+  const syncAlerts = container.useCases.alerts.syncAlerts;
 
   return new JobRegistry([
     {
@@ -59,7 +57,7 @@ export const buildJobRegistry = (): JobRegistryLike => {
       ...buildSyncAlertsJob({ syncAlerts, lapiClient: crowdSecAPI, statusStore }),
       everySeconds: config.sync.intervalSeconds,
     },
-    buildVersionCheckJob({ checkVersion: checkVersionUseCase }),
+    buildVersionCheckJob({ checkVersion: container.useCases.status.checkVersion }),
     {
       ...buildRefreshBlocklistsJob({
         tracker: statusBlocklistService,
@@ -69,7 +67,7 @@ export const buildJobRegistry = (): JobRegistryLike => {
       everySeconds: config.blocklists.refreshTimeSeconds,
     },
     {
-      ...buildSyncCsBlocklistsJob({ syncCsBlocklists: syncCsBlocklistsUseCase }),
+      ...buildSyncCsBlocklistsJob({ syncCsBlocklists: container.useCases.blocklists.syncCsBlocklists }),
       everySeconds: config.crowdsecBlocklists.refreshTimeSeconds,
     },
   ]);

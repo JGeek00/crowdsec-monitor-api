@@ -4,6 +4,7 @@ import { NotificationChannelsTable } from '@/models';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { findNotificationsUsingChannel } from '@/application/use-cases/notifications/channel-refs';
 import { errorResponse } from '@/utils/error-response';
+import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<DeleteChannelResponse>;
@@ -15,7 +16,7 @@ export async function deleteChannel(req: Request<ChannelIdParams>, res: Response
       res.status(404).json(errorResponse('Not found', 'Channel not found'));
       return;
     }
-    const usedBy = await findNotificationsUsingChannel(row.id);
+    const usedBy = await findNotificationsUsingChannel(container.repositories.notificationRepository, row.id);
     if (usedBy.length > 0) {
       res
         .status(409)

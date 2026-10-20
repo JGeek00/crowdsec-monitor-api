@@ -9,7 +9,11 @@ import {
 } from '@/delivery/http/schemas/notification.validator';
 import { validationResult } from 'express-validator';
 
-async function runBody(validators: { run: (req: unknown) => Promise<void> }[] | unknown[], body: Record<string, unknown>, params: Record<string, unknown> = {}) {
+async function runBody(
+  validators: { run: (req: unknown) => Promise<void> }[] | unknown[],
+  body: Record<string, unknown>,
+  params: Record<string, unknown> = {},
+) {
   const req = { body, params } as unknown as Record<string, unknown>;
   for (const validator of validators as { run: (req: unknown) => Promise<void> }[]) {
     await validator.run(req);

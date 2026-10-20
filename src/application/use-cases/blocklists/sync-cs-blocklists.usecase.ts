@@ -1,18 +1,18 @@
-import { csBlocklistSyncService } from '@/infrastructure/sync/cs-blocklists-sync';
+import type { CsBlocklistSyncPort } from '@/application/ports/cs-blocklist-sync.port';
 
 /**
  * Syncs CrowdSec-managed blocklists (alerts with origin=lists → cs_blocklists
  * table + their IPs) into the local DB.
  *
- * Strangler note: the pipeline still lives in the legacy cs-blocklists-sync
- * service; the application-facing entry point is port-shaped for jobs and
- * controllers (debt (a) in the feature Log — ports land with T15).
+ * Strangler note: the pipeline still lives in the infrastructure cs-blocklists
+ * sync service behind the CsBlocklistSyncPort; the orchestration rewrite moves
+ * it fully into this layer (debt (a) in the feature Log).
  */
 // Called by: application/jobs/sync-cs-blocklists.job
 export class SyncCsBlocklistsUseCase {
-  execute(): Promise<unknown> {
-    return csBlocklistSyncService.syncCsBlocklists();
+  constructor(private readonly deps: { csBlocklistSync: CsBlocklistSyncPort }) {}
+
+  execute(): Promise<{ synced: number; ips: number; errors: number }> {
+    return this.deps.csBlocklistSync.syncCsBlocklists();
   }
 }
-
-export const syncCsBlocklistsUseCase = new SyncCsBlocklistsUseCase();

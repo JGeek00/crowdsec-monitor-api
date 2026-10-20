@@ -69,7 +69,9 @@ describe('alert-info-body helper', () => {
     const html = buildAlertInfoHtml([makeSnapshot()]);
     expect(html).toContain('<h2>Alert #2741</h2>');
     expect(html).toContain('<h1>Summary</h1>');
-    expect(plain(html)).toContain(`<td>Declared at</td>\n      <td>${formatDeclaredAt(makeSnapshot().declaredAt)}</td>`);
+    expect(plain(html)).toContain(
+      `<td>Declared at</td>\n      <td>${formatDeclaredAt(makeSnapshot().declaredAt)}</td>`,
+    );
     expect(plain(html)).toContain('<td>Scenary</td>\n      <td>crowdsecurity/ssh-bf</td>');
     expect(plain(html)).toContain('<td>Country</td>\n      <td>🇪🇸</td>');
     expect(plain(html)).toContain('<td>Target</td>\n      <td>1.2.3.4</td>');
@@ -93,9 +95,7 @@ describe('alert-info-body helper', () => {
   });
 
   it('shows N/A for missing country and IP owner', () => {
-    const html = buildAlertInfoHtml([
-      makeSnapshot({ source: { ip: '1.2.3.4', value: '1.2.3.4', scope: 'Ip' } }),
-    ]);
+    const html = buildAlertInfoHtml([makeSnapshot({ source: { ip: '1.2.3.4', value: '1.2.3.4', scope: 'Ip' } })]);
     expect(plain(html)).toContain('<td>Country</td>\n      <td>N/A</td>');
     expect(plain(html)).toContain('<td>IP Owner</td>\n      <td>N/A</td>');
     expect(plain(html)).toContain('<td>Countries</td>\n      <td>N/A</td>');

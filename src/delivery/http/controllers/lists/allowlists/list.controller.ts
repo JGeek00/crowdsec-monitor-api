@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import type { GetAllowlistsResponse, ResponseWithError } from '@/models';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 /**
  * Get all allowlists from CrowdSec LAPI

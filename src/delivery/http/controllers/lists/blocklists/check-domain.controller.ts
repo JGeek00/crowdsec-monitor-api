@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 /**
  * Resolve DNS for a domain using the configured DNS server and check if any

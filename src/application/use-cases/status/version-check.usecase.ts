@@ -1,12 +1,16 @@
-import { versionCheckerService } from '@/infrastructure/system/version-checker';
-import { statusService } from '@/infrastructure/status/monitor-status-store';
+import type { VersionCheckerPort } from '@/application/ports/version-checker.port';
 
 // Called by: application/jobs/version-check.job
 export class CheckVersionUseCase {
+  constructor(
+    private readonly deps: {
+      versionChecker: VersionCheckerPort;
+      statusStore: { updateVersionInfo(latestVersion: string | null): void };
+    },
+  ) {}
+
   async execute(): Promise<void> {
-    await versionCheckerService.checkForNewVersion();
-    statusService.updateVersionInfo(versionCheckerService.getLatestVersion());
+    await this.deps.versionChecker.checkForNewVersion();
+    this.deps.statusStore.updateVersionInfo(this.deps.versionChecker.getLatestVersion());
   }
 }
-
-export const checkVersionUseCase = new CheckVersionUseCase();

@@ -54,9 +54,7 @@ describe('e2e notification channels', () => {
     });
     expect(noName.status).toBe(400);
 
-    const badType = await app.request
-      .post('/api/v1/notification-channels')
-      .send(makeChannelPayload({ type: 'sms' }));
+    const badType = await app.request.post('/api/v1/notification-channels').send(makeChannelPayload({ type: 'sms' }));
     expect(badType.status).toBe(400);
 
     const noConfig = await app.request.post('/api/v1/notification-channels').send({ name: 'x', type: 'email' });
@@ -77,7 +75,9 @@ describe('e2e notification channels', () => {
 
     const tokenWithBasic = await app.request
       .post('/api/v1/notification-channels')
-      .send(makeChannelPayload({ type: 'ntfy', config: { topic: 'ok', username: 'u', password: 'p', accessToken: 't' } }));
+      .send(
+        makeChannelPayload({ type: 'ntfy', config: { topic: 'ok', username: 'u', password: 'p', accessToken: 't' } }),
+      );
     expect(tokenWithBasic.status).toBe(400);
   });
 
@@ -131,15 +131,13 @@ describe('e2e notification channels', () => {
   });
 
   it('POST /:id/test sends a test message and returns the result', async () => {
-    const created = await app.request
-      .post('/api/v1/notification-channels')
-      .send(
-        makeChannelPayload({
-          name: 'dead ntfy',
-          type: 'ntfy',
-          config: { server: 'http://127.0.0.1:1', topic: 'test-topic' },
-        }),
-      );
+    const created = await app.request.post('/api/v1/notification-channels').send(
+      makeChannelPayload({
+        name: 'dead ntfy',
+        type: 'ntfy',
+        config: { server: 'http://127.0.0.1:1', topic: 'test-topic' },
+      }),
+    );
     const id = String(created.body.data.id);
     const res = await app.request.post(`/api/v1/notification-channels/${id}/test`).send({ message: 'ping' });
     expect(res.status).toBe(200);
@@ -169,9 +167,7 @@ describe('e2e notification channels', () => {
   });
 
   it('POST /test returns 400 for bad type or config', async () => {
-    const badType = await app.request
-      .post('/api/v1/notification-channels/test')
-      .send({ type: 'sms', config: {} });
+    const badType = await app.request.post('/api/v1/notification-channels/test').send({ type: 'sms', config: {} });
     expect(badType.status).toBe(400);
 
     const badConfig = await app.request

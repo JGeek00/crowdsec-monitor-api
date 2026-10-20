@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   mockExecute: vi.fn(),
 }));
 
-vi.mock('@/application/container', () => ({
+vi.mock('@/container', () => ({
   container: {
     useCases: {
       blocklists: { createBlocklist: { execute: mocks.mockExecute } },
@@ -15,12 +15,7 @@ vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn(), warn: 
 
 import { Request, Response } from 'express';
 import { createBlocklist } from '@/delivery/http/controllers/lists/blocklists/create.controller';
-import {
-  ValidationError,
-  ConflictError,
-  ServiceUnavailableError,
-  UpstreamUnavailableError,
-} from '@/domain/errors';
+import { ValidationError, ConflictError, ServiceUnavailableError, UpstreamUnavailableError } from '@/domain/errors';
 
 describe('createBlocklist', () => {
   let req: Partial<Request>;

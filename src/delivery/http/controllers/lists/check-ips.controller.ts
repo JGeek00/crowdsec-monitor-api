@@ -4,7 +4,7 @@ import { isIpv4 } from '@/shared/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
 import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
-import { container } from '@/application/container';
+import { container } from '@/container';
 
 /**
  * Check if IPs are in any list (blocklist or allowlist)

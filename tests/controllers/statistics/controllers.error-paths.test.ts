@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   getTargetHistory: vi.fn(),
 }));
 
-vi.mock('@/application/container', () => ({
+vi.mock('@/container', () => ({
   container: {
     useCases: {
       statistics: {

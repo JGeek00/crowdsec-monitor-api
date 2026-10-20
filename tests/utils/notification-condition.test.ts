@@ -40,9 +40,7 @@ describe('evaluateCondition', () => {
       ],
     } as const;
     expect(evaluateCondition(baseAlert, condition)).toBe(true);
-    expect(
-      evaluateCondition({ ...baseAlert, source: { ...baseAlert.source, cn: 'FR' } }, condition),
-    ).toBe(false);
+    expect(evaluateCondition({ ...baseAlert, source: { ...baseAlert.source, cn: 'FR' } }, condition)).toBe(false);
   });
 
   it('supports not nodes', () => {
@@ -55,9 +53,9 @@ describe('evaluateCondition', () => {
   });
 
   it('reads every field (target, origin, type, scope)', () => {
-    expect(
-      evaluateCondition(baseAlert, { type: 'leaf', field: 'target', operator: 'equals', value: '1.2.3.4' }),
-    ).toBe(true);
+    expect(evaluateCondition(baseAlert, { type: 'leaf', field: 'target', operator: 'equals', value: '1.2.3.4' })).toBe(
+      true,
+    );
     expect(evaluateCondition(baseAlert, { type: 'leaf', field: 'origin', operator: 'equals', value: 'crowdsec' })).toBe(
       true,
     );
@@ -103,7 +101,10 @@ describe('isValidCondition', () => {
     expect(isValidCondition({ type: 'leaf', field: 'country', operator: 'in', value: ['ES', 'FR'] })).toBe(true);
     expect(isValidCondition({ type: 'leaf', field: 'ipOwner', operator: 'contains', value: 'amazon' })).toBe(true);
     expect(
-      isValidCondition({ type: 'and', children: [{ type: 'leaf', field: 'scenario', operator: 'equals', value: 'x' }] }),
+      isValidCondition({
+        type: 'and',
+        children: [{ type: 'leaf', field: 'scenario', operator: 'equals', value: 'x' }],
+      }),
     ).toBe(true);
     expect(
       isValidCondition({
@@ -123,10 +124,12 @@ describe('isValidCondition', () => {
     expect(isValidCondition({ type: 'leaf', field: 'scenario', operator: 'equals', value: 42 })).toBe(false);
     expect(isValidCondition({ type: 'leaf', field: 'scenario', operator: 'in', value: [] })).toBe(false);
     expect(isValidCondition({ type: 'leaf', field: 'scenario', operator: 'in', value: [42] })).toBe(false);
-    expect(isValidCondition({ type: 'or', children: Array.from({ length: 21 }, () => ({ type: 'leaf' })) })).toBe(false);
-    expect(
-      isValidCondition({ type: 'and', children: Array.from({ length: 21 }, () => ({ type: 'leaf' })) }),
-    ).toBe(false);
+    expect(isValidCondition({ type: 'or', children: Array.from({ length: 21 }, () => ({ type: 'leaf' })) })).toBe(
+      false,
+    );
+    expect(isValidCondition({ type: 'and', children: Array.from({ length: 21 }, () => ({ type: 'leaf' })) })).toBe(
+      false,
+    );
     expect(isValidCondition({ type: 'not', child: null })).toBe(false);
     expect(isValidCondition({ type: 'not' })).toBe(false);
   });
