@@ -1,7 +1,7 @@
 import { config } from '@/config';
 import { CrowdSecDecision } from '@/types/crowdsec.types';
-import { CrowdSecBaseClient } from './base-client.service';
-import { AlertsService } from './alerts.service';
+import { CrowdSecBaseClient } from './base-client';
+import { AlertsService } from './alerts';
 
 export class DecisionsService {
   constructor(

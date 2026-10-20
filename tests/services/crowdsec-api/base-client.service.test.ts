@@ -29,7 +29,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('login succeeds with valid token response', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.post).mockResolvedValue({
       data: { token: 'test-token', expire: new Date(Date.now() + 3600000).toISOString() },
@@ -40,7 +40,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('login returns false when no token', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.post).mockResolvedValue({
       data: { expire: new Date().toISOString() },
@@ -51,7 +51,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('login returns false on error', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.post).mockRejectedValue(new Error('boom'));
 
@@ -60,13 +60,13 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('isTokenValid returns false without token', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     expect(client.isTokenValid()).toBe(false);
   });
 
   it('isTokenValid returns true for valid token', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     (client as any).token = 'valid';
     (client as any).tokenExpiration = new Date(Date.now() + 3600000);
@@ -74,7 +74,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('ensureAuthenticated returns cached promise for concurrent calls', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     (client as any).token = 'expired';
     (client as any).tokenExpiration = new Date(Date.now() - 1000);
@@ -89,7 +89,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('testConnection returns false when login fails', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.post).mockRejectedValue(new Error('boom'));
 
@@ -98,7 +98,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('checkStatus returns false when not authenticated', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.post).mockRejectedValue(new Error('boom'));
 
@@ -107,7 +107,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('checkBouncerConnection sets bouncerConnected on success', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.get).mockResolvedValue({ data: [] });
 
@@ -116,7 +116,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('checkBouncerConnection sets bouncerConnected false on error', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     vi.mocked(client.client.get).mockRejectedValue(new Error('timeout'));
 
@@ -125,7 +125,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('handleError handles different error types', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
 
     client.handleError({ isAxiosError: true, response: { status: 401, data: 'unauthorized' } }, 'testing');
@@ -134,7 +134,7 @@ describe('CrowdSecBaseClient', () => {
   });
 
   it('setBouncerConnected updates the flag', async () => {
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const client = new CrowdSecBaseClient();
     client.setBouncerConnected(true);
     expect(client.isBouncerConnected()).toBe(true);

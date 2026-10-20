@@ -1,5 +1,5 @@
 import { CrowdSecAllowlist, CrowdSecAllowlistCheckResponse } from '@/types/crowdsec.types';
-import { CrowdSecBaseClient } from './base-client.service';
+import { CrowdSecBaseClient } from './base-client';
 
 export class AllowlistsService {
   constructor(private readonly base: CrowdSecBaseClient) {}

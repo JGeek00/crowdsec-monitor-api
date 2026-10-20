@@ -1,5 +1,5 @@
 import { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
-import { CrowdSecBaseClient } from './base-client.service';
+import { CrowdSecBaseClient } from './base-client';
 
 export class AlertsService {
   constructor(private readonly base: CrowdSecBaseClient) {}

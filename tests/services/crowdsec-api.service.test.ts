@@ -28,7 +28,7 @@ const mockClient = {
   interceptors: { request: { use: vi.fn(), eject: vi.fn() }, response: { use: vi.fn(), eject: vi.fn() } },
 };
 
-vi.mock('@/services/crowdsec-api/base-client.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => ({
   CrowdSecBaseClient: vi.fn().mockImplementation(function () {
     return {
       client: mockClient,

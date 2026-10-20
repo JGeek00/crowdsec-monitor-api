@@ -20,7 +20,7 @@ vi.mock('@/services/status.service', () => ({
   },
 }));
 
-vi.mock('@/services/crowdsec-api/base-client.service', () => {
+vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
   const MockBaseClient = vi.fn().mockImplementation(function () {
     return {
       client: {

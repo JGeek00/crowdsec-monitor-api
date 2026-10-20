@@ -7,7 +7,7 @@ const mockClient = {
   post: vi.fn(),
 };
 
-vi.mock('@/services/crowdsec-api/base-client.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => ({
   CrowdSecBaseClient: vi.fn().mockImplementation(function () {
     return {
       client: mockClient,
@@ -26,8 +26,8 @@ describe('AllowlistsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockResolvedValue({ data: [{ name: 'al-1', items: [{ value: '1.2.3.4' }] }] });
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.getAllowlists();
@@ -38,8 +38,8 @@ describe('AllowlistsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockRejectedValue(new Error('timeout'));
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.getAllowlists();
@@ -55,8 +55,8 @@ describe('AllowlistsService', () => {
       ],
     });
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.getAllowlistByName('al-1');
@@ -67,8 +67,8 @@ describe('AllowlistsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockResolvedValue({ data: [{ name: 'al-1', items: [] }] });
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.getAllowlistByName('nope');
@@ -86,8 +86,8 @@ describe('AllowlistsService', () => {
       },
     });
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.checkAllowlist(['1.2.3.4', '5.5.5.5']);
@@ -99,8 +99,8 @@ describe('AllowlistsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.post.mockRejectedValue(new Error('timeout'));
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.checkAllowlist(['1.2.3.4']);
@@ -111,8 +111,8 @@ describe('AllowlistsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockRejectedValue(new Error('timeout'));
 
-    const { AllowlistsService } = await import('@/services/crowdsec-api/allowlists.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AllowlistsService } = await import('@/infrastructure/crowdsec/lapi/allowlists');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AllowlistsService(new CrowdSecBaseClient());
 
     const result = await service.getAllowlistByName('any');

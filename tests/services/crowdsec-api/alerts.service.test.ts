@@ -8,7 +8,7 @@ const mockClient = {
   delete: vi.fn(),
 };
 
-vi.mock('@/services/crowdsec-api/base-client.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => ({
   CrowdSecBaseClient: vi.fn().mockImplementation(function () {
     return {
       client: mockClient,
@@ -27,8 +27,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockResolvedValue({ data: [{ id: 1 }] });
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     const result = await service.getAlerts({ origin: 'crowdsec' });
@@ -39,8 +39,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockRejectedValue(new Error('timeout'));
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     const result = await service.getAlerts();
@@ -51,8 +51,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockRejectedValue(new Error('timeout'));
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     const result = await service.getAlertById(1);
@@ -63,8 +63,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockResolvedValue({ data: { id: 1 } });
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     const result = await service.getAlertById(1);
@@ -75,8 +75,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.post.mockResolvedValue({ data: ['id1'] });
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     const result = await service.createAlerts([{} as any]);
@@ -87,8 +87,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.post.mockRejectedValue(new Error('fail'));
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     await expect(service.createAlerts([{} as any])).rejects.toThrow();
@@ -98,8 +98,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.delete.mockResolvedValue({ data: { nbDeleted: '2' } });
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     const result = await service.deleteAlert(1);
@@ -110,8 +110,8 @@ describe('AlertsService', () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.delete.mockRejectedValue(new Error('fail'));
 
-    const { AlertsService } = await import('@/services/crowdsec-api/alerts.service');
-    const { CrowdSecBaseClient } = await import('@/services/crowdsec-api/base-client.service');
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
     const service = new AlertsService(new CrowdSecBaseClient());
 
     await expect(service.deleteAlert(1)).rejects.toThrow();

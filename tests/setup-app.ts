@@ -44,7 +44,7 @@ vi.mock('@/config/database', () => {
 });
 
 // ponytail: mock base-client so CS API calls return empty arrays without network
-vi.mock('@/services/crowdsec-api/base-client.service', () => {
+vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
   // NOTE: la implementación debe ser una función normal (no arrow) porque
   // vitest 5 lanza "is not a constructor" al hacer `new` sobre una arrow.
   const MockBaseClient = vi.fn(function MockBaseClient(this: unknown) {
