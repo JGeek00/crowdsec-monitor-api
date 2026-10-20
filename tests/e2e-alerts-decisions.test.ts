@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeAlert, makeDecision } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeAlert, makeDecision } from '@tests/setup/factories';
 
 describe('e2e alerts and decisions', () => {
   let app: TestApp;

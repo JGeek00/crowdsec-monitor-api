@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeAlert } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeAlert } from '@tests/setup/factories';
 
 describe('getTopTargets', () => {
   let app: TestApp;

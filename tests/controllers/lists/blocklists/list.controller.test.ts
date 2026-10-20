@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeBlocklist, makeCsBlocklist } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeBlocklist, makeCsBlocklist } from '@tests/setup/factories';
 
 describe('getBlocklists', () => {
   let app: TestApp;

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
 
 vi.mock('@/infrastructure/status/monitor-status-store', () => ({
   statusService: {

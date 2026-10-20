@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeAlert, makeDecision } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeAlert, makeDecision } from '@tests/setup/factories';
 import {
   NAMED_ABBREVIATION,
   NAMED_ABBREVIATION_CANONICAL,
   DUPLICATED_OFFSET,
   DUPLICATED_OFFSET_CANONICAL,
   UNPARSEABLE,
-} from '@tests/helpers/timestamp-fixtures';
+} from '@tests/setup/timestamp-fixtures';
 
 describe('getAlertById', () => {
   let app: TestApp;

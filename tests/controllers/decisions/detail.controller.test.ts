@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeDecision, makeAlert } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeDecision, makeAlert } from '@tests/setup/factories';
 
 const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 

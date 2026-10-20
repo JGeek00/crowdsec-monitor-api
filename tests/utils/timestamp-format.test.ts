@@ -25,7 +25,7 @@ import {
   ISO_WITH_OFFSET_CANONICAL,
   ISO_UTC,
   ISO_UTC_CANONICAL,
-} from '@tests/helpers/timestamp-fixtures';
+} from '@tests/setup/timestamp-fixtures';
 
 const RFC3339_UTC_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
 
 describe('AuthMiddleware integration', () => {
   let app: TestApp;

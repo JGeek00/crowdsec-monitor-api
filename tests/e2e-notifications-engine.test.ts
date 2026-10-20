@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach, vi } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeAlert, makeChannelPayload, makeNotificationPayload } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeAlert, makeChannelPayload, makeNotificationPayload } from '@tests/setup/factories';
 import { AlertsTable } from '@/infrastructure/persistence/sequelize/models';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { notificationHistoryService } from '@/infrastructure/notifications/history';

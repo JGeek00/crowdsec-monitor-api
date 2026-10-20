@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
 
 describe('deleteAlert', () => {
   let app: TestApp;

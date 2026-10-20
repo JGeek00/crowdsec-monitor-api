@@ -43,7 +43,7 @@ import {
   DUPLICATED_OFFSET,
   DUPLICATED_OFFSET_CANONICAL,
   UNPARSEABLE,
-} from '@tests/helpers/timestamp-fixtures';
+} from '@tests/setup/timestamp-fixtures';
 
 describe('AlertsSyncService', () => {
   afterEach(() => {

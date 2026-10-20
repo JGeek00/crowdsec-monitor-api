@@ -14,8 +14,8 @@ vi.mock('@/infrastructure/status/memory-process-tracker', async (importOriginal)
   };
 });
 
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeBlocklist, makeBlocklistIp } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeBlocklist, makeBlocklistIp } from '@tests/setup/factories';
 
 describe('e2e blocklists', () => {
   let app: TestApp;

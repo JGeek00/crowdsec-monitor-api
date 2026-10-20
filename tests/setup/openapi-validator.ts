@@ -9,7 +9,7 @@ const ajv = new Ajv({ strict: false });
 
 async function loadSpec(): Promise<OpenAPIV3.Document> {
   if (!spec) {
-    const specPath = resolve(__dirname, '../../openapi.yaml');
+    const specPath = resolve(__dirname, '../../docs/openapi.yaml');
     spec = (await SwaggerParser.dereference(specPath)) as OpenAPIV3.Document;
   }
   return spec;

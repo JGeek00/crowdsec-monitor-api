@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeAlert } from '@tests/factories';
-import { NAMED_ABBREVIATION, NAMED_ABBREVIATION_CANONICAL } from '@tests/helpers/timestamp-fixtures';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeAlert } from '@tests/setup/factories';
+import { NAMED_ABBREVIATION, NAMED_ABBREVIATION_CANONICAL } from '@tests/setup/timestamp-fixtures';
 
 const CANONICAL_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
 import appDefaults from '@/constants/app-defaults';
-import { setupApp, type TestApp } from '@tests/setup-app';
-import { makeChannelPayload, makeNotificationPayload } from '@tests/factories';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
+import { makeChannelPayload, makeNotificationPayload } from '@tests/setup/factories';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { notificationHistoryService } from '@/infrastructure/notifications/history';
 

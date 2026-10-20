@@ -51,7 +51,7 @@ vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
   return { CrowdSecBaseClient: MockBaseClient };
 });
 
-import { setupApp, type TestApp } from '@tests/setup-app';
+import { setupApp, type TestApp } from '@tests/setup/setup-app';
 import type { WebSocketApp } from '@/delivery/websocket/gateway';
 
 // NOTE: vitest 5 no comparte las factories de vi.mock con la cadena de imports
