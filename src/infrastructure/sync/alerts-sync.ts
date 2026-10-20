@@ -1,12 +1,12 @@
 import { Op } from '@sequelize/core';
 import { Alert, AlertsTable, Decision, DecisionsTable, UnparsedMetaData } from '@/models';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
 import { toCanonicalTimestamp } from '@/utils/timestamp-format';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
-import { log } from '@/services/log.service';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
+import { log } from '@/infrastructure/system/logger';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
 
 class AlertsSyncService {
   private lastSuccessfulSync: Date | null = null;

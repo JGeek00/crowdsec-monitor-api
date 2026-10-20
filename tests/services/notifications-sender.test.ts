@@ -11,7 +11,7 @@ import {
   dispatchChannels,
   registerNotificationChannel,
   supportedNotificationChannels,
-} from '@/services/notifications/notification-sender.service';
+} from '@/infrastructure/notifications/sender';
 
 beforeEach(() => {
   sendMailMock.mockReset().mockResolvedValue({ messageId: 'test-id' });

@@ -3,7 +3,7 @@ import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
 import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
 import { resolveIps } from '@/utils/dns-resolve';
 import { config } from '@/config';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { PostCheckDomainBody, PostCheckDomainResponse, PostCheckDomainResponse_IP, ResponseWithError } from '@/models';
 

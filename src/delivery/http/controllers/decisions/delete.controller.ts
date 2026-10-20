@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '@/application/container';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { NotFoundError } from '@/domain/errors';
 import type { DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/models';

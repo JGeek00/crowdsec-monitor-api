@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { ChannelIdParams, DeleteChannelResponse, ResponseWithError } from '@/models';
 import { NotificationChannelsTable } from '@/models';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
-import { findNotificationsUsingChannel } from '@/helpers/notifications/channel-refs.helper';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
+import { findNotificationsUsingChannel } from '@/application/use-cases/notifications/channel-refs';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<DeleteChannelResponse>;
 

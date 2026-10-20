@@ -1,4 +1,4 @@
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 /**
  * Canonical timestamp format: RFC 3339 UTC — `2026-09-27T10:40:36Z` — second

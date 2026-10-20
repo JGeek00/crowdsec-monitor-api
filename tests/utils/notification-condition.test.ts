@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateCondition, isValidCondition, matchOperator } from '@/utils/notification-condition';
+import { evaluateCondition, isValidCondition, matchOperator } from '@/domain/value-objects/notification-condition';
 
 const baseAlert = {
   scenario: 'crowdsecurity/http-probing',

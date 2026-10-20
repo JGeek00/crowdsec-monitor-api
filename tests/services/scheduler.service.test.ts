@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
@@ -14,7 +14,7 @@ describe('SchedulerService', () => {
 
   it('schedules and runs a task on interval', async () => {
     vi.useFakeTimers();
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     const task = vi.fn();
     schedulerService.schedule('test', task, { intervalSeconds: 1 });
     expect(task).not.toHaveBeenCalled();
@@ -25,7 +25,7 @@ describe('SchedulerService', () => {
   });
 
   it('runs immediately when runImmediately is true', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     const task = vi.fn().mockResolvedValue(undefined);
     schedulerService.schedule('immediate', task, { intervalSeconds: 60, runImmediately: true });
     await new Promise(process.nextTick);
@@ -34,7 +34,7 @@ describe('SchedulerService', () => {
   });
 
   it('prevents concurrent task execution', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     let release: () => void;
     const task = vi.fn().mockImplementation(
       () =>
@@ -51,7 +51,7 @@ describe('SchedulerService', () => {
   });
 
   it('stopTask removes the task', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     const task = vi.fn();
     schedulerService.schedule('stop-me', task, { intervalSeconds: 10 });
     expect(schedulerService.isActive('stop-me')).toBe(true);
@@ -60,7 +60,7 @@ describe('SchedulerService', () => {
   });
 
   it('stopAll stops all tasks', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     schedulerService.schedule('a', vi.fn(), { intervalSeconds: 10 });
     schedulerService.schedule('b', vi.fn(), { intervalSeconds: 20 });
     schedulerService.stopAll();
@@ -69,24 +69,24 @@ describe('SchedulerService', () => {
   });
 
   it('isActive returns false for unknown task', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     expect(schedulerService.isActive('nope')).toBe(false);
   });
 
   it('isTaskRunning returns false for unknown task', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     expect(schedulerService.isTaskRunning('nope')).toBe(false);
   });
 
   it('getActiveTaskCount returns correct count', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     schedulerService.schedule('x', vi.fn(), { intervalSeconds: 5 });
     expect(schedulerService.getActiveTaskCount()).toBe(1);
     schedulerService.stopAll();
   });
 
   it('reschedules by stopping existing task with same id', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     const task1 = vi.fn();
     const task2 = vi.fn();
     schedulerService.schedule('dup', task1, { intervalSeconds: 10 });
@@ -97,7 +97,7 @@ describe('SchedulerService', () => {
   });
 
   it('handles task errors gracefully', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     const task = vi.fn().mockRejectedValue(new Error('task failed'));
     schedulerService.schedule('err-task', task, { intervalSeconds: 60, runImmediately: true });
     await new Promise(process.nextTick);
@@ -107,7 +107,7 @@ describe('SchedulerService', () => {
   });
 
   it('stopTask on unknown id does nothing', async () => {
-    const { schedulerService } = await import('@/services/scheduler.service');
+    const { schedulerService } = await import('@/infrastructure/scheduling/interval-scheduler');
     expect(() => schedulerService.stopTask('nonexistent')).not.toThrow();
   });
 });

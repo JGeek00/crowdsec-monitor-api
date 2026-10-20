@@ -11,13 +11,13 @@ vi.mock('@/models', () => ({
   },
 }));
 
-vi.mock('@/services/crowdsec-api.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: {
     alerts: { getAlerts: vi.fn() },
   },
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
@@ -51,7 +51,7 @@ describe('AlertsSyncService', () => {
   });
 
   it('syncAlerts fetches and writes alerts', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       {
         id: 1,
@@ -90,7 +90,7 @@ describe('AlertsSyncService', () => {
     vi.mocked(AlertsTable.findByPk).mockResolvedValue(null);
     vi.mocked(AlertsTable.create).mockResolvedValue({ id: 1 } as any);
 
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncAlerts();
 
     expect(result.synced).toBe(1);
@@ -98,10 +98,10 @@ describe('AlertsSyncService', () => {
   });
 
   it('syncAlerts returns empty counts on fetch error', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockRejectedValue(new Error('network error'));
 
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncAlerts();
 
     expect(result.synced).toBe(0);
@@ -109,7 +109,7 @@ describe('AlertsSyncService', () => {
   });
 
   it('acquireWriteLock serializes operations', async () => {
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const order: number[] = [];
 
     const p1 = alertsSyncService.acquireWriteLock(async () => {
@@ -125,19 +125,19 @@ describe('AlertsSyncService', () => {
   });
 
   it('syncDecisions returns zero counts', async () => {
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncDecisions();
     expect(result).toEqual({ synced: 0, errors: 0 });
   });
 
   it('syncAll delegates to syncAlerts', async () => {
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncAll();
     expect(result).toHaveProperty('alerts');
   });
 
   it('normalizes event timestamps to canonical format before persisting (REQ-007)', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       {
         id: 2,
@@ -170,7 +170,7 @@ describe('AlertsSyncService', () => {
     vi.mocked(AlertsTable.findByPk).mockResolvedValue(null);
     vi.mocked(AlertsTable.create).mockResolvedValue({ id: 2 } as any);
 
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncAlerts();
 
     expect(result.synced).toBe(1);
@@ -182,7 +182,7 @@ describe('AlertsSyncService', () => {
   });
 
   it('canonicalizes event timestamps when updating an existing alert (REQ-007)', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       {
         id: 3,
@@ -211,7 +211,7 @@ describe('AlertsSyncService', () => {
     const updateMock = vi.fn().mockResolvedValue({});
     vi.mocked(AlertsTable.findByPk).mockResolvedValue({ id: 3, update: updateMock } as any);
 
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     await alertsSyncService.syncAlerts();
 
     expect(updateMock).toHaveBeenCalledTimes(1);
@@ -220,7 +220,7 @@ describe('AlertsSyncService', () => {
   });
 
   it('getLastSuccessfulSync returns null initially', async () => {
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     expect(alertsSyncService.getLastSuccessfulSync()).toBeNull();
   });
 
@@ -228,7 +228,7 @@ describe('AlertsSyncService', () => {
     it('skips cleanup when no retention is configured', async () => {
       mockCalculateRetentionCutoff.mockReturnValue(null);
 
-      const { alertsSyncService: svc } = await import('@/services/alerts-sync.service');
+      const { alertsSyncService: svc } = await import('@/infrastructure/sync/alerts-sync');
       const result = await svc.cleanupOldData();
       expect(result).toEqual({ deletedAlerts: 0, deletedDecisions: 0 });
     });
@@ -239,7 +239,7 @@ describe('AlertsSyncService', () => {
       vi.mocked(DecisionsTable.destroy).mockResolvedValue(5);
       vi.mocked(AlertsTable.destroy).mockResolvedValue(3);
 
-      const { alertsSyncService: svc } = await import('@/services/alerts-sync.service');
+      const { alertsSyncService: svc } = await import('@/infrastructure/sync/alerts-sync');
       const result = await svc.cleanupOldData();
       expect(result).toEqual({ deletedAlerts: 3, deletedDecisions: 5 });
       expect(DecisionsTable.destroy).toHaveBeenCalled();
@@ -251,14 +251,14 @@ describe('AlertsSyncService', () => {
       const { DecisionsTable } = await import('@/models');
       vi.mocked(DecisionsTable.destroy).mockRejectedValue(new Error('db error'));
 
-      const { alertsSyncService: svc } = await import('@/services/alerts-sync.service');
+      const { alertsSyncService: svc } = await import('@/infrastructure/sync/alerts-sync');
       const result = await svc.cleanupOldData();
       expect(result).toEqual({ deletedAlerts: 0, deletedDecisions: 0 });
     });
   });
 
   it('syncAlerts updates existing alert when found', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       {
         id: 1,
@@ -297,7 +297,7 @@ describe('AlertsSyncService', () => {
     const mockUpdate = vi.fn();
     vi.mocked(AlertsTable.findByPk).mockResolvedValue({ id: 1, update: mockUpdate } as any);
 
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncAlerts();
 
     expect(result.updated).toBe(1);
@@ -305,7 +305,7 @@ describe('AlertsSyncService', () => {
   });
 
   it('syncAlerts handles individual alert sync error', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       {
         id: 1,
@@ -343,7 +343,7 @@ describe('AlertsSyncService', () => {
     const { AlertsTable } = await import('@/models');
     vi.mocked(AlertsTable.findByPk).mockRejectedValue(new Error('find error'));
 
-    const { alertsSyncService } = await import('@/services/alerts-sync.service');
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
     const result = await alertsSyncService.syncAlerts();
 
     expect(result.errors).toBe(1);

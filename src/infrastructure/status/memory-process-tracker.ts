@@ -1,4 +1,4 @@
-import type { BlocklistRefreshReporter } from '@/helpers/blocklists/blocklists-refresh-pipeline';
+import type { BlocklistRefreshReporter } from '@/infrastructure/sync/blocklists-refresh-pipeline';
 import type {
   Process,
   ProcessBlocklist,
@@ -18,7 +18,7 @@ import {
 } from '@/types/process.types';
 import { config } from '@/config';
 import { toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
-import { type StatusService, statusService } from '@/services/status.service';
+import { type StatusService, statusService } from './monitor-status-store';
 
 const PROCESS_RETENTION_MS = config.processes.finishedRetentionMs;
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
-import packageJson from '../../package.json';
-import { log } from '@/services/log.service';
+import packageJson from '../../../package.json';
+import { log } from '@/infrastructure/system/logger';
 
 interface GitHubRelease {
   tag_name: string;

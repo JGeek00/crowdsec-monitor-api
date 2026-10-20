@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { Migration } from '@/models/db/Migration';
-import { MigrationService } from '@/services/migrations/migration.service';
+import { MigrationService } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration.service';
 import { MigrationTask } from '@/types/migration-task.types';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { config } from '@/config/index';
 import { sequelize } from '@/config/database';
 import { DB_MODE } from '@/types/database.types';

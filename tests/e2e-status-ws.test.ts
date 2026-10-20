@@ -2,7 +2,7 @@ import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest';
 import http from 'http';
 import WebSocket from 'ws';
 
-vi.mock('@/services/status.service', () => ({
+vi.mock('@/infrastructure/status/monitor-status-store', () => ({
   statusService: {
     getCleanSnapshot: vi.fn(function () {
       return {
@@ -61,7 +61,7 @@ describe('e2e status ws', () => {
   let server: http.Server;
   let port: number;
   let webSocketApp: WebSocketApp;
-  let statusService: (typeof import('@/services/status.service'))['statusService'];
+  let statusService: (typeof import('@/infrastructure/status/monitor-status-store'))['statusService'];
 
   beforeAll(async () => {
     app = await setupApp();
@@ -90,7 +90,7 @@ describe('e2e status ws', () => {
 
   it('ws receives snapshot when state changes after connect', async () => {
     ({ webSocketApp } = await import('@/delivery/websocket/gateway'));
-    ({ statusService } = await import('@/services/status.service'));
+    ({ statusService } = await import('@/infrastructure/status/monitor-status-store'));
     webSocketApp.setup(server);
     const ws = new WebSocket(`ws://localhost:${port}/api/v1/status`);
     await new Promise<void>((resolve, reject) => {

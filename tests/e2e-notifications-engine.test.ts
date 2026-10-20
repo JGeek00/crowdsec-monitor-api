@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach, vi } 
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeAlert, makeChannelPayload, makeNotificationPayload } from '@tests/factories';
 import { AlertsTable } from '@/models/db';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
 
 const sshAlert = {
   scenario: 'crowdsecurity/ssh-bf',

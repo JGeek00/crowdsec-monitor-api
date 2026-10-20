@@ -10,11 +10,11 @@ vi.mock('@/config/database', () => ({
   sequelize: { transaction: vi.fn() },
 }));
 
-vi.mock('@/services/crowdsec-api.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: { alerts: { getAlerts: vi.fn() } },
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
@@ -24,7 +24,7 @@ describe('CsBlocklistSyncService', () => {
   });
 
   it('syncCsBlocklists processes alerts with origin=lists', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       { id: 1, source: { scope: 'list-1' }, decisions: [{ value: '1.2.3.4', scenario: 'test' }] },
     ] as any);
@@ -37,7 +37,7 @@ describe('CsBlocklistSyncService', () => {
     vi.mocked(CsBlocklistsTable.create).mockResolvedValue({} as any);
     vi.mocked(BlocklistIpsTable.bulkCreate).mockResolvedValue([] as any);
 
-    const { csBlocklistSyncService } = await import('@/services/blocklists/cs-blocklist-sync.service');
+    const { csBlocklistSyncService } = await import('@/infrastructure/sync/cs-blocklists-sync');
     const result = await csBlocklistSyncService.syncCsBlocklists();
 
     expect(result.synced).toBe(1);
@@ -45,10 +45,10 @@ describe('CsBlocklistSyncService', () => {
   });
 
   it('syncCsBlocklists returns empty when no alerts', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([]);
 
-    const { csBlocklistSyncService } = await import('@/services/blocklists/cs-blocklist-sync.service');
+    const { csBlocklistSyncService } = await import('@/infrastructure/sync/cs-blocklists-sync');
     const result = await csBlocklistSyncService.syncCsBlocklists();
 
     expect(result.synced).toBe(0);
@@ -56,7 +56,7 @@ describe('CsBlocklistSyncService', () => {
   });
 
   it('syncCsBlocklists deduplicates by name keeping highest id', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
       { id: 1, source: { scope: 'list-a' }, decisions: [{ value: '1.1.1.1' }] },
       { id: 2, source: { scope: 'list-a' }, decisions: [{ value: '2.2.2.2' }] },
@@ -71,7 +71,7 @@ describe('CsBlocklistSyncService', () => {
     vi.mocked(CsBlocklistsTable.create).mockResolvedValue({} as any);
     vi.mocked(BlocklistIpsTable.bulkCreate).mockResolvedValue([] as any);
 
-    const { csBlocklistSyncService } = await import('@/services/blocklists/cs-blocklist-sync.service');
+    const { csBlocklistSyncService } = await import('@/infrastructure/sync/cs-blocklists-sync');
     const result = await csBlocklistSyncService.syncCsBlocklists();
 
     expect(result.synced).toBe(2);

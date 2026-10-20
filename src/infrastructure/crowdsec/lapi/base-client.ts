@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { config } from '@/config';
 import { CrowdSecLoginResponse } from '@/types/crowdsec.types';
 import { BLOCKLIST_SCENARIO_PREFIX, MANUAL_DECISION } from '@/constants/scenarios';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 export class CrowdSecBaseClient {
   readonly client: AxiosInstance;

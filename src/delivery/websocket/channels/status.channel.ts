@@ -1,6 +1,6 @@
 import { WsChannel } from '@/utils/ws-channel';
-import { statusService } from '@/services/status.service';
-import { log } from '@/services/log.service';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
+import { log } from '@/infrastructure/system/logger';
 
 const statusChannel = new WsChannel((ws) => {
   const route = '/api/v1/status';

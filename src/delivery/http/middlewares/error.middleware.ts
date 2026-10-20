@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction): void => {
   log.error('Error:', err);

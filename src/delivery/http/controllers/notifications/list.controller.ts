@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import type { GetNotificationsResponse, ResponseWithError } from '@/models';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { container } from '@/application/container';
 
 type Res = ResponseWithError<GetNotificationsResponse>;

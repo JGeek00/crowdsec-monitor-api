@@ -7,10 +7,10 @@ import {
   ResponseWithError,
   UnparsedMetaData,
 } from '@/models';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
 import { parseAlertMeta } from '@/utils/parse-meta-values';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<GetNotificationHistoryAlertsResponse>;
 

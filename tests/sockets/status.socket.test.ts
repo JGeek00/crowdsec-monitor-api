@@ -11,7 +11,7 @@ vi.mock('@/config/database', () => {
   return { sequelize: seq, initDatabase: vi.fn().mockResolvedValue(undefined) };
 });
 
-vi.mock('@/services/status.service', () => ({
+vi.mock('@/infrastructure/status/monitor-status-store', () => ({
   statusService: {
     getCleanSnapshot: vi.fn(function () {
       return {
@@ -48,7 +48,7 @@ describe('status socket integration', () => {
   let server: http.Server;
   let port: number;
   let webSocketApp: WebSocketApp;
-  let statusService: (typeof import('@/services/status.service'))['statusService'];
+  let statusService: (typeof import('@/infrastructure/status/monitor-status-store'))['statusService'];
 
   beforeAll(async () => {
     server = http.createServer();
@@ -61,7 +61,7 @@ describe('status socket integration', () => {
 
   it('client connects and receives snapshot after state change', async () => {
     ({ webSocketApp } = await import('@/delivery/websocket/gateway'));
-    ({ statusService } = await import('@/services/status.service'));
+    ({ statusService } = await import('@/infrastructure/status/monitor-status-store'));
     webSocketApp.setup(server);
     const ws = new WebSocket(`ws://localhost:${port}/api/v1/status`);
     await new Promise<void>((resolve, reject) => {

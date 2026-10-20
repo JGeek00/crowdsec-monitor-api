@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import type { NotificationIdParams, PutNotificationBody, PutNotificationResponse, ResponseWithError } from '@/models';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { container } from '@/application/container';
 import { ValidationError, NotFoundError } from '@/domain/errors';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 
-vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { errorHandler } from '@/delivery/http/middlewares/error.middleware';
 

@@ -6,39 +6,39 @@ describe('statusBlocklistService', () => {
   });
 
   it('isSyncingBlocklists returns false when no processes', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     expect(statusBlocklistService.isSyncingBlocklists()).toBe(false);
   });
 
   it('isSyncingBlocklists returns true when refresh is active', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     statusBlocklistService.createBlocklistRefreshProcess([{ number: 1, name: 'bl-1' }]);
     expect(statusBlocklistService.isSyncingBlocklists()).toBe(true);
   });
 
   it('isSyncingBlocklists returns false when completeProcess is called', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     const id = statusBlocklistService.createBlocklistRefreshProcess([{ number: 1, name: 'bl-1' }]);
     statusBlocklistService.completeProcess(id, true);
     expect(statusBlocklistService.isSyncingBlocklists()).toBe(false);
   });
 
   it('isBlocklistBusy returns true when process is active for that blocklist', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     statusBlocklistService.createBlocklistImportProcess(1, 'test');
     expect(statusBlocklistService.isBlocklistBusy(1)).toBe(true);
     expect(statusBlocklistService.isBlocklistBusy(2)).toBe(false);
   });
 
   it('isAnyBlocklistProcessRunning returns true when any process active', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     expect(statusBlocklistService.isAnyBlocklistProcessRunning()).toBe(false);
     statusBlocklistService.createBlocklistDisableProcess(10, 1, 'test');
     expect(statusBlocklistService.isAnyBlocklistProcessRunning()).toBe(true);
   });
 
   it('getProcessesSnapshot returns deep clone of processes', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     statusBlocklistService.createBlocklistImportProcess(1, 'test');
     const snapshot = statusBlocklistService.getProcessesSnapshot();
     expect(snapshot).toHaveLength(1);
@@ -46,12 +46,12 @@ describe('statusBlocklistService', () => {
   });
 
   it('getProcessById returns undefined for unknown id', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     expect(statusBlocklistService.getProcessById('nope')).toBeUndefined();
   });
 
   it('markFetched updates process state', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     const id = statusBlocklistService.createBlocklistImportProcess(1, 'test');
     statusBlocklistService.markFetched(id, 'blocklistImport');
     const proc = statusBlocklistService.getProcessById(id);
@@ -59,7 +59,7 @@ describe('statusBlocklistService', () => {
   });
 
   it('completeProcess sets endDatetime and cleans up process', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     const id = statusBlocklistService.createBlocklistImportProcess(1, 'test');
     statusBlocklistService.completeProcess(id, true);
     const proc = statusBlocklistService.getProcessById(id);
@@ -68,7 +68,7 @@ describe('statusBlocklistService', () => {
   });
 
   it('setBlocklistStepStatus updates step status in refresh process', async () => {
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     const id = statusBlocklistService.createBlocklistRefreshProcess([{ number: 1, name: 'bl-1' }]);
     statusBlocklistService.setBlocklistStepStatus(id, 0, 'fetch', 'running');
     const proc = statusBlocklistService.getProcessById(id);

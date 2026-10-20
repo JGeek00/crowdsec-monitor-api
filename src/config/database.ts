@@ -3,8 +3,8 @@ import { SqliteDialect } from '@sequelize/sqlite3';
 import { PostgresDialect } from '@sequelize/postgres';
 import { config } from '@/config/index';
 import { DB_MODE } from '@/types/database.types';
-import { MigrationService } from '@/services/migrations/migration.service';
-import { MigrationRunner } from '@/services/migrations/migration-runner.service';
+import { MigrationService } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration.service';
+import { MigrationRunner } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service';
 
 function createSequelize(): Sequelize {
   if (config.database.mode === DB_MODE.POSTGRES) {

@@ -1,5 +1,5 @@
 import { isIpv4, isIpv4InCidr } from '@/utils/ip';
-import { crowdSecAPI } from '@/services';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 
 /**
  * Look up which allowlist each IP belongs to (if any).

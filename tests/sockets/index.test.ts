@@ -11,7 +11,7 @@ vi.mock('@/config/database', () => {
   return { sequelize: seq, initDatabase: vi.fn().mockResolvedValue(undefined) };
 });
 
-vi.mock('@/services/status.service', () => ({
+vi.mock('@/infrastructure/status/monitor-status-store', () => ({
   statusService: {
     getCleanSnapshot: vi.fn(function () {
       return {

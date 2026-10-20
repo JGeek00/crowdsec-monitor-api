@@ -1,4 +1,4 @@
-import { alertsSyncService } from '@/services/alerts-sync.service';
+import { alertsSyncService } from '@/infrastructure/sync/alerts-sync';
 
 export interface SyncAlertsResult {
   synced: number;

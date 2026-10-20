@@ -7,7 +7,7 @@ const { mockLookupIpsInBlocklists, mockLookupIpsInAllowlists } = vi.hoisted(() =
 
 vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mockLookupIpsInBlocklists }));
 vi.mock('@/utils/allowlist-lookup', () => ({ lookupIpsInAllowlists: mockLookupIpsInAllowlists }));
-vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
 import { checkIpsInList } from '@/delivery/http/controllers/lists/check-ips.controller';

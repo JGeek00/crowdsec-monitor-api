@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/services/crowdsec-api.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: {
     decisions: { getActiveDecisions: vi.fn() },
     alerts: { createAlerts: vi.fn() },
@@ -8,15 +8,15 @@ vi.mock('@/services/crowdsec-api.service', () => ({
   },
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock('@/services/blocklists/blocklist-db.service', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/blocklist-db-writes', () => ({
   blocklistDbService: { writeIpsToDb: vi.fn() },
 }));
 
-vi.mock('@/services/blocklists/blocklist-crowdsec.service', () => ({
+vi.mock('@/infrastructure/crowdsec/http-bouncer-client', () => ({
   blocklistCrowdSecService: {
     downloadBlocklist: vi.fn(),
     deleteBlocklistAlerts: vi.fn(),
@@ -44,19 +44,19 @@ describe('runBlocklistRefreshPipeline', () => {
   });
 
   it('runs full pipeline and returns pushed count', async () => {
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     vi.mocked(blocklistCrowdSecService.downloadBlocklist).mockResolvedValue({ rawContent: '1.2.3.4\n5.5.5.5' });
     const { parseBlocklistContent } = await import('@/utils/parse-blocklist');
     vi.mocked(parseBlocklistContent).mockReturnValue(['1.2.3.4', '5.5.5.5']);
     const { filterAllowlistedIps } = await import('@/utils/blocklist-allowlist-filter');
     vi.mocked(filterAllowlistedIps).mockReturnValue(['1.2.3.4', '5.5.5.5']);
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.decisions.getActiveDecisions).mockResolvedValue(new Set(['1.2.3.4']));
-    const { blocklistDbService } = await import('@/services/blocklists/blocklist-db.service');
+    const { blocklistDbService } = await import('@/infrastructure/persistence/sequelize/blocklist-db-writes');
     vi.mocked(blocklistCrowdSecService.pushIpsToCrowdSec).mockResolvedValue(1);
     vi.mocked(blocklistCrowdSecService.deleteBlocklistAlerts).mockResolvedValue({ alertsCount: 0, totalDecisions: 0 });
 
-    const { runBlocklistRefreshPipeline } = await import('@/helpers/blocklists/blocklists-refresh-pipeline');
+    const { runBlocklistRefreshPipeline } = await import('@/infrastructure/sync/blocklists-refresh-pipeline');
     const reporter = makeReporter();
     const result = await runBlocklistRefreshPipeline(
       { id: 1, name: 'test', url: 'http://example.com/list' } as any,
@@ -71,10 +71,10 @@ describe('runBlocklistRefreshPipeline', () => {
   });
 
   it('reports step failure on error', async () => {
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     vi.mocked(blocklistCrowdSecService.downloadBlocklist).mockRejectedValue(new Error('network error'));
 
-    const { runBlocklistRefreshPipeline } = await import('@/helpers/blocklists/blocklists-refresh-pipeline');
+    const { runBlocklistRefreshPipeline } = await import('@/infrastructure/sync/blocklists-refresh-pipeline');
     const reporter = makeReporter();
     await expect(runBlocklistRefreshPipeline({ id: 1, name: 'test' } as any, [], reporter)).rejects.toThrow();
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { setupApp, type TestApp } from '@tests/setup-app';
 
-vi.mock('@/services/status.service', () => ({
+vi.mock('@/infrastructure/status/monitor-status-store', () => ({
   statusService: {
     getCleanSnapshot: vi.fn(function () {
       return {

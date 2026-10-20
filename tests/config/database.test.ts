@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('@/services/migrations/migration.service', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/migrations-legacy/migration.service', () => ({
   MigrationService: vi.fn().mockImplementation(function () {
     return {
       isMigrationApplied: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('@/services/migrations/migration.service', () => ({
   }),
 }));
 
-vi.mock('@/services/migrations/migration-runner.service', () => ({
+vi.mock('@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service', () => ({
   MigrationRunner: vi.fn().mockImplementation(function () {
     return {
       run: vi.fn().mockResolvedValue(undefined),

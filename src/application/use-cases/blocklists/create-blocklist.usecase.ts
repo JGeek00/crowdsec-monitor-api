@@ -2,10 +2,10 @@ import { assertSafeBlocklistUrl } from '@/domain/value-objects/blocklist-url.vo'
 import { ConflictError, ServiceUnavailableError, UpstreamUnavailableError, ValidationError } from '@/domain/errors';
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
 import type { Blocklist } from '@/domain/entities/blocklist.entity';
-import { log } from '@/services/log.service';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
-import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
+import { log } from '@/infrastructure/system/logger';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
+import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
+import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 import { PROCESS_FIELD_BLOCKLIST } from '@/types/process.types';
 
 export interface CreateBlocklistInput {

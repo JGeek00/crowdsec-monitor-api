@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
 
 beforeEach(() => {
   notificationHistoryService.clear();

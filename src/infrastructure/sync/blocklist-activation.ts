@@ -1,6 +1,6 @@
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { statusService } from '@/services/status.service';
-import { log } from '@/services/log.service';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
+import { log } from '@/infrastructure/system/logger';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 
 /**

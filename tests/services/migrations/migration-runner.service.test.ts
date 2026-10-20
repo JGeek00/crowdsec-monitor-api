@@ -29,11 +29,11 @@ vi.mock('fs', () => ({
   default: mockFs,
   ...mockFs,
 }));
-vi.mock('@/services/log.service', () => ({ log: mockLog }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: mockLog }));
 vi.mock('@/models/db/Migration', () => ({ Migration: mockMigration }));
 
 describe('MigrationRunner', () => {
-  let MigrationRunner: typeof import('@/services/migrations/migration-runner.service').MigrationRunner;
+  let MigrationRunner: typeof import('@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service').MigrationRunner;
   let runner: InstanceType<typeof MigrationRunner>;
   let mockMigrationService: any;
 
@@ -46,7 +46,7 @@ describe('MigrationRunner', () => {
       sequelize: mockSequelize,
     }));
 
-    const mod = await import('@/services/migrations/migration-runner.service');
+    const mod = await import('@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service');
     MigrationRunner = mod.MigrationRunner;
 
     mockMigrationService = {

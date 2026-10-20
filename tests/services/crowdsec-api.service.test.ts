@@ -6,7 +6,7 @@ vi.mock('@/config', () => ({
   },
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
@@ -72,51 +72,51 @@ vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => ({
 describe('CrowdSecAPIService', () => {
   it('delegates login to base client', async () => {
     mockLogin.mockResolvedValue(true);
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     const result = await crowdSecAPI.login();
     expect(result).toBe(true);
   });
 
   it('delegates testConnection to base client', async () => {
     mockTestConnection.mockResolvedValue(true);
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     const result = await crowdSecAPI.testConnection();
     expect(result).toBe(true);
   });
 
   it('delegates checkStatus to base client', async () => {
     mockCheckStatus.mockResolvedValue(true);
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     const result = await crowdSecAPI.checkStatus();
     expect(result).toBe(true);
   });
 
   it('delegates checkBouncerConnection to base client', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     await crowdSecAPI.checkBouncerConnection();
     expect(mockCheckBouncerConnection).toHaveBeenCalled();
   });
 
   it('delegates isBouncerConnected to base client', async () => {
     mockIsBouncerConnected.mockReturnValue(true);
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     expect(crowdSecAPI.isBouncerConnected()).toBe(true);
   });
 
   it('delegates setBouncerConnected to base client', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     crowdSecAPI.setBouncerConnected(true);
     expect(mockSetBouncerConnected).toHaveBeenCalledWith(true);
   });
 
   it('delegates getLastLapiConnected to base client', async () => {
     mockGetLastLapiConnected.mockReturnValue(true);
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     expect(crowdSecAPI.getLastLapiConnected()).toBe(true);
   });
 
   it('has alerts service', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     expect(crowdSecAPI.alerts).toBeDefined();
   });
 });

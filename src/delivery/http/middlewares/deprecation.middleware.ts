@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 /**
  * Middleware factory to mark routes as deprecated.

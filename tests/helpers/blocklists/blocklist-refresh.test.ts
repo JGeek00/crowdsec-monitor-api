@@ -4,15 +4,15 @@ vi.mock('@/models', () => ({
   BlocklistsTable: {},
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock('@/helpers/blocklists/blocklists-refresh-pipeline', () => ({
+vi.mock('@/infrastructure/sync/blocklists-refresh-pipeline', () => ({
   runBlocklistRefreshPipeline: vi.fn(),
 }));
 
-vi.mock('@/services/blocklists/status-blocklist.service', () => {
+vi.mock('@/infrastructure/status/memory-process-tracker', () => {
   const mockSetCurrentBlocklist = vi.fn();
   const mockRecordSuccess = vi.fn();
   const mockGetFailedStep = vi.fn();
@@ -30,27 +30,27 @@ vi.mock('@/services/blocklists/status-blocklist.service', () => {
 
 describe('processOneBlocklist', () => {
   it('returns pushed count on success', async () => {
-    const { runBlocklistRefreshPipeline } = await import('@/helpers/blocklists/blocklists-refresh-pipeline');
+    const { runBlocklistRefreshPipeline } = await import('@/infrastructure/sync/blocklists-refresh-pipeline');
     vi.mocked(runBlocklistRefreshPipeline).mockResolvedValue({ pushed: 10 });
 
-    const { processOneBlocklist } = await import('@/helpers/blocklists/blocklist-refresh');
+    const { processOneBlocklist } = await import('@/infrastructure/sync/blocklist-refresh');
     const result = await processOneBlocklist({ name: 'test-list', id: 1 } as any, [], 'proc-1', 0, 1);
 
     expect(result).toEqual({ pushed: 10 });
   });
 
   it('re-throws error with failedStep when pipeline fails', async () => {
-    const { runBlocklistRefreshPipeline } = await import('@/helpers/blocklists/blocklists-refresh-pipeline');
+    const { runBlocklistRefreshPipeline } = await import('@/infrastructure/sync/blocklists-refresh-pipeline');
     vi.mocked(runBlocklistRefreshPipeline).mockRejectedValue(new Error('fetch error'));
 
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
     const mockReporter = vi.mocked(statusBlocklistService.setCurrentBlocklist).mock;
     // BulkRefreshReporter constructor attaches failedStep
     vi.mocked(statusBlocklistService.setCurrentBlocklist).mock.calls; // just reference
 
-    const BulkRefreshReporter = (await import('@/services/blocklists/status-blocklist.service')).BulkRefreshReporter;
+    const BulkRefreshReporter = (await import('@/infrastructure/status/memory-process-tracker')).BulkRefreshReporter;
 
-    const { processOneBlocklist } = await import('@/helpers/blocklists/blocklist-refresh');
+    const { processOneBlocklist } = await import('@/infrastructure/sync/blocklist-refresh');
     try {
       await processOneBlocklist({ name: 'test-list', id: 1 } as any, [], 'proc-1', 0, 1);
     } catch (err) {
@@ -59,12 +59,12 @@ describe('processOneBlocklist', () => {
   });
 
   it('sets currentBlocklist on status service', async () => {
-    const { runBlocklistRefreshPipeline } = await import('@/helpers/blocklists/blocklists-refresh-pipeline');
+    const { runBlocklistRefreshPipeline } = await import('@/infrastructure/sync/blocklists-refresh-pipeline');
     vi.mocked(runBlocklistRefreshPipeline).mockResolvedValue({ pushed: 5 });
 
-    const { statusBlocklistService } = await import('@/services/blocklists/status-blocklist.service');
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
 
-    const { processOneBlocklist } = await import('@/helpers/blocklists/blocklist-refresh');
+    const { processOneBlocklist } = await import('@/infrastructure/sync/blocklist-refresh');
     await processOneBlocklist({ name: 'bl-1', id: 2 } as any, [], 'proc-2', 1, 3);
 
     expect(statusBlocklistService.setCurrentBlocklist).toHaveBeenCalledWith('proc-2', 2);

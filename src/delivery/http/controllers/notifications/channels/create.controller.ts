@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import { NotificationChannelType, PostChannelBody, PostChannelResponse, ResponseWithError } from '@/models';
 import { NotificationChannelsTable } from '@/models';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { validateChannelConfig } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';
-import { toChannelResponse } from '@/helpers/notifications/channel-response.helper';
-import { log } from '@/services/log.service';
+import { toChannelResponse } from '@/infrastructure/notifications/channel-response';
+import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<PostChannelResponse>;
 

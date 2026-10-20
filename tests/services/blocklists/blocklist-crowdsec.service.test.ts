@@ -10,14 +10,14 @@ vi.mock('axios', () => {
   return { default: mockAxios };
 });
 
-vi.mock('@/services/crowdsec-api.service', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: {
     allowlists: { getAllowlists: vi.fn() },
     alerts: { getAlerts: vi.fn(), createAlerts: vi.fn(), deleteAlert: vi.fn() },
   },
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
@@ -31,22 +31,22 @@ describe('BlocklistCrowdSecService', () => {
   });
 
   it('fetchAllowlistEntries returns flat entries', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.allowlists.getAllowlists).mockResolvedValue([
       { items: [{ value: '1.2.3.4' }, { value: '5.5.5.5' }] },
       { items: [{ value: '9.9.9.9' }] },
     ] as any);
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const result = await blocklistCrowdSecService.fetchAllowlistEntries();
     expect(result).toEqual(['1.2.3.4', '5.5.5.5', '9.9.9.9']);
   });
 
   it('fetchAllowlistEntries returns empty on error', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.allowlists.getAllowlists).mockRejectedValue(new Error('timeout'));
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const result = await blocklistCrowdSecService.fetchAllowlistEntries();
     expect(result).toEqual([]);
   });
@@ -55,7 +55,7 @@ describe('BlocklistCrowdSecService', () => {
     const axios = await import('axios');
     vi.mocked(axios.default.get).mockResolvedValue({ data: 'ip1\nip2' });
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const result = await blocklistCrowdSecService.downloadBlocklist('http://x.com', 'test');
     expect(result.rawContent).toBe('ip1\nip2');
   });
@@ -64,12 +64,12 @@ describe('BlocklistCrowdSecService', () => {
     const axios = await import('axios');
     vi.mocked(axios.default.get).mockRejectedValue(new Error('timeout'));
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     await expect(blocklistCrowdSecService.downloadBlocklist('http://x.com', 'test')).rejects.toThrow();
   });
 
   it('buildAlertPayload creates payload with decisions', async () => {
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const result = blocklistCrowdSecService.buildAlertPayload(
       ['1.2.3.4', '5.5.5.5'],
       ['1.2.3.4', '5.5.5.5'],
@@ -80,16 +80,16 @@ describe('BlocklistCrowdSecService', () => {
   });
 
   it('pushIpsToCrowdSec returns 0 when no IPs', async () => {
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const result = await blocklistCrowdSecService.pushIpsToCrowdSec([], 'test');
     expect(result).toBe(0);
   });
 
   it('pushIpsToCrowdSec pushes in batches', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.createAlerts).mockResolvedValue(['ok']);
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const onChunk = vi.fn();
     const result = await blocklistCrowdSecService.pushIpsToCrowdSec(['1.2.3.4', '5.5.5.5'], 'test', onChunk);
     expect(result).toBe(2);
@@ -97,20 +97,20 @@ describe('BlocklistCrowdSecService', () => {
   });
 
   it('deleteBlocklistAlerts fetches and deletes alerts', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([{ id: 1, decisions: [{ id: 1 }] }] as any);
     vi.mocked(crowdSecAPI.alerts.deleteAlert).mockResolvedValue(1);
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     const result = await blocklistCrowdSecService.deleteBlocklistAlerts('test-list');
     expect(result.alertsCount).toBe(1);
     expect(crowdSecAPI.alerts.deleteAlert).toHaveBeenCalledWith(1);
   });
 
   it('verifyConnection calls getAlerts', async () => {
-    const { crowdSecAPI } = await import('@/services/crowdsec-api.service');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
 
-    const { blocklistCrowdSecService } = await import('@/services/blocklists/blocklist-crowdsec.service');
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     await blocklistCrowdSecService.verifyConnection();
     expect(crowdSecAPI.alerts.getAlerts).toHaveBeenCalledWith({});
   });

@@ -1,7 +1,7 @@
 import { BlocklistsTable } from '@/models';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { blocklistDbService } from '@/services/blocklists/blocklist-db.service';
-import { blocklistCrowdSecService } from '@/services/blocklists/blocklist-crowdsec.service';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
+import { blocklistDbService } from '@/infrastructure/persistence/sequelize/blocklist-db-writes';
+import { blocklistCrowdSecService } from '@/infrastructure/crowdsec/http-bouncer-client';
 import {
   PROCESS_BLOCKLIST_STEP,
   PROCESS_BLOCKLIST_STEP_STATUS,

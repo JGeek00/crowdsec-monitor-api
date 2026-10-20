@@ -19,7 +19,7 @@ vi.mock('@/config/env-defaults', () => ({
   defaults: { blocklists: { writeChunkSize: 1000 } },
 }));
 
-vi.mock('@/services/log.service', () => ({
+vi.mock('@/infrastructure/system/logger', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
@@ -37,7 +37,7 @@ describe('BlocklistDbService', () => {
     vi.mocked(BlocklistIpsTable.destroy).mockResolvedValue(0);
     vi.mocked(BlocklistIpsTable.bulkCreate).mockResolvedValue([] as any);
 
-    const { blocklistDbService } = await import('@/services/blocklists/blocklist-db.service');
+    const { blocklistDbService } = await import('@/infrastructure/persistence/sequelize/blocklist-db-writes');
     await blocklistDbService.writeIpsToDb({ id: 1, name: 'test' } as any, ['1.2.3.4']);
 
     expect(BlocklistIpsTable.destroy).toHaveBeenCalled();
@@ -55,14 +55,14 @@ describe('BlocklistDbService', () => {
       .mockResolvedValueOnce([]);
     vi.mocked(BlocklistIpsTable.destroy).mockResolvedValue(2);
 
-    const { blocklistDbService } = await import('@/services/blocklists/blocklist-db.service');
+    const { blocklistDbService } = await import('@/infrastructure/persistence/sequelize/blocklist-db-writes');
     const result = await blocklistDbService.deleteBlocklistIps({ id: 1, name: 'test' } as any);
 
     expect(result).toBe(2);
   });
 
   it('updateRefreshMetadata calls blocklist.update', async () => {
-    const { blocklistDbService } = await import('@/services/blocklists/blocklist-db.service');
+    const { blocklistDbService } = await import('@/infrastructure/persistence/sequelize/blocklist-db-writes');
     const mockUpdate = vi.fn().mockResolvedValue(undefined);
     const blocklist = { id: 1, name: 'test', update: mockUpdate } as any;
 

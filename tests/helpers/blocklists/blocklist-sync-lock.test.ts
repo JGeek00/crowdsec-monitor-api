@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 describe('AsyncWriteLock', () => {
   it('executes functions sequentially', async () => {
-    const { AsyncWriteLock } = await import('@/helpers/blocklists/blocklist-sync-lock');
+    const { AsyncWriteLock } = await import('@/shared/async-write-lock');
     const lock = new AsyncWriteLock();
     const order: number[] = [];
 
@@ -19,7 +19,7 @@ describe('AsyncWriteLock', () => {
   });
 
   it('returns the function result', async () => {
-    const { AsyncWriteLock } = await import('@/helpers/blocklists/blocklist-sync-lock');
+    const { AsyncWriteLock } = await import('@/shared/async-write-lock');
     const lock = new AsyncWriteLock();
 
     const result = await lock.acquire(async () => 42);
@@ -27,7 +27,7 @@ describe('AsyncWriteLock', () => {
   });
 
   it('handles errors without breaking subsequent calls', async () => {
-    const { AsyncWriteLock } = await import('@/helpers/blocklists/blocklist-sync-lock');
+    const { AsyncWriteLock } = await import('@/shared/async-write-lock');
     const lock = new AsyncWriteLock();
     const later = vi.fn();
 

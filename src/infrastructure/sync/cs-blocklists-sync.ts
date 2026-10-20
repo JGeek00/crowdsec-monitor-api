@@ -1,8 +1,8 @@
 import { CsBlocklistsTable, BLOCKLIST_IP_ORIGIN, BlocklistIpsTable } from '@/models';
 import { sequelize } from '@/config/database';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import appDefaults from '@/constants/app-defaults';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 class CsBlocklistSyncService {
   /**

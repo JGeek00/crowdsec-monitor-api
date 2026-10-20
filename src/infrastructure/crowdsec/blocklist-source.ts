@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import type { BlocklistSource as BlocklistSourcePort } from '@/application/ports/blocklist-source.port';
 
 /** Downloads blocklist files over HTTP (the `fetch` stage input of the refresh pipeline). */

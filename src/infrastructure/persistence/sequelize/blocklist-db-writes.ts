@@ -3,8 +3,8 @@ import { sequelize } from '@/config/database';
 import { defaults } from '@/config/env-defaults';
 import appDefaults from '@/constants/app-defaults';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
-import { log } from '@/services/log.service';
-import { AsyncWriteLock } from '@/helpers/blocklists/blocklist-sync-lock';
+import { log } from '@/infrastructure/system/logger';
+import { AsyncWriteLock } from '@/shared/async-write-lock';
 
 const lock = new AsyncWriteLock();
 

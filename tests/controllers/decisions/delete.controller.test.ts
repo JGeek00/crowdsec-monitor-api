@@ -12,7 +12,7 @@ vi.mock('@/application/container', () => ({
   },
 }));
 
-vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
 import { deleteDecision } from '@/delivery/http/controllers/decisions/delete.controller';

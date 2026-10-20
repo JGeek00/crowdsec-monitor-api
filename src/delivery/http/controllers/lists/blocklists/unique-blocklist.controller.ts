@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import type { GetBlocklistParams, GetBlocklistQueryParams, GetBlocklistResponse, ResponseWithError } from '@/models';
 import { createRequestSignal } from '@/utils/request-signal';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/application/container';
 import { NotFoundError } from '@/domain/errors';

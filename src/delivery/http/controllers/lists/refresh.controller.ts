@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ResponseWithError } from '@/models';
 import { container } from '@/application/container';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { ServiceUnavailableError } from '@/domain/errors';
 

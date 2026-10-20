@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 
-vi.mock('@/services/blocklists/status-blocklist.service', async (importOriginal) => {
+vi.mock('@/infrastructure/status/memory-process-tracker', async (importOriginal) => {
   const mod = await importOriginal();
   const orig = mod.statusBlocklistService;
   return {

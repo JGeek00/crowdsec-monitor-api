@@ -1,5 +1,5 @@
 import { buildAllowlistMatcher } from '@/utils/ip';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 /** Remove IPs that match any allowlist entry. */
 export function filterAllowlistedIps(ips: string[], name: string, entries: string[]): string[] {

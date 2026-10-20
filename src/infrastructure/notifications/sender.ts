@@ -6,9 +6,9 @@ import type {
   NtfyChannelConfig,
 } from '@/models';
 import { buildNtfyUrl, splitRecipients, withChannelDefaults } from '@/utils/notification-channel';
-import { buildAlertInfoEmailHtml } from '@/helpers/notifications/alert-info-body.helper';
+import { buildAlertInfoEmailHtml } from '@/infrastructure/notifications/alert-info-body';
 import { findProvider } from '@/constants/notification-providers';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 export interface ChannelResult {
   type: string;

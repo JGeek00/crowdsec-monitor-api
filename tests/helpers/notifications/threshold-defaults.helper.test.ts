@@ -3,7 +3,7 @@ import appDefaults from '@/constants/app-defaults';
 import {
   resolveCooldownSeconds,
   withThresholdDefaults,
-} from '@/helpers/notifications/threshold-defaults.helper';
+} from '@/application/use-cases/notifications/threshold-defaults';
 
 describe('threshold-defaults helper', () => {
   it('backfills the service default cooldown when omitted', () => {

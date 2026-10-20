@@ -1,6 +1,6 @@
-import { databaseService } from '@/services';
-import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
-import { log } from '@/services/log.service';
+import { databaseService } from '@/infrastructure/persistence/database-facade';
+import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
+import { log } from '@/infrastructure/system/logger';
 import appDefaults from '@/constants/app-defaults';
 import type { JobDefinition } from './check-lapi-health.job';
 

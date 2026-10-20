@@ -1,4 +1,4 @@
-import { log, setLevel } from '@/services/log.service';
+import { log, setLevel } from '@/infrastructure/system/logger';
 import type { Logger } from '@/application/ports/logger.port';
 
 /** Application logger adapter over the legacy log service (until T10 slim). */

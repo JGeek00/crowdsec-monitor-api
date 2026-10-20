@@ -1,4 +1,5 @@
-import { versionCheckerService, statusService } from '@/services';
+import { versionCheckerService } from '@/infrastructure/system/version-checker';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
 import appDefaults from '@/constants/app-defaults';
 import type { JobDefinition } from './check-lapi-health.job';
 

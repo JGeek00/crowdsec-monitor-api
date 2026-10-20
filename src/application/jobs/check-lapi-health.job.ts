@@ -1,5 +1,6 @@
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { databaseService, statusService } from '@/services';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
+import { databaseService } from '@/infrastructure/persistence/database-facade';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
 import appDefaults from '@/constants/app-defaults';
 import type { SyncAlertsResult } from './sync-alerts.job';
 

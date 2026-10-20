@@ -1,7 +1,7 @@
 import { BlocklistsTable } from '@/models';
-import { log } from '@/services/log.service';
-import { runBlocklistRefreshPipeline } from '@/helpers/blocklists/blocklists-refresh-pipeline';
-import { statusBlocklistService, BulkRefreshReporter } from '@/services/blocklists/status-blocklist.service';
+import { log } from '@/infrastructure/system/logger';
+import { runBlocklistRefreshPipeline } from '@/infrastructure/sync/blocklists-refresh-pipeline';
+import { statusBlocklistService, BulkRefreshReporter } from '@/infrastructure/status/memory-process-tracker';
 
 /**
  * Process a single blocklist inside the bulk refresh loop.

@@ -1,4 +1,4 @@
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 type ScheduledTask = () => unknown | Promise<unknown>;
 

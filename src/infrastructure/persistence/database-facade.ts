@@ -1,8 +1,8 @@
 import { BlocklistsTable } from '@/models';
-import { alertsSyncService } from '@/services/alerts-sync.service';
-import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
+import { alertsSyncService } from '@/infrastructure/sync/alerts-sync';
+import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 
-import { csBlocklistSyncService } from '@/services/blocklists/cs-blocklist-sync.service';
+import { csBlocklistSyncService } from '@/infrastructure/sync/cs-blocklists-sync';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
 
 /**

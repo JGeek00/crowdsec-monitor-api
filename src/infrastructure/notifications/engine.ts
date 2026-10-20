@@ -7,11 +7,11 @@ import type {
   UserNotification,
   UserNotificationChannel,
 } from '@/models';
-import { evaluateCondition, type AlertLike } from '@/utils/notification-condition';
-import { resolveCooldownSeconds } from '@/helpers/notifications/threshold-defaults.helper';
-import { dispatchChannels } from '@/services/notifications/notification-sender.service';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
-import { log } from '@/services/log.service';
+import { evaluateCondition, type AlertLike } from '@/domain/value-objects/notification-condition';
+import { resolveCooldownSeconds } from '@/application/use-cases/notifications/threshold-defaults';
+import { dispatchChannels } from '@/infrastructure/notifications/sender';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
+import { log } from '@/infrastructure/system/logger';
 
 function safeEvaluate(alert: AlertLike, condition: ConditionNode): boolean {
   try {

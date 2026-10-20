@@ -1,5 +1,6 @@
-import { databaseService, statusService } from '@/services';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { databaseService } from '@/infrastructure/persistence/database-facade';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import appDefaults from '@/constants/app-defaults';
 import type { JobDefinition } from './check-lapi-health.job';
 

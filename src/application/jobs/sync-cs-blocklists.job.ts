@@ -1,4 +1,4 @@
-import { databaseService } from '@/services';
+import { databaseService } from '@/infrastructure/persistence/database-facade';
 import appDefaults from '@/constants/app-defaults';
 import type { JobDefinition } from './check-lapi-health.job';
 

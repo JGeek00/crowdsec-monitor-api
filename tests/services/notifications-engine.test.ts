@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
 import appDefaults from '@/constants/app-defaults';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
 import type { NotificationAlertSnapshot, UserNotification, UserNotificationChannel } from '@/models';
-import { registerNotificationChannel } from '@/services/notifications/notification-sender.service';
+import { registerNotificationChannel } from '@/infrastructure/notifications/sender';
 
 registerNotificationChannel('test-ok', async () => null);
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
 
-vi.mock('@/services', () => ({
+vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: {
     allowlists: {
       getAllowlists: vi.fn(),
@@ -9,7 +9,7 @@ vi.mock('@/services', () => ({
   },
 }));
 
-import { crowdSecAPI } from '@/services';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 
 const mockGetAllowlists = crowdSecAPI.allowlists.getAllowlists as ReturnType<typeof vi.fn>;
 

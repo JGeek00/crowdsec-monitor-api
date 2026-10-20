@@ -1,10 +1,14 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { buildApp, buildJobRegistry } from '@/app';
-import { databaseService, schedulerService, statusService, notificationEngineService, log } from '@/services';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { databaseService } from '@/infrastructure/persistence/database-facade';
+import { schedulerService } from '@/infrastructure/scheduling/interval-scheduler';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
+import { log } from '@/infrastructure/system/logger';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import { webSocketApp } from '@/delivery/websocket/gateway';
-import { setLevel as initLogger } from '@/services/log.service';
+import { setLevel as initLogger } from '@/infrastructure/system/logger';
 import { LogLevel } from '@/types/log.types';
 import { formatInterval } from '@/application/jobs/format-interval';
 import packageJson from '../package.json';

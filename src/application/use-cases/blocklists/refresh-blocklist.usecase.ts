@@ -1,8 +1,8 @@
 import { NotFoundError, ServiceUnavailableError } from '@/domain/errors';
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
-import { log } from '@/services/log.service';
-import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
-import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
+import { log } from '@/infrastructure/system/logger';
+import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
+import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 
 // Called by: delivery/http controllers (blocklists refresh endpoint, lists/refresh endpoint)
 export class RefreshSingleBlocklistUseCase {

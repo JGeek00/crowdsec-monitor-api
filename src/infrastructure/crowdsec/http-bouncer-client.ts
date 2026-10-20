@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 import { CrowdSecCreateAlertPayload } from '@/types/crowdsec.types';
 import { PROCESS_ERRORS } from '@/constants/process-errors';
 import appDefaults from '@/constants/app-defaults';
 import { config } from '@/config';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import type { BouncerClient } from '@/application/ports/bouncer-client.port';
 
 /**

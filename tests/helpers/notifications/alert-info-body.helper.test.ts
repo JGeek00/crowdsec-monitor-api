@@ -5,7 +5,7 @@ import {
   buildAlertInfoHtml,
   countryFlag,
   formatDeclaredAt,
-} from '@/helpers/notifications/alert-info-body.helper';
+} from '@/infrastructure/notifications/alert-info-body';
 
 /** Test assertions are layout-agnostic: inline styles are stripped first. */
 const plain = (html: string): string => html.replace(/ style="[^"]*"/g, '');

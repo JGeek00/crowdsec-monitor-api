@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from
 import appDefaults from '@/constants/app-defaults';
 import { setupApp, type TestApp } from '@tests/setup-app';
 import { makeChannelPayload, makeNotificationPayload } from '@tests/factories';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
 
 describe('e2e notifications CRUD', () => {
   let app: TestApp;

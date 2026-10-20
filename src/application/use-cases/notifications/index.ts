@@ -1,11 +1,11 @@
 import { NotFoundError, ValidationError } from '@/domain/errors';
 import type { UserNotification } from '@/domain/entities/notification.entity';
 import type { NotificationRepository } from '@/application/ports/notification-repository.port';
-import { notificationEngineService } from '@/services/notifications/notification-engine.service';
-import { notificationHistoryService } from '@/services/notifications/notification-history.service';
-import { findMissingChannelIds } from '@/helpers/notifications/channel-refs.helper';
-import { withThresholdDefaults } from '@/helpers/notifications/threshold-defaults.helper';
-import { isValidCondition } from '@/utils/notification-condition';
+import { notificationEngineService } from '@/infrastructure/notifications/engine';
+import { notificationHistoryService } from '@/infrastructure/notifications/history';
+import { findMissingChannelIds } from '@/application/use-cases/notifications/channel-refs';
+import { withThresholdDefaults } from '@/application/use-cases/notifications/threshold-defaults';
+import { isValidCondition } from '@/domain/value-objects/notification-condition';
 
 // Called by: delivery/http controllers (notifications endpoints)
 export class ListNotificationsUseCase {

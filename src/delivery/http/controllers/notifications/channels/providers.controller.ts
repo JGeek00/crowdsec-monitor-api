@@ -3,7 +3,7 @@ import { GetProvidersResponse, ResponseWithError } from '@/models';
 import { notificationProviders, notificationProvidersVersion } from '@/constants/notification-providers';
 import { sanitizeProviderDefinitions } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<GetProvidersResponse>;
 

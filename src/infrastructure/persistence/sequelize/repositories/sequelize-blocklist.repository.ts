@@ -15,7 +15,7 @@ import { sequelize } from '@/config/database';
 import { defaults } from '@/config/env-defaults';
 import appDefaults from '@/constants/app-defaults';
 import { BlocklistMapper } from '../mappers/blocklist.mapper';
-import { AsyncWriteLock } from '@/helpers/blocklists/blocklist-sync-lock';
+import { AsyncWriteLock } from '@/shared/async-write-lock';
 import type { BlocklistRepository as BlocklistRepositoryPort } from '@/application/ports/blocklist-repository.port';
 
 const writeLock = new AsyncWriteLock();

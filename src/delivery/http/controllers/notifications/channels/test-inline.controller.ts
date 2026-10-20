@@ -5,10 +5,10 @@ import {
   PostChannelTestResponse,
   ResponseWithError,
 } from '@/models';
-import { dispatchChannels } from '@/services/notifications/notification-sender.service';
+import { dispatchChannels } from '@/infrastructure/notifications/sender';
 import { validateChannelConfig } from '@/utils/notification-channel';
 import { errorResponse } from '@/utils/error-response';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<PostChannelTestResponse>;
 

@@ -1,7 +1,7 @@
 import { StatusSnapshot } from '@/models';
 import { makeReactive } from '@/utils/make-reactive';
 import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
-import packageJson from '../../package.json';
+import packageJson from '../../../package.json';
 
 export class StatusService {
   private onStateChange: (() => void) | null = null;
@@ -52,7 +52,7 @@ export class StatusService {
    * Lazy-require avoids circular dependency with StatusBlocklistService.
    */
   getCleanSnapshot(): StatusSnapshot {
-    const { statusBlocklistService } = require('./blocklists/status-blocklist.service') as {
+    const { statusBlocklistService } = require('./memory-process-tracker') as {
       statusBlocklistService: { getProcessesSnapshot(): import('@/types/process.types').Process[] };
     };
     return {

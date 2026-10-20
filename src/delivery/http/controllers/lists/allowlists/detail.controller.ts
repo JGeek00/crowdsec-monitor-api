@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import type { GetAllowlistParams, GetAllowlistResponse, ResponseWithError } from '@/models';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/application/container';
 import { NotFoundError } from '@/domain/errors';

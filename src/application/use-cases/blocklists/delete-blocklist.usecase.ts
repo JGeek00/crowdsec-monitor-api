@@ -1,8 +1,8 @@
 import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
-import { log } from '@/services/log.service';
-import { statusBlocklistService } from '@/services/blocklists/status-blocklist.service';
-import { blocklistOpsService } from '@/services/blocklists/blocklist-ops.service';
+import { log } from '@/infrastructure/system/logger';
+import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
+import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
 import { PROCESS_FIELD_BLOCKLIST_OPS } from '@/types/process.types';
 
 // Called by: delivery/http controllers (blocklists delete endpoint)

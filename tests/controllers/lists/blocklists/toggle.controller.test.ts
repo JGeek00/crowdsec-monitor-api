@@ -11,7 +11,7 @@ vi.mock('@/application/container', () => ({
     },
   },
 }));
-vi.mock('@/services/log.service', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
 
 import { Request, Response } from 'express';
 import { toggleBlocklist } from '@/delivery/http/controllers/lists/blocklists/toggle.controller';

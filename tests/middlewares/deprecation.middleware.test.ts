@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 
-vi.mock('@/services/log.service', () => ({ log: { warn: vi.fn() } }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: { warn: vi.fn() } }));
 
 import { deprecate } from '@/delivery/http/middlewares/deprecation.middleware';
 

@@ -4,7 +4,7 @@ vi.mock('@/delivery/websocket/gateway', () => ({
   webSocketApp: { setup: vi.fn() },
 }));
 
-vi.mock('@/services/blocklists/status-blocklist.service', () => ({
+vi.mock('@/infrastructure/status/memory-process-tracker', () => ({
   statusBlocklistService: { getProcessesSnapshot: vi.fn(() => []) },
 }));
 
@@ -40,7 +40,7 @@ describe('server helpers', () => {
   });
 
   it('step logs with padded label and status', async () => {
-    const { log } = await import('@/services/log.service');
+    const { log } = await import('@/infrastructure/system/logger');
     vi.spyOn(log, 'info').mockImplementation(() => {});
 
     const { step } = await import('@/server');
@@ -50,7 +50,7 @@ describe('server helpers', () => {
   });
 
   it('step logs without detail', async () => {
-    const { log } = await import('@/services/log.service');
+    const { log } = await import('@/infrastructure/system/logger');
     vi.spyOn(log, 'info').mockImplementation(() => {});
 
     const { step } = await import('@/server');

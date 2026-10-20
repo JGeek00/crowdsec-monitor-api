@@ -10,7 +10,7 @@ vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mocks.mockLo
 vi.mock('@/utils/allowlist-lookup', () => ({ lookupIpsInAllowlists: mocks.mockLookupIpsInAllowlists }));
 vi.mock('@/utils/dns-resolve', () => ({ resolveIps: mocks.mockResolveIps }));
 vi.mock('@/config', () => ({ config: { dns: { server: '1.1.1.1' } } }));
-vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
+vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
 import { checkDomainInList } from '@/delivery/http/controllers/lists/check-domain.controller';

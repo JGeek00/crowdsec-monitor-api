@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import type { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithError } from '@/models';
 import { isIpv4 } from '@/shared/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
-import { log } from '@/services/log.service';
+import { log } from '@/infrastructure/system/logger';
 import { errorResponse } from '@/utils/error-response';
 import { container } from '@/application/container';
 
