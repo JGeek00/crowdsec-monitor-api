@@ -227,7 +227,7 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
 
     const topScenarios = scenariosData.map((item) => ({
       scenario: item.scenario,
-      amount: parseInt(String(item.count), 10),
+      count: parseInt(String(item.count), 10),
     }));
 
     const sourceRows = await AlertsTable.findAll({
@@ -442,11 +442,11 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
 
     const activityMap = new Map<string, { amountAlerts: number; amountDecisions: number }>();
     alertsByDate.forEach((item) => {
-      activityMap.set(item.date, { amountAlerts: parseInt(item.count, 10), amountDecisions: 0 });
+      activityMap.set(item.date, { amountAlerts: parseInt(String(item.count), 10), amountDecisions: 0 });
     });
     decisionsByDate.forEach((item) => {
       const existing = activityMap.get(item.date) || { amountAlerts: 0, amountDecisions: 0 };
-      existing.amountDecisions = parseInt(item.count, 10);
+      existing.amountDecisions = parseInt(String(item.count), 10);
       activityMap.set(item.date, existing);
     });
     const activityHistory = Array.from(activityMap.entries())

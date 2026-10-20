@@ -176,7 +176,7 @@ describe('SequelizeAlertRepository', () => {
       const stats = await repo.getStats();
       expect(stats.total).toBe(3);
       expect(stats.simulated).toBe(1);
-      expect(stats.topScenarios[0]).toEqual({ scenario: 'crowdsec/ssh-bf', amount: 2 });
+      expect(stats.topScenarios[0]).toEqual({ scenario: 'crowdsec/ssh-bf', count: 2 });
       expect(stats.sources).toHaveLength(3);
     });
 
