@@ -1,5 +1,4 @@
 import { schedulerService } from './interval-scheduler';
-import { config } from '@/config';
 import type { JobDefinition } from '@/application/jobs';
 
 /**

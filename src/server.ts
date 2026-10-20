@@ -2,7 +2,6 @@ import { config } from '@/config';
 import { buildApp, buildJobRegistry } from '@/app';
 import { webSocketApp } from '@/delivery/websocket/gateway';
 import {
-  bootstrap,
   readyBanner,
   registerShutdownHandlers,
   schedulerBanner,
