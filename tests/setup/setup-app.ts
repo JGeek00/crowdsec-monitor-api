@@ -23,6 +23,15 @@ export interface TestApp {
 // ponytail: shared ref so vi.mock factory can create and tests can access the in-memory sequelize
 const sequelizeRef = vi.hoisted(() => ({ current: null as any }));
 
+// Shared ref to the latest mocked CrowdSec base client instance, so e2e tests can
+// override LAPI responses per test (create/delete happy paths, allowlist payloads).
+const lapiClientRef = vi.hoisted(() => ({ current: null as any }));
+
+/** Returns the latest mocked CrowdSec base client instance created by setupApp(). */
+export function getLapiClientMock(): any {
+  return lapiClientRef.current;
+}
+
 vi.mock('@/config/database', () => {
   const { Sequelize } = require('@sequelize/core');
   const { SqliteDialect } = require('@sequelize/sqlite3');
@@ -49,7 +58,7 @@ vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
   // NOTE: la implementación debe ser una función normal (no arrow) porque
   // vitest 5 lanza "is not a constructor" al hacer `new` sobre una arrow.
   const MockBaseClient = vi.fn(function MockBaseClient(this: unknown) {
-    return {
+    const instance = {
       client: {
         get: vi.fn().mockResolvedValue({ data: [] }),
         post: vi.fn().mockResolvedValue({ data: {} }),
@@ -76,6 +85,8 @@ vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
       getLastLapiConnected: vi.fn().mockReturnValue(true),
       handleError: vi.fn(),
     };
+    lapiClientRef.current = instance;
+    return instance;
   });
 
   return { CrowdSecBaseClient: MockBaseClient };
