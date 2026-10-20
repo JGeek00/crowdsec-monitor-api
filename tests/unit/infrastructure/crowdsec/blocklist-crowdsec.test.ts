@@ -14,6 +14,8 @@ vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: {
     allowlists: { getAllowlists: vi.fn() },
     alerts: { getAlerts: vi.fn(), createAlerts: vi.fn(), deleteAlert: vi.fn() },
+    decisions: { getActiveDecisions: vi.fn() },
+    isBouncerConnected: vi.fn(),
   },
 }));
 
@@ -113,5 +115,119 @@ describe('BlocklistCrowdSecService', () => {
     const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     await blocklistCrowdSecService.verifyConnection();
     expect(crowdSecAPI.alerts.getAlerts).toHaveBeenCalledWith({});
+  });
+});
+
+describe('HttpBouncerClient port adapter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('check returns true when the LAPI is reachable', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([]);
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    await expect(httpBouncerClient.check()).resolves.toBe(true);
+  });
+
+  it('check returns false when the LAPI is unreachable', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockRejectedValue(new Error('down'));
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    await expect(httpBouncerClient.check()).resolves.toBe(false);
+  });
+
+  it('isBouncerConnected delegates to the crowdsec api state', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.isBouncerConnected).mockReturnValue(true);
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    expect(httpBouncerClient.isBouncerConnected()).toBe(true);
+  });
+
+  it('getActiveDecisions delegates to the decisions service', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.decisions.getActiveDecisions).mockResolvedValue(new Set(['1.2.3.4']));
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    await expect(httpBouncerClient.getActiveDecisions()).resolves.toEqual(new Set(['1.2.3.4']));
+  });
+
+  it('pushIps delegates and reports chunk progress', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.createAlerts).mockResolvedValue(['a1']);
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    const onChunk = vi.fn();
+    await expect(httpBouncerClient.pushIps(['1.2.3.4'], 'bl', onChunk)).resolves.toBe(1);
+    expect(onChunk).toHaveBeenCalledWith(1);
+  });
+
+  it('deleteBlocklistAlerts delegates with progress callback', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
+      { id: 1, decisions: [{ id: 'd1' }, { id: 'd2' }] },
+    ] as never);
+    vi.mocked(crowdSecAPI.alerts.deleteAlert).mockResolvedValue(1);
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    const onProgress = vi.fn();
+    await expect(httpBouncerClient.deleteBlocklistAlerts('bl', onProgress)).resolves.toBeUndefined();
+    expect(onProgress).toHaveBeenCalledWith(2);
+  });
+
+  it('download returns the raw content', async () => {
+    vi.mocked((await import('axios')).default.get as never as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: '10.0.0.1',
+    });
+
+    const { httpBouncerClient } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    await expect(httpBouncerClient.download('https://example.com/bl.txt')).resolves.toBe('10.0.0.1');
+  });
+});
+
+describe('pushIpsToCrowdSec and deleteBlocklistAlerts error paths', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('pushIpsToCrowdSec throws the crowdSecPushFailed process error when the push rejects', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.createAlerts).mockRejectedValue(new Error('down'));
+
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    await expect(blocklistCrowdSecService.pushIpsToCrowdSec(['1.2.3.4'], 'bl')).rejects.toThrow(
+      'Failed to push IP decisions to CrowdSec',
+    );
+  });
+
+  it('deleteBlocklistAlerts throws when fetching the alerts fails', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockRejectedValue(new Error('down'));
+
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    await expect(blocklistCrowdSecService.deleteBlocklistAlerts('bl')).rejects.toThrow(
+      'Failed to retrieve blocklist alerts from CrowdSec',
+    );
+  });
+
+  it('deleteBlocklistAlerts throws and reports progress when deleting an alert fails', async () => {
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockResolvedValue([
+      { id: 1, decisions: [{ id: 'd1' }] },
+      { id: 2, decisions: [{ id: 'd2' }] },
+    ] as never);
+    vi.mocked(crowdSecAPI.alerts.deleteAlert).mockResolvedValueOnce(1).mockRejectedValueOnce(new Error('delete failed'));
+
+    const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
+    const onAlertDeleted = vi.fn();
+    await expect(blocklistCrowdSecService.deleteBlocklistAlerts('bl', undefined, onAlertDeleted)).rejects.toThrow(
+      'Failed to delete blocklist decisions from CrowdSec',
+    );
+    // the callback fires only after a successful deletion, so just the first alert
+    expect(onAlertDeleted).toHaveBeenCalledTimes(1);
+    expect(onAlertDeleted).toHaveBeenCalledWith(1, 1, 1);
   });
 });

@@ -142,3 +142,97 @@ describe('CrowdSecBaseClient', () => {
     expect(client.isBouncerConnected()).toBe(false);
   });
 });
+
+describe('CrowdSecBaseClient uncovered branches', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('testConnection succeeds when login and the status check work', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    vi.mocked(client.client.post).mockResolvedValue({
+      data: { token: 't', expire: new Date(Date.now() + 3600000).toISOString() },
+    });
+    vi.mocked(client.client.get).mockResolvedValue({ data: [] });
+
+    await expect(client.testConnection()).resolves.toBe(true);
+    expect(client.getLastLapiConnected()).toBe(true);
+  });
+
+  it('testConnection fails and caches the outage when the status check throws', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    vi.mocked(client.client.post).mockResolvedValue({
+      data: { token: 't', expire: new Date(Date.now() + 3600000).toISOString() },
+    });
+    vi.mocked(client.client.get).mockRejectedValue(new Error('boom'));
+
+    await expect(client.testConnection()).resolves.toBe(false);
+    expect(client.getLastLapiConnected()).toBe(false);
+  });
+
+  it('checkStatus re-authenticates with an expired token and succeeds', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    (client as any).token = 'expired';
+    (client as any).tokenExpiration = new Date(Date.now() - 1000);
+    vi.mocked(client.client.post).mockResolvedValue({
+      data: { token: 'fresh', expire: new Date(Date.now() + 3600000).toISOString() },
+    });
+    vi.mocked(client.client.get).mockResolvedValue({ data: [] });
+
+    await expect(client.checkStatus()).resolves.toBe(true);
+    expect(client.getLastLapiConnected()).toBe(true);
+  });
+
+  it('checkStatus fails when the minimal request throws with a valid token', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    (client as any).token = 'valid';
+    (client as any).tokenExpiration = new Date(Date.now() + 3600000);
+    vi.mocked(client.client.get).mockRejectedValue(new Error('boom'));
+
+    await expect(client.checkStatus()).resolves.toBe(false);
+    expect(client.getLastLapiConnected()).toBe(false);
+  });
+
+  it('checkBouncerConnection logs the HTTP status when the LAPI rejects with a response', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    const axiosError = Object.assign(new Error('unauthorized'), {
+      isAxiosError: true,
+      response: { status: 401, data: { message: 'bad key' } },
+    });
+    vi.mocked(client.client.get).mockRejectedValue(axiosError);
+
+    await client.checkBouncerConnection();
+    expect(client.isBouncerConnected()).toBe(false);
+  });
+
+  it('getAuthHeaders throws when authentication fails', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    vi.mocked(client.client.post).mockRejectedValue(new Error('boom'));
+
+    await expect(client.getAuthHeaders()).rejects.toThrow('Authentication failed: No token available');
+  });
+
+  it('isTokenValid is false when the token exists but the expiration is missing', () => {
+    return (async () => {
+      const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+      const client = new CrowdSecBaseClient();
+      (client as any).token = 't';
+      (client as any).tokenExpiration = null;
+      expect(client.isTokenValid()).toBe(false);
+    })();
+  });
+
+  it('handleError logs a setup error for axios errors without response or request', async () => {
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const client = new CrowdSecBaseClient();
+    expect(() =>
+      client.handleError({ isAxiosError: true, message: 'bad config' } as never, 'testing'),
+    ).not.toThrow();
+  });
+});

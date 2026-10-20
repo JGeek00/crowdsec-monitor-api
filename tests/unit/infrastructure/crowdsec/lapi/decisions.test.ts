@@ -107,3 +107,37 @@ describe('DecisionsService', () => {
     expect(result.has('1.2.3.4')).toBe(true);
   });
 });
+
+describe('DecisionsService fallback branches', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('getDecisionsFromAlerts skips alerts whose decisions are not an array', async () => {
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    vi.mocked(AlertsService).mockImplementation(function () {
+      return {
+        getAlerts: vi
+          .fn()
+          .mockResolvedValue([{ decisions: null }, { decisions: 'not-an-array' }, { noDecisionsKey: true }]),
+      };
+    });
+
+    const { DecisionsService } = await import('@/infrastructure/crowdsec/lapi/decisions');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const { AlertsService: AlertsSvc } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const service = new DecisionsService(new CrowdSecBaseClient(), new AlertsSvc(new CrowdSecBaseClient()));
+
+    await expect(service.getDecisionsFromAlerts()).resolves.toEqual([]);
+  });
+
+  it('getActiveDecisions returns an empty set when the response data is falsy', async () => {
+    mockClient.get.mockResolvedValue({ data: null });
+
+    const { DecisionsService } = await import('@/infrastructure/crowdsec/lapi/decisions');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const service = new DecisionsService(new CrowdSecBaseClient());
+
+    await expect(service.getActiveDecisions()).resolves.toEqual(new Set());
+  });
+});
