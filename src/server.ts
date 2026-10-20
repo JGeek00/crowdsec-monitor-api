@@ -1,12 +1,16 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
 import { buildApp, buildJobRegistry } from '@/app';
+import { databaseService, schedulerService, statusService, notificationEngineService, log } from '@/services';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
-import { databaseService, schedulerService, statusService, notificationEngineService } from '@/services';
 import { webSocketApp } from '@/sockets';
-import { setLevel as initLogger, log } from '@/services';
+import { setLevel as initLogger } from '@/services/log.service';
 import { LogLevel } from '@/types/log.types';
+import { formatInterval } from '@/application/jobs/format-interval';
 import packageJson from '../package.json';
+
+// Re-export for backwards compatibility (tests and helpers import it from '@/server').
+export { formatInterval };
 
 /**
  * Validate required environment variables
@@ -42,66 +46,58 @@ export const validateEnvironment = (): void => {
   }
 };
 
-export const formatInterval = (seconds: number): string => {
-  if (seconds >= 3600 && seconds % 3600 === 0) return `${seconds / 3600}h`;
-  if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60}m`;
-  return `${seconds}s`;
-};
-
 export const step = (label: string, status: '✓' | '⚠' | '✗', detail?: string): void => {
   const paddedLabel = label.padEnd(36, '.');
   const suffix = detail ? ` (${detail})` : '';
   log.info(`  ${paddedLabel} ${status}${suffix}`);
 };
 
+/** Bootstrap steps before the HTTP listener starts (legacy order preserved). */
+const bootstrap = async (): Promise<void> => {
+  initLogger(config.logs.level as LogLevel);
+
+  console.log('');
+  console.log('  ╔══════════════════════════════════════╗');
+  console.log(`  ║   CrowdSec Monitor API  v${packageJson.version.padEnd(12)}║`);
+  console.log('  ╚══════════════════════════════════════╝');
+  console.log('');
+
+  validateEnvironment();
+  step('Environment', '✓');
+
+  await initDatabase();
+  step('Database', '✓', config.database.mode);
+
+  const isConnected = await crowdSecAPI.testConnection();
+  if (!isConnected) {
+    step('CrowdSec LAPI', '⚠', 'unreachable — check config');
+  } else {
+    step('CrowdSec LAPI', '✓', config.crowdsec.lapiUrl);
+  }
+  statusService.updateLapiStatus(isConnected, null);
+
+  await crowdSecAPI.checkBouncerConnection();
+  statusService.updateBouncerStatus(crowdSecAPI.isBouncerConnected());
+  step('Bouncer key', '✓');
+
+  try {
+    await notificationEngineService.reload();
+    step('Notifications', '✓');
+  } catch (err) {
+    step('Notifications', '⚠', err instanceof Error ? err.message : 'load failed');
+  }
+
+  if (isConnected) {
+    await databaseService.syncAll();
+    statusService.updateLapiStatus(isConnected, databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
+    step('Initial data sync', '✓');
+  }
+};
+
 const startServer = async (): Promise<void> => {
   try {
-    initLogger(config.logs.level as LogLevel);
+    await bootstrap();
 
-    console.log('');
-    console.log('  ╔══════════════════════════════════════╗');
-    console.log(`  ║   CrowdSec Monitor API  v${packageJson.version.padEnd(12)}║`);
-    console.log('  ╚══════════════════════════════════════╝');
-    console.log('');
-
-    // Validate environment variables first
-    validateEnvironment();
-    step('Environment', '✓');
-
-    // Initialize database
-    await initDatabase();
-    step('Database', '✓', config.database.mode);
-
-    // Test CrowdSec connection
-    const isConnected = await crowdSecAPI.testConnection();
-    if (!isConnected) {
-      step('CrowdSec LAPI', '⚠', 'unreachable — check config');
-    } else {
-      step('CrowdSec LAPI', '✓', config.crowdsec.lapiUrl);
-    }
-    statusService.updateLapiStatus(isConnected, null);
-
-    // Verify bouncer API key (CROWDSEC_BOUNCER_KEY) by requesting active decisions
-    await crowdSecAPI.checkBouncerConnection();
-    statusService.updateBouncerStatus(crowdSecAPI.isBouncerConnected());
-    step('Bouncer key', '✓');
-
-    // Load user notifications into the engine before any sync so fresh alerts can trigger them
-    try {
-      await notificationEngineService.reload();
-      step('Notifications', '✓');
-    } catch (err) {
-      step('Notifications', '⚠', err instanceof Error ? err.message : 'load failed');
-    }
-
-    // Initial data sync
-    if (isConnected) {
-      await databaseService.syncAll();
-      statusService.updateLapiStatus(isConnected, databaseService.getLastSuccessfulSync()?.toISOString() ?? null);
-      step('Initial data sync', '✓');
-    }
-
-    // Setup schedulers
     const jobRegistry = buildJobRegistry();
     jobRegistry.startAll();
 
@@ -113,7 +109,6 @@ const startServer = async (): Promise<void> => {
     log.info(`    ↻ CS blocklists sync     every ${formatInterval(config.crowdsecBlocklists.refreshTimeSeconds)}`);
     log.info(`    ↻ Version check          every 1h`);
 
-    // Create and start Express app
     const app = buildApp();
 
     const server = app.listen(config.server.port, () => {
@@ -127,7 +122,6 @@ const startServer = async (): Promise<void> => {
       console.log('');
     });
 
-    // Start websocket
     webSocketApp.setup(server);
   } catch (err) {
     console.error('');

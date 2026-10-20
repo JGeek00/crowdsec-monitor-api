@@ -1,6 +1,6 @@
 import { log } from '@/services/log.service';
 
-type ScheduledTask = () => void | Promise<void>;
+type ScheduledTask = () => unknown | Promise<unknown>;
 
 interface SchedulerOptions {
   intervalSeconds: number;
