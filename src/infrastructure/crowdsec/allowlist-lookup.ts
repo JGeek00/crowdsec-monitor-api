@@ -1,4 +1,4 @@
-import { isIpv4, isIpv4InCidr } from '@/utils/ip';
+import { isIpv4, isIpv4InCidr } from '@/shared/utils/ip';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
 
 /**

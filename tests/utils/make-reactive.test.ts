@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { makeReactive } from '@/utils/make-reactive';
+import { makeReactive } from '@/infrastructure/status/make-reactive';
 
 describe('makeReactive', () => {
   it('calls onChange when a property is set', () => {

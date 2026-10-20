@@ -1,6 +1,6 @@
 import { NotFoundError } from '@/domain/errors';
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
-import { canonicalizeFields } from '@/utils/timestamp-format';
+import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import type { BlocklistIp } from '@/domain/entities';
 
 // Called by: delivery/http controllers (blocklists detail endpoint)

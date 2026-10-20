@@ -1,4 +1,4 @@
-import { canonicalizeFields } from '@/utils/timestamp-format';
+import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import type { Decision } from '@/domain/entities';
 import type { GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';

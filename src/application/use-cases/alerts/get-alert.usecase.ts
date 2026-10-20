@@ -1,5 +1,5 @@
 import type { Alert, Decision } from '@/domain/entities';
-import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 import { NotFoundError } from '@/domain/errors';
 import type { AlertRepository } from '@/application/ports/alert-repository.port';
 

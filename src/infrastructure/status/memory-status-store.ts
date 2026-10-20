@@ -1,5 +1,5 @@
 import type { StatusSnapshot } from '@/shared/models';
-import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
+import { toCanonicalTimestamp, toCanonicalTimestampFromDate } from '@/shared/utils/timestamp-format';
 import packageJson from '../../../package.json';
 
 type StateChangeCallback = () => void;

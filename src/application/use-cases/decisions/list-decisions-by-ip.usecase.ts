@@ -2,7 +2,7 @@ import type { Decision } from '@/domain/entities';
 import type { DecisionGroup, GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
 import { applyJsFilters, groupDecisionsByIp, buildPaginatedResponse } from './list.helpers';
-import { canonicalizeFields } from '@/utils/timestamp-format';
+import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 
 // Called by: delivery/http controllers (decisions by-ip list endpoint)
 export class ListDecisionsByIpUseCase {

@@ -1,4 +1,4 @@
-import { WsChannel } from '@/utils/ws-channel';
+import { WsChannel } from '@/delivery/websocket/ws-channel';
 import { statusService } from '@/infrastructure/status/monitor-status-store';
 import { log } from '@/infrastructure/system/logger';
 

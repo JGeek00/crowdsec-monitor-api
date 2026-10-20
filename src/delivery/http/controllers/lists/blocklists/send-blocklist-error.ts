@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import {
   ServiceUnavailableError,
   UpstreamUnavailableError,

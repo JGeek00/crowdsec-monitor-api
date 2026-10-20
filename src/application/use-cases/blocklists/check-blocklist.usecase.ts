@@ -1,7 +1,6 @@
 import type { LapiClient } from '@/application/ports/lapi-client.port';
-import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
-import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
-import { resolveIps } from '@/utils/dns-resolve';
+import type { AllowlistIpLookup, BlocklistIpLookup, DomainResolver } from '@/application/ports/ip-lookup.port';
+import { resolveIps } from '@/shared/utils/dns-resolve';
 import { config } from '@/config';
 
 export interface CheckIpResultItem {
@@ -11,10 +10,10 @@ export interface CheckIpResultItem {
 
 // Called by: delivery/http controllers (blocklists check endpoint)
 export class CheckIpUseCase {
-  constructor(private readonly deps: { lapiClient: LapiClient }) {}
+  constructor(private readonly deps: { blocklistLookup: BlocklistIpLookup }) {}
 
   async execute(ips: string[]): Promise<{ results: CheckIpResultItem[] }> {
-    const blocklistMap = await lookupIpsInBlocklists(ips);
+    const blocklistMap = await this.deps.blocklistLookup(ips);
     const results = ips.map((ip) => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
     return { results };
   }
@@ -27,16 +26,16 @@ export interface CheckDomainResult {
 
 // Called by: delivery/http controllers (blocklists check-domain endpoint)
 export class CheckDomainUseCase {
-  constructor(private readonly deps: { lapiClient: LapiClient }) {}
+  constructor(private readonly deps: { blocklistLookup: BlocklistIpLookup; resolveDomain: DomainResolver }) {}
 
   async execute(domain: string): Promise<CheckDomainResult | { unresolvable: true }> {
-    const ips = await resolveIps(domain, config.dns.server);
+    const ips = await this.deps.resolveDomain(domain, config.dns.server);
 
     if (ips.length === 0) {
       return { unresolvable: true };
     }
 
-    const blocklistMap = await lookupIpsInBlocklists(ips);
+    const blocklistMap = await this.deps.blocklistLookup(ips);
     const results = ips.map((ip) => ({ ip, blocklists: blocklistMap.get(ip) ?? [] }));
     return { domain, ips: results };
   }
@@ -44,10 +43,13 @@ export class CheckDomainUseCase {
 
 // Called by: delivery/http controllers (lists check-ips endpoint)
 export class CheckIpsInListUseCase {
-  constructor(private readonly deps: { lapiClient: LapiClient }) {}
+  constructor(private readonly deps: { blocklistLookup: BlocklistIpLookup; allowlistLookup: AllowlistIpLookup }) {}
 
   async execute(ips: string[]): Promise<unknown> {
-    const [blocklistMap, allowlistMap] = await Promise.all([lookupIpsInBlocklists(ips), lookupIpsInAllowlists(ips)]);
+    const [blocklistMap, allowlistMap] = await Promise.all([
+      this.deps.blocklistLookup(ips),
+      this.deps.allowlistLookup(ips),
+    ]);
 
     return {
       results: ips.map((ip) => ({
@@ -67,3 +69,6 @@ export class CheckAllowlistUseCase {
     return this.deps.lapiClient.checkAllowlist(ips);
   }
 }
+
+// Re-exported for the composition root's convenience wiring.
+export { resolveIps };

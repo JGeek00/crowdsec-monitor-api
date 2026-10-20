@@ -1,5 +1,5 @@
 import { IncomingMessage, Server } from 'http';
-import { WsChannel } from '@/utils/ws-channel';
+import { WsChannel } from '@/delivery/websocket/ws-channel';
 import { AuthMiddleware } from '@/delivery/http/middlewares/auth.middleware';
 import { statusSocket } from './channels/status.channel';
 

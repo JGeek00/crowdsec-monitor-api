@@ -3,7 +3,7 @@ import { IncomingMessage } from 'http';
 import { timingSafeEqual } from 'crypto';
 import { Stream } from 'stream';
 import { config } from '@/config';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 
 export interface AuthResult {
   isValid: boolean;

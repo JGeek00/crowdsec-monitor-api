@@ -1,5 +1,5 @@
 import { Op } from '@sequelize/core';
-import { isIpv4, isIpv4InCidr } from '@/utils/ip';
+import { isIpv4, isIpv4InCidr } from '@/shared/utils/ip';
 import { BlocklistIpsTable } from '@/infrastructure/persistence/sequelize/models';
 
 /**

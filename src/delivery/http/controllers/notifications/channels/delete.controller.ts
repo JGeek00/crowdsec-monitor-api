@@ -3,7 +3,7 @@ import { ChannelIdParams, DeleteChannelResponse, ResponseWithError } from '@/del
 import { NotificationChannelsTable } from '@/delivery/http/contracts';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 import { findNotificationsUsingChannel } from '@/application/use-cases/notifications/channel-refs';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
 

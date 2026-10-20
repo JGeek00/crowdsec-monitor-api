@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { resolveIps } from '@/utils/dns-resolve';
+import { resolveIps } from '@/shared/utils/dns-resolve';
 
 // Mock the entire dns/promises module
 vi.mock('dns/promises', () => {

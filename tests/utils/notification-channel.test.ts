@@ -7,7 +7,7 @@ import {
   splitRecipients,
   validateChannelConfig,
   withChannelDefaults,
-} from '@/utils/notification-channel';
+} from '@/shared/utils/notification-channel';
 
 describe('validateChannelConfig ntfy', () => {
   it('accepts a minimal topic-only config', () => {

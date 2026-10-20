@@ -17,7 +17,7 @@ import {
   PROCESS_FIELD_BLOCKLIST,
 } from '@/types/process.types';
 import { config } from '@/config';
-import { toCanonicalTimestampFromDate } from '@/utils/timestamp-format';
+import { toCanonicalTimestampFromDate } from '@/shared/utils/timestamp-format';
 import { type StatusService, statusService } from './monitor-status-store';
 
 const PROCESS_RETENTION_MS = config.processes.finishedRetentionMs;

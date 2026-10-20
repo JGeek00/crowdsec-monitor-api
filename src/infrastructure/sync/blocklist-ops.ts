@@ -10,8 +10,8 @@ import { blocklistDbService } from '@/infrastructure/persistence/sequelize/block
 import { blocklistCrowdSecService } from '@/infrastructure/crowdsec/http-bouncer-client';
 import { SingleRefreshReporter, statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
 import type { ProcessFieldBlocklist, ProcessFieldBlocklistOps } from '@/types/process.types';
-import { filterAllowlistedIps } from '@/utils/blocklist-allowlist-filter';
-import { parseBlocklistContent } from '@/utils/parse-blocklist';
+import { filterAllowlistedIps } from '@/infrastructure/sync/blocklist-allowlist-filter';
+import { parseBlocklistContent } from '@/shared/utils/parse-blocklist';
 import { fetchAndDeduplicateIps, buildActivationSummary } from '@/infrastructure/sync/blocklist-activation';
 import { processOneBlocklist } from '@/infrastructure/sync/blocklist-refresh';
 import { runBlocklistRefreshPipeline } from '@/infrastructure/sync/blocklists-refresh-pipeline';

@@ -3,8 +3,8 @@ import { AlertsTable, DecisionsTable } from '@/infrastructure/persistence/sequel
 import type { Alert, Decision } from '@/domain/entities';
 import type { UnparsedMetaData } from '@/shared/models';
 import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
-import { calculateExpiration, calculateRetentionCutoff } from '@/utils/duration';
-import { toCanonicalTimestamp } from '@/utils/timestamp-format';
+import { calculateExpiration, calculateRetentionCutoff } from '@/shared/utils/duration';
+import { toCanonicalTimestamp } from '@/shared/utils/timestamp-format';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
 import { log } from '@/infrastructure/system/logger';

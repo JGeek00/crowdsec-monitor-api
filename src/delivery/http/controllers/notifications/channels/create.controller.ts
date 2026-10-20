@@ -7,8 +7,8 @@ import {
 } from '@/delivery/http/contracts';
 import { NotificationChannelsTable } from '@/delivery/http/contracts';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
-import { validateChannelConfig } from '@/utils/notification-channel';
-import { errorResponse } from '@/utils/error-response';
+import { validateChannelConfig } from '@/shared/utils/notification-channel';
+import { errorResponse } from '@/delivery/http/error-response';
 import { toChannelResponse } from '@/infrastructure/notifications/channel-response';
 import { log } from '@/infrastructure/system/logger';
 

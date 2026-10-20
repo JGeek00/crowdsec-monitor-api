@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
+import { lookupIpsInBlocklists } from '@/infrastructure/persistence/sequelize/blocklist-lookup';
 
 vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
   BlocklistIpsTable: {

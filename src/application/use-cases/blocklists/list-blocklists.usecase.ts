@@ -1,5 +1,5 @@
 import type { BlocklistRepository } from '@/application/ports/blocklist-repository.port';
-import { canonicalizeFields } from '@/utils/timestamp-format';
+import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import type { BlocklistIp } from '@/domain/entities';
 import type { GetBlocklistsQueryParams } from './blocklists.dto';
 import { BLOCKLIST_TYPE, type BlocklistType } from '@/domain/entities/blocklist.entity';

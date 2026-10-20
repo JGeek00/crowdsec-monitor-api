@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
+import { lookupIpsInAllowlists } from '@/infrastructure/crowdsec/allowlist-lookup';
 
 vi.mock('@/infrastructure/crowdsec/lapi/crowdsec-api', () => ({
   crowdSecAPI: {

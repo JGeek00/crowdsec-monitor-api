@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseBlocklistContent } from '@/utils/parse-blocklist';
+import { parseBlocklistContent } from '@/shared/utils/parse-blocklist';
 
 describe('parseBlocklistContent', () => {
   it('parses simple IP entries', () => {

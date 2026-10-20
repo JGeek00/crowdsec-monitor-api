@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WebSocketServer, WebSocket } from 'ws';
-import { WsChannel } from '@/utils/ws-channel';
+import { WsChannel } from '@/delivery/websocket/ws-channel';
 
 vi.mock('ws', () => {
   const mockWebSocket = vi.fn();

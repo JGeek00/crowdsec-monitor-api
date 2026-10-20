@@ -23,12 +23,12 @@ vi.mock('@/container', () => ({
     },
   },
 }));
-vi.mock('@/utils/request-signal', () => ({
+vi.mock('@/delivery/http/request-signal', () => ({
   createRequestSignal: vi.fn(function () {
     return { signal: { aborted: false }, cleanup: vi.fn() };
   }),
 }));
-vi.mock('@/utils/error-response', () => ({
+vi.mock('@/delivery/http/error-response', () => ({
   errorResponse: vi.fn((e, m) => ({ error: e, message: m })),
 }));
 

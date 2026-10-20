@@ -5,7 +5,7 @@ import type {
   NotificationChannelRef,
   NtfyChannelConfig,
 } from '@/domain/entities';
-import { buildNtfyUrl, splitRecipients, withChannelDefaults } from '@/utils/notification-channel';
+import { buildNtfyUrl, splitRecipients, withChannelDefaults } from '@/shared/utils/notification-channel';
 import { buildAlertInfoEmailHtml } from '@/infrastructure/notifications/alert-info-body';
 import { findProvider } from '@/constants/notification-providers';
 import { log } from '@/infrastructure/system/logger';

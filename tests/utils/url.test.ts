@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assertSafeUrl } from '@/utils/url';
+import { assertSafeUrl } from '@/shared/utils/url';
 
 describe('assertSafeUrl', () => {
   it('accepts valid public http URLs', () => {

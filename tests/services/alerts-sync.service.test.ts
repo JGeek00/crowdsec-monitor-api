@@ -28,7 +28,7 @@ vi.mock('@/config', () => ({
 const { mockCalculateRetentionCutoff } = vi.hoisted(() => ({
   mockCalculateRetentionCutoff: vi.fn(() => new Date(Date.now() - 30 * 86400000)),
 }));
-vi.mock('@/utils/duration', () => ({
+vi.mock('@/shared/utils/duration', () => ({
   calculateExpiration: vi.fn(() => new Date()),
   calculateRetentionCutoff: mockCalculateRetentionCutoff,
 }));

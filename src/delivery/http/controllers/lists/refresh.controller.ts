@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { ResponseWithError } from '@/delivery/http/contracts';
 import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import { ServiceUnavailableError } from '@/domain/errors';
 
 /**

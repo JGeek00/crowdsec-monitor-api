@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createRequestSignal } from '@/utils/request-signal';
+import { createRequestSignal } from '@/delivery/http/request-signal';
 import type { Request } from 'express';
 
 function createMockReq(): Partial<Request> {

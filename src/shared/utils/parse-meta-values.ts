@@ -1,4 +1,4 @@
-import { toCanonicalFromUnknown } from '@/utils/timestamp-format';
+import { toCanonicalFromUnknown } from '@/shared/utils/timestamp-format';
 import type { AlertDelivery } from '@/delivery/http/presenters/alerts/AlertDelivery.model';
 import type { Alert } from '@/domain/entities';
 import type { ParsedMetaData, UnparsedMetaData } from '@/shared/models';

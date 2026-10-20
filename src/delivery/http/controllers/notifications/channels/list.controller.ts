@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { NotificationChannelsTable, GetChannelsResponse, ResponseWithError } from '@/delivery/http/contracts';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import { toChannelResponse } from '@/infrastructure/notifications/channel-response';
 import { log } from '@/infrastructure/system/logger';
 

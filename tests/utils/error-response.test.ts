@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 
 describe('errorResponse', () => {
   it('returns an object with error and message properties', () => {

@@ -8,8 +8,8 @@ import {
   UnparsedMetaData,
 } from '@/delivery/http/contracts';
 import { notificationHistoryService } from '@/infrastructure/notifications/history';
-import { parseAlertMeta } from '@/utils/parse-meta-values';
-import { errorResponse } from '@/utils/error-response';
+import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
+import { errorResponse } from '@/delivery/http/error-response';
 import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<GetNotificationHistoryAlertsResponse>;

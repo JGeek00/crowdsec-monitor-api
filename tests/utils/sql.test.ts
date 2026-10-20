@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { escapeLike } from '@/utils/sql';
+import { escapeLike } from '@/shared/utils/sql';
 
 describe('escapeLike', () => {
   it('escapes percent signs', () => {

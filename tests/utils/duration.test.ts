@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseDuration, calculateExpiration, parseRetentionPeriod, calculateRetentionCutoff } from '@/utils/duration';
+import {
+  parseDuration,
+  calculateExpiration,
+  parseRetentionPeriod,
+  calculateRetentionCutoff,
+} from '@/shared/utils/duration';
 
 describe('parseDuration', () => {
   it('parses hours', () => {

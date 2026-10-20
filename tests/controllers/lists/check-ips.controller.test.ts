@@ -5,8 +5,10 @@ const { mockLookupIpsInBlocklists, mockLookupIpsInAllowlists } = vi.hoisted(() =
   mockLookupIpsInAllowlists: vi.fn(),
 }));
 
-vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mockLookupIpsInBlocklists }));
-vi.mock('@/utils/allowlist-lookup', () => ({ lookupIpsInAllowlists: mockLookupIpsInAllowlists }));
+vi.mock('@/infrastructure/persistence/sequelize/blocklist-lookup', () => ({
+  lookupIpsInBlocklists: mockLookupIpsInBlocklists,
+}));
+vi.mock('@/infrastructure/crowdsec/allowlist-lookup', () => ({ lookupIpsInAllowlists: mockLookupIpsInAllowlists }));
 vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';

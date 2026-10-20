@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { lookupIpsInBlocklists } from '@/utils/blocklist-lookup';
-import { lookupIpsInAllowlists } from '@/utils/allowlist-lookup';
-import { resolveIps } from '@/utils/dns-resolve';
+import { lookupIpsInBlocklists } from '@/infrastructure/persistence/sequelize/blocklist-lookup';
+import { lookupIpsInAllowlists } from '@/infrastructure/crowdsec/allowlist-lookup';
+import { resolveIps } from '@/shared/utils/dns-resolve';
 import { config } from '@/config';
 import { log } from '@/infrastructure/system/logger';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import {
   PostCheckDomainBody,
   PostCheckDomainResponse,

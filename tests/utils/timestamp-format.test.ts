@@ -5,7 +5,7 @@ import {
   toCanonicalTimestampFromDate,
   toCanonicalFromUnknown,
   canonicalizeFields,
-} from '@/utils/timestamp-format';
+} from '@/shared/utils/timestamp-format';
 import {
   CANONICAL_PLUS_0200,
   CANONICAL_PLUS_0200_UTC,

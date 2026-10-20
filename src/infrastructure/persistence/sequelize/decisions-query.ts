@@ -1,7 +1,7 @@
 import { Op, WhereOptions } from '@sequelize/core';
 import { DecisionsTable } from '@/infrastructure/persistence/sequelize/models';
 import type { Decision, Alert_SourceInfo } from '@/domain/entities';
-import { escapeLike } from '@/utils/sql';
+import { escapeLike } from '@/shared/utils/sql';
 import { DB_SORTING } from '@/types/database.types';
 import type { FilteringInfo } from '@/application/use-cases/decisions/decisions.dto';
 

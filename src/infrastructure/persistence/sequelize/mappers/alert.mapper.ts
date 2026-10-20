@@ -1,6 +1,6 @@
 import type { Alert, Alert_EventData, Alert_SourceInfo } from '@/domain/entities';
 import type { UnparsedMetaData } from '@/shared/models';
-import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 
 type AlertRow = Alert<UnparsedMetaData>;
 

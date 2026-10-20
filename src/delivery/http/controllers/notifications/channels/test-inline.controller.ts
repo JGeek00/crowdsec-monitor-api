@@ -6,8 +6,8 @@ import {
   ResponseWithError,
 } from '@/delivery/http/contracts';
 import { dispatchChannels } from '@/infrastructure/notifications/sender';
-import { validateChannelConfig } from '@/utils/notification-channel';
-import { errorResponse } from '@/utils/error-response';
+import { validateChannelConfig } from '@/shared/utils/notification-channel';
+import { errorResponse } from '@/delivery/http/error-response';
 import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<PostChannelTestResponse>;

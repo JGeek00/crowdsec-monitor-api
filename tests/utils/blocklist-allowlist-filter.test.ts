@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterAllowlistedIps } from '@/utils/blocklist-allowlist-filter';
+import { filterAllowlistedIps } from '@/infrastructure/sync/blocklist-allowlist-filter';
 
 describe('filterAllowlistedIps', () => {
   it('removes exact match allowlisted IPs', () => {

@@ -6,9 +6,13 @@ const mocks = vi.hoisted(() => ({
   mockResolveIps: vi.fn(),
 }));
 
-vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mocks.mockLookupIpsInBlocklists }));
-vi.mock('@/utils/allowlist-lookup', () => ({ lookupIpsInAllowlists: mocks.mockLookupIpsInAllowlists }));
-vi.mock('@/utils/dns-resolve', () => ({ resolveIps: mocks.mockResolveIps }));
+vi.mock('@/infrastructure/persistence/sequelize/blocklist-lookup', () => ({
+  lookupIpsInBlocklists: mocks.mockLookupIpsInBlocklists,
+}));
+vi.mock('@/infrastructure/crowdsec/allowlist-lookup', () => ({
+  lookupIpsInAllowlists: mocks.mockLookupIpsInAllowlists,
+}));
+vi.mock('@/shared/utils/dns-resolve', () => ({ resolveIps: mocks.mockResolveIps }));
 vi.mock('@/config', () => ({ config: { dns: { server: '1.1.1.1' } } }));
 vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 

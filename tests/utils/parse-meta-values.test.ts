@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAlertMeta } from '@/utils/parse-meta-values';
+import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
 
 describe('parseAlertMeta', () => {
   it('parses string meta values as JSON arrays', () => {

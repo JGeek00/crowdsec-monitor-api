@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { GetProvidersResponse, ResponseWithError } from '@/delivery/http/contracts';
 import { notificationProviders, notificationProvidersVersion } from '@/constants/notification-providers';
-import { sanitizeProviderDefinitions } from '@/utils/notification-channel';
-import { errorResponse } from '@/utils/error-response';
+import { sanitizeProviderDefinitions } from '@/shared/utils/notification-channel';
+import { errorResponse } from '@/delivery/http/error-response';
 import { log } from '@/infrastructure/system/logger';
 
 type Res = ResponseWithError<GetProvidersResponse>;

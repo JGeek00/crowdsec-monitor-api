@@ -3,7 +3,7 @@ import type { PostCheckIpsInListBody, PostCheckIpsInListResult, ResponseWithErro
 import { isIpv4 } from '@/shared/utils/ip';
 import { ipv6Regex } from '@/constants/regexps';
 import { log } from '@/infrastructure/system/logger';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import { container } from '@/container';
 
 /**

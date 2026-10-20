@@ -1,7 +1,7 @@
 import type { Decision, Alert } from '@/domain/entities';
 import type { UnparsedMetaData } from '@/shared/meta-data';
-import { parseAlertMeta } from '@/utils/parse-meta-values';
-import { canonicalizeFields } from '@/utils/timestamp-format';
+import { parseAlertMeta } from '@/shared/utils/parse-meta-values';
+import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import { NotFoundError } from '@/domain/errors';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countIpsInValue } from '@/utils/ip-count';
+import { countIpsInValue } from '@/shared/utils/ip-count';
 
 describe('countIpsInValue', () => {
   it('returns 1 for a plain IP address', () => {

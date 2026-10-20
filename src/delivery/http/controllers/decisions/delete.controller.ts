@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '@/container';
 import { log } from '@/infrastructure/system/logger';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import { NotFoundError } from '@/domain/errors';
 import type { DeleteDecisionParams, DeleteDecisionResponse, ResponseWithError } from '@/delivery/http/contracts';
 

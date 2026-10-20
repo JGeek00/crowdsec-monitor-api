@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockLookupIpsInBlocklists = vi.hoisted(() => vi.fn());
 
-vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mockLookupIpsInBlocklists }));
+vi.mock('@/infrastructure/persistence/sequelize/blocklist-lookup', () => ({
+  lookupIpsInBlocklists: mockLookupIpsInBlocklists,
+}));
 vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';

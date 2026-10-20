@@ -24,11 +24,11 @@ vi.mock('@/infrastructure/crowdsec/http-bouncer-client', () => ({
   },
 }));
 
-vi.mock('@/utils/blocklist-allowlist-filter', () => ({
+vi.mock('@/infrastructure/sync/blocklist-allowlist-filter', () => ({
   filterAllowlistedIps: vi.fn(),
 }));
 
-vi.mock('@/utils/parse-blocklist', () => ({
+vi.mock('@/shared/utils/parse-blocklist', () => ({
   parseBlocklistContent: vi.fn(),
 }));
 
@@ -46,9 +46,9 @@ describe('runBlocklistRefreshPipeline', () => {
   it('runs full pipeline and returns pushed count', async () => {
     const { blocklistCrowdSecService } = await import('@/infrastructure/crowdsec/http-bouncer-client');
     vi.mocked(blocklistCrowdSecService.downloadBlocklist).mockResolvedValue({ rawContent: '1.2.3.4\n5.5.5.5' });
-    const { parseBlocklistContent } = await import('@/utils/parse-blocklist');
+    const { parseBlocklistContent } = await import('@/shared/utils/parse-blocklist');
     vi.mocked(parseBlocklistContent).mockReturnValue(['1.2.3.4', '5.5.5.5']);
-    const { filterAllowlistedIps } = await import('@/utils/blocklist-allowlist-filter');
+    const { filterAllowlistedIps } = await import('@/infrastructure/sync/blocklist-allowlist-filter');
     vi.mocked(filterAllowlistedIps).mockReturnValue(['1.2.3.4', '5.5.5.5']);
     const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.decisions.getActiveDecisions).mockResolvedValue(new Set(['1.2.3.4']));

@@ -13,6 +13,9 @@ import { notificationEngineService } from '@/infrastructure/notifications/engine
 import { notificationHistoryService } from '@/infrastructure/notifications/history';
 import { versionCheckerService } from '@/infrastructure/system/version-checker';
 import { log } from '@/infrastructure/system/logger';
+import { lookupIpsInBlocklists } from '@/infrastructure/persistence/sequelize/blocklist-lookup';
+import { lookupIpsInAllowlists } from '@/infrastructure/crowdsec/allowlist-lookup';
+import { resolveIps } from '@/shared/utils/dns-resolve';
 import { ListAlertsUseCase } from '@/application/use-cases/alerts/list-alerts.usecase';
 import { GetAlertUseCase } from '@/application/use-cases/alerts/get-alert.usecase';
 import { DeleteAlertUseCase } from '@/application/use-cases/alerts/delete-alert.usecase';
@@ -162,9 +165,12 @@ const buildContainer = () => {
         getBlocklist: new GetBlocklistUseCase({ blocklistRepository }),
         getBlocklistIps: new GetBlocklistIpsUseCase({ blocklistRepository }),
         syncCsBlocklists: new SyncCsBlocklistsUseCase({ csBlocklistSync: csBlocklistSyncService }),
-        checkIp: new CheckIpUseCase({ lapiClient }),
-        checkDomain: new CheckDomainUseCase({ lapiClient }),
-        checkIpsInList: new CheckIpsInListUseCase({ lapiClient }),
+        checkIp: new CheckIpUseCase({ blocklistLookup: lookupIpsInBlocklists }),
+        checkDomain: new CheckDomainUseCase({ blocklistLookup: lookupIpsInBlocklists, resolveDomain: resolveIps }),
+        checkIpsInList: new CheckIpsInListUseCase({
+          blocklistLookup: lookupIpsInBlocklists,
+          allowlistLookup: lookupIpsInAllowlists,
+        }),
         checkAllowlist: new CheckAllowlistUseCase({ lapiClient }),
         listAllowlists: new ListAllowlistsUseCase({ lapiClient }),
         getAllowlist: new GetAllowlistUseCase({ lapiClient }),

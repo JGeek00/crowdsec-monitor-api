@@ -5,9 +5,9 @@ import type {
   GetBlocklistResponse,
   ResponseWithError,
 } from '@/delivery/http/contracts';
-import { createRequestSignal } from '@/utils/request-signal';
+import { createRequestSignal } from '@/delivery/http/request-signal';
 import { log } from '@/infrastructure/system/logger';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import { container } from '@/container';
 import { NotFoundError } from '@/domain/errors';
 

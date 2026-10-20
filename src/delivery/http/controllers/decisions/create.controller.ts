@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '@/container';
-import { errorResponse } from '@/utils/error-response';
+import { errorResponse } from '@/delivery/http/error-response';
 import type { PostDecisionBody, PostDecisionResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**

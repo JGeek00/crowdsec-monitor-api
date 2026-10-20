@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidDate } from '@/utils/date-validator';
+import { isValidDate } from '@/shared/utils/date-validator';
 
 describe('isValidDate', () => {
   it('returns true for valid ISO date strings', () => {

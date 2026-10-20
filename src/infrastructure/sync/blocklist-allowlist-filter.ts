@@ -1,4 +1,4 @@
-import { buildAllowlistMatcher } from '@/utils/ip';
+import { buildAllowlistMatcher } from '@/shared/utils/ip';
 import { log } from '@/infrastructure/system/logger';
 
 /** Remove IPs that match any allowlist entry. */

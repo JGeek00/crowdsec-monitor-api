@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isIpv4, ipToInt32, isIpv4InCidr, isIpv6InCidr, buildAllowlistMatcher } from '@/utils/ip';
+import { isIpv4, ipToInt32, isIpv4InCidr, isIpv6InCidr, buildAllowlistMatcher } from '@/shared/utils/ip';
 
 describe('isIpv4', () => {
   it('returns true for valid IPv4 addresses', () => {

@@ -9,8 +9,8 @@ import {
   type ProcessBlocklistStep,
   type ProcessBlocklistStepStatus,
 } from '@/types/process.types';
-import { filterAllowlistedIps } from '@/utils/blocklist-allowlist-filter';
-import { parseBlocklistContent } from '@/utils/parse-blocklist';
+import { filterAllowlistedIps } from '@/infrastructure/sync/blocklist-allowlist-filter';
+import { parseBlocklistContent } from '@/shared/utils/parse-blocklist';
 
 export interface BlocklistRefreshReporter {
   onStep(step: ProcessBlocklistRefreshStep, status: ProcessBlocklistStepStatus): void;
