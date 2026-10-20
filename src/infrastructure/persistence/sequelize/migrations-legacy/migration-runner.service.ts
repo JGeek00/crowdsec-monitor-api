@@ -23,15 +23,15 @@ function loadMigration(filePath: string): MigrationTask {
 
 /**
  * MigrationRunner - Automatically discovers and executes database migrations
- * from the src/migrations/ directory in numeric order.
+ * from the infrastructure/persistence/sequelize/migrations/ directory in numeric order.
  */
 export class MigrationRunner {
   private migrationsCache: Map<string, MigrationTask> = new Map();
   private migrationsDir: string;
 
   constructor(private migrationService: MigrationService) {
-    const projectRoot = path.resolve(__dirname, '../../..');
-    this.migrationsDir = path.join(projectRoot, 'dist/migrations');
+    // Compiled migrations live next to this file: dist/infrastructure/persistence/sequelize/migrations
+    this.migrationsDir = path.resolve(__dirname, '../migrations');
   }
 
   /**
@@ -72,7 +72,7 @@ export class MigrationRunner {
       const migrationNames = this.loadMigrations();
 
       if (migrationNames.length === 0) {
-        log.info('No migrations found in src/migrations/');
+        log.info('No migrations found in the migrations directory');
         return;
       }
 
@@ -135,7 +135,7 @@ export class MigrationRunner {
   }
 
   /**
-   * Load all migrations from src/migrations/ directory
+   * Load all migrations from the migrations directory
    */
   private loadMigrations(): string[] {
     if (!fs.existsSync(this.migrationsDir)) {
