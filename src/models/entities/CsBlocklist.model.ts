@@ -1,4 +1,1 @@
-export interface CsBlocklist {
-  id: string;
-  name: string;
-}
+export * from '@/domain/entities/cs-blocklist.entity';
