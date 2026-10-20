@@ -30,10 +30,10 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,js}\"",
     "test": "vitest run",
-    "test:unit": "vitest run tests/utils tests/validators tests/constants tests/helpers tests/services tests/config",
-    "test:unit:coverage": "vitest run tests/utils tests/validators tests/constants tests/helpers tests/services tests/config --coverage",
-    "test:integration": "vitest run tests/controllers tests/routes tests/middlewares tests/app.test.ts",
-    "test:e2e": "vitest run tests/sockets tests/e2e-*.test.ts tests/app.test.ts",
+    "test:unit": "vitest run tests/unit",
+    "test:unit:coverage": "vitest run tests/unit --coverage",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "vitest run tests/e2e",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {

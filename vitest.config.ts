@@ -20,24 +20,22 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/index.ts',
-        'src/types/**',
-        'src/models/in/**',
-        'src/models/out/**',
-        'src/models/shared/**',
-        'src/models/db/**',
-        'src/models/entities/**',
-        'src/migrations/**',
         'src/server.ts',
-        // Covered by the integration/e2e suites (api-tests spec, FR-007):
+        // HTTP/WS delivery wiring is covered by the integration/e2e suites:
         // excluded from the unit-coverage scope because they require a DB/app bootstrap.
-        'src/controllers/**', // tests/controllers
-        'src/routes/**', // tests/routes
-        'src/sockets/**', // tests/sockets + tests/e2e-*
-        'src/middlewares/**', // tests/middlewares
-        'src/helpers/**', // exercised via tests/controllers + tests/routes
-        'src/app.ts', // tests/app.test.ts
-        'tests/lapi-mock.ts',
-        'tests/openapi-validator.ts',
+        'src/delivery/http/controllers/**', // tests/integration/http
+        'src/delivery/http/routes/**', // tests/integration/http
+        'src/delivery/websocket/**', // tests/integration/websocket + tests/e2e
+        'src/delivery/http/middlewares/**', // tests/unit/delivery/http/middlewares
+        'src/infrastructure/sync/**', // exercised via tests/integration/http + tests/e2e (legacy helpers)
+        'src/infrastructure/persistence/sequelize/migrations/**', // SQL migrations, applied at bootstrap
+        'src/application/jobs/**', // thin bootstrap wiring, exercised via tests/e2e (legacy src/server.ts scope)
+        'src/infrastructure/scheduling/job-registry.ts', // thin bootstrap wiring (legacy src/server.ts scope)
+        'src/server-bootstrap.ts', // bootstrap wiring (legacy src/server.ts scope)
+        'src/delivery/mcp/**', // compile stub, no behavior yet
+        'src/domain/events/**', // placeholder event types, no behavior yet
+        'src/app.ts', // tests/integration/http/app.test.ts
+        'tests/setup/**',
       ],
       thresholds: {
         lines: 80,
