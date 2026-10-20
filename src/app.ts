@@ -7,6 +7,95 @@ import { config } from '@/config';
 import routes from '@/routes';
 import { errorHandler } from '@/middlewares/error.middleware';
 import { notFoundHandler } from '@/middlewares/not-found.middleware';
+import {
+  databaseService,
+  schedulerService,
+  versionCheckerService,
+  statusService,
+  statusBlocklistService,
+  log,
+} from '@/services';
+import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import appDefaults from '@/constants/app-defaults';
+
+export interface JobRegistry {
+  startAll: () => void;
+  stopAll: () => void;
+}
+
+/**
+ * Manual composition root (layered-architecture reorg, T1).
+ *
+ * For now `buildApp` / `buildJobRegistry` wire the legacy singletons so the
+ * bootstrap (server.ts) stops owning inline scheduler lambdas. Successive
+ * strangler tasks replace these singletons with ports + use cases behind
+ * manual DI, without changing behaviour.
+ */
+export const buildApp = (): Application => createApp();
+
+export const buildJobRegistry = (): JobRegistry => {
+  const startAll = (): void => {
+    schedulerService.schedule(
+      appDefaults.scheduler.lapiCheck,
+      async () => {
+        await crowdSecAPI.checkStatus();
+        statusService.updateLapiStatus(
+          crowdSecAPI.getLastLapiConnected(),
+          databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
+        );
+      },
+      { intervalSeconds: config.lapiCheck.intervalSeconds, runImmediately: false },
+    );
+
+    schedulerService.schedule(
+      appDefaults.scheduler.dataSync,
+      async () => {
+        await databaseService.syncAll();
+        statusService.updateLapiStatus(
+          crowdSecAPI.getLastLapiConnected(),
+          databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
+        );
+      },
+      { intervalSeconds: config.sync.intervalSeconds, runImmediately: false },
+    );
+
+    schedulerService.schedule(
+      appDefaults.scheduler.versionCheck,
+      async () => {
+        await versionCheckerService.checkForNewVersion();
+        statusService.updateVersionInfo(versionCheckerService.getLatestVersion());
+      },
+      { intervalSeconds: 3600, runImmediately: true },
+    );
+
+    schedulerService.schedule(
+      appDefaults.scheduler.blocklistsSync,
+      async () => {
+        if (statusBlocklistService.isSyncingBlocklists()) {
+          log.warn('Blocklists sync skipped: a refresh is already in progress');
+          return;
+        }
+        await databaseService.refreshBlocklists();
+      },
+      { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true },
+    );
+
+    schedulerService.schedule(
+      appDefaults.scheduler.csBlocklistsSync,
+      async () => {
+        await databaseService.syncCsBlocklists();
+      },
+      { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true },
+    );
+  };
+
+  return {
+    startAll,
+    stopAll: (): void => {
+      schedulerService.stopAll();
+    },
+  };
+};
 
 export const createApp = (): Application => {
   const app = express();

@@ -1,17 +1,9 @@
 import { config } from '@/config';
 import { initDatabase } from '@/config/database';
-import { createApp } from '@/app';
-import {
-  databaseService,
-  schedulerService,
-  versionCheckerService,
-  statusService,
-  statusBlocklistService,
-  notificationEngineService,
-} from '@/services';
+import { buildApp, buildJobRegistry } from '@/app';
 import { crowdSecAPI } from '@/services/crowdsec-api.service';
+import { databaseService, schedulerService, statusService, notificationEngineService } from '@/services';
 import { webSocketApp } from '@/sockets';
-import appDefaults from '@/constants/app-defaults';
 import { setLevel as initLogger, log } from '@/services';
 import { LogLevel } from '@/types/log.types';
 import packageJson from '../package.json';
@@ -110,58 +102,8 @@ const startServer = async (): Promise<void> => {
     }
 
     // Setup schedulers
-    schedulerService.schedule(
-      appDefaults.scheduler.lapiCheck,
-      async () => {
-        await crowdSecAPI.checkStatus();
-        statusService.updateLapiStatus(
-          crowdSecAPI.getLastLapiConnected(),
-          databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
-        );
-      },
-      { intervalSeconds: config.lapiCheck.intervalSeconds, runImmediately: false },
-    );
-
-    schedulerService.schedule(
-      appDefaults.scheduler.dataSync,
-      async () => {
-        await databaseService.syncAll();
-        statusService.updateLapiStatus(
-          crowdSecAPI.getLastLapiConnected(),
-          databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
-        );
-      },
-      { intervalSeconds: config.sync.intervalSeconds, runImmediately: false },
-    );
-
-    schedulerService.schedule(
-      appDefaults.scheduler.versionCheck,
-      async () => {
-        await versionCheckerService.checkForNewVersion();
-        statusService.updateVersionInfo(versionCheckerService.getLatestVersion());
-      },
-      { intervalSeconds: 3600, runImmediately: true },
-    );
-
-    schedulerService.schedule(
-      appDefaults.scheduler.blocklistsSync,
-      async () => {
-        if (statusBlocklistService.isSyncingBlocklists()) {
-          log.warn('Blocklists sync skipped: a refresh is already in progress');
-          return;
-        }
-        await databaseService.refreshBlocklists();
-      },
-      { intervalSeconds: config.blocklists.refreshTimeSeconds, runImmediately: true },
-    );
-
-    schedulerService.schedule(
-      appDefaults.scheduler.csBlocklistsSync,
-      async () => {
-        await databaseService.syncCsBlocklists();
-      },
-      { intervalSeconds: config.crowdsecBlocklists.refreshTimeSeconds, runImmediately: true },
-    );
+    const jobRegistry = buildJobRegistry();
+    jobRegistry.startAll();
 
     console.log('');
     log.info('  Schedulers:');
@@ -172,7 +114,7 @@ const startServer = async (): Promise<void> => {
     log.info(`    ↻ Version check          every 1h`);
 
     // Create and start Express app
-    const app = createApp();
+    const app = buildApp();
 
     const server = app.listen(config.server.port, () => {
       console.log('');
