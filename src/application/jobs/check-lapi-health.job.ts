@@ -1,7 +1,7 @@
-import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
-import { databaseService } from '@/infrastructure/persistence/database-facade';
-import { statusService } from '@/infrastructure/status/monitor-status-store';
 import appDefaults from '@/constants/app-defaults';
+import type { SyncAlertsUseCase } from '@/application/use-cases/alerts/sync-alerts.usecase';
+import type { LapiClient } from '@/application/ports/lapi-client.port';
+import type { StatusStore } from '@/application/ports/status-store.port';
 import type { SyncAlertsResult } from './sync-alerts.job';
 
 export interface JobDefinition {
@@ -19,16 +19,20 @@ export interface JobDefinition {
 /**
  * LAPI health check job: polls the LAPI status and updates the status store.
  */
-export const buildLapiHealthJob = (): JobDefinition => ({
+export const buildLapiHealthJob = (deps: {
+  lapiClient: Pick<LapiClient, 'checkStatus' | 'getLastLapiConnected'>;
+  syncAlerts: Pick<SyncAlertsUseCase, 'getLastSuccessfulSync'>;
+  statusStore: Pick<StatusStore, 'updateLapi'>;
+}): JobDefinition => ({
   id: appDefaults.scheduler.lapiCheck,
   everySeconds: 60, // overridden by registry from config
   runOnBoot: false,
   overlap: 'skip',
   run: async (): Promise<boolean> => {
-    await crowdSecAPI.checkStatus();
-    statusService.updateLapiStatus(
-      crowdSecAPI.getLastLapiConnected(),
-      databaseService.getLastSuccessfulSync()?.toISOString() ?? null,
+    await deps.lapiClient.checkStatus();
+    deps.statusStore.updateLapi(
+      deps.lapiClient.getLastLapiConnected(),
+      deps.syncAlerts.getLastSuccessfulSync()?.toISOString() ?? null,
     );
     return true;
   },

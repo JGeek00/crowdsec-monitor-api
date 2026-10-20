@@ -8,6 +8,21 @@ import routes from '@/delivery/http/routes';
 import { errorHandler } from '@/delivery/http/middlewares/error.middleware';
 import { notFoundHandler } from '@/delivery/http/middlewares/not-found.middleware';
 import { JobRegistry } from '@/infrastructure/scheduling/job-registry';
+import { crowdSecAPI } from '@/infrastructure/crowdsec/lapi/crowdsec-api';
+import { statusService } from '@/infrastructure/status/monitor-status-store';
+import { statusBlocklistService } from '@/infrastructure/status/memory-process-tracker';
+import { blocklistOpsService } from '@/infrastructure/sync/blocklist-ops';
+import { log } from '@/infrastructure/system/logger';
+import { syncAlertsUseCase } from '@/application/use-cases/alerts/sync-alerts.usecase';
+import { checkVersionUseCase } from '@/application/use-cases/status/version-check.usecase';
+import { syncCsBlocklistsUseCase } from '@/application/use-cases/blocklists/sync-cs-blocklists.usecase';
+import {
+  buildLapiHealthJob,
+  buildSyncAlertsJob,
+  buildVersionCheckJob,
+  buildRefreshBlocklistsJob,
+  buildSyncCsBlocklistsJob,
+} from '@/application/jobs';
 
 export interface JobRegistryLike {
   startAll: () => void;
@@ -23,7 +38,42 @@ export interface JobRegistryLike {
  */
 export const buildApp = (): Application => createApp();
 
-export const buildJobRegistry = (): JobRegistryLike => new JobRegistry();
+/**
+ * Builds the job registry with its dependencies injected (legacy order
+ * preserved: lapi, sync, version, blocklists, cs-blocklists).
+ */
+export const buildJobRegistry = (): JobRegistryLike => {
+  const statusStore = {
+    updateLapi: (connected: boolean, lastSuccessfulSync: string | null): void => {
+      statusService.updateLapiStatus(connected, lastSuccessfulSync);
+    },
+  };
+  const syncAlerts = syncAlertsUseCase;
+
+  return new JobRegistry([
+    {
+      ...buildLapiHealthJob({ lapiClient: crowdSecAPI, syncAlerts, statusStore }),
+      everySeconds: config.lapiCheck.intervalSeconds,
+    },
+    {
+      ...buildSyncAlertsJob({ syncAlerts, lapiClient: crowdSecAPI, statusStore }),
+      everySeconds: config.sync.intervalSeconds,
+    },
+    buildVersionCheckJob({ checkVersion: checkVersionUseCase }),
+    {
+      ...buildRefreshBlocklistsJob({
+        tracker: statusBlocklistService,
+        runRefresh: () => blocklistOpsService.refreshBlocklists(),
+        logger: log,
+      }),
+      everySeconds: config.blocklists.refreshTimeSeconds,
+    },
+    {
+      ...buildSyncCsBlocklistsJob({ syncCsBlocklists: syncCsBlocklistsUseCase }),
+      everySeconds: config.crowdsecBlocklists.refreshTimeSeconds,
+    },
+  ]);
+};
 
 export const createApp = (): Application => {
   const app = express();

@@ -21,6 +21,11 @@ export class SyncAlertsUseCase {
   execute(): Promise<SyncAlertsResult> {
     return alertsSyncService.syncAlerts();
   }
+
+  /** Timestamp of the last successful LAPI pull (drives the status snapshot). */
+  getLastSuccessfulSync(): Date | null {
+    return alertsSyncService.getLastSuccessfulSync();
+  }
 }
 
 export const syncAlertsUseCase = new SyncAlertsUseCase();
