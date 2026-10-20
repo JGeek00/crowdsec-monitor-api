@@ -1,4 +1,4 @@
-import type { MetaData, UnparsedMetaData } from '@/shared/meta-data';
+import type { UnparsedMetaData } from '@/shared/meta-data';
 import type { Alert } from '@/domain/entities/alert.entity';
 import type { Decision } from '@/domain/entities/decision.entity';
 
@@ -6,19 +6,27 @@ import type { Decision } from '@/domain/entities/decision.entity';
 export interface AlertFilters {
   limit?: number;
   offset?: number;
-  scenario?: string;
-  country?: string;
-  owner?: string;
-  target?: string;
-  origin?: string;
-  metadata?: string;
+  unpaged?: boolean;
+  scenario?: string | string[];
+  simulated?: unknown;
+  ip_address?: string | string[];
+  country?: string | string[];
+  ip_owner?: string | string[];
+  target?: string | string[];
 }
 
-export interface AlertPage<T extends MetaData = UnparsedMetaData> {
-  items: Alert<T>[];
+/** Facets extracted from the whole table for the filtering UI. */
+export interface AlertFilteringOptions {
+  countries: string[];
+  scenarios: string[];
+  ipOwners: string[];
+  targets: string[];
+}
+
+export interface AlertPage {
+  items: import('@/models').AlertDelivery[];
   total: number;
-  /** Populated when a filter forced in-memory filtering (bypasses SQL pagination). */
-  filtering?: string[];
+  filtering: AlertFilteringOptions;
 }
 
 // Implemented by: infrastructure/persistence/sequelize/repositories/sequelize-alert.repository.ts
@@ -26,7 +34,7 @@ export interface AlertPage<T extends MetaData = UnparsedMetaData> {
 export interface AlertRepository {
   /** Lists alerts applying filters; includes the decisions of each alert (aggregate). */
   findWithFilters(filters: AlertFilters): Promise<AlertPage>;
-  findById<T extends MetaData = UnparsedMetaData>(id: number): Promise<Alert<T> | null>;
+  findById(id: number): Promise<Alert<UnparsedMetaData> | null>;
   /** Batch upsert keyed by CrowdSec alert UUID. */
   upsertBatch(alerts: unknown[]): Promise<number>;
   deleteById(id: number): Promise<boolean>;
