@@ -19,7 +19,17 @@ export async function getStatistics(
       since,
       amount ? Number(amount) : undefined,
     );
-    res.json(result as GetStatisticsResponse);
+    // GeneralStatistics uses generic { item, amount } rows; delivery maps them to the response field names.
+    const response: GetStatisticsResponse = {
+      alertsLast24Hours: result.alertsLast24Hours,
+      activeDecisions: result.activeDecisions,
+      activityHistory: result.activityHistory,
+      topCountries: result.topCountries.map((country) => ({ countryCode: country.item, amount: country.amount })),
+      topScenarios: result.topScenarios,
+      topIpOwners: result.topIpOwners.map((owner) => ({ ipOwner: owner.item, amount: owner.amount })),
+      topTargets: result.topTargets.map((target) => ({ target: target.item, amount: target.amount })),
+    };
+    res.json(response);
   } catch (error) {
     if (signal.aborted) return;
     res
