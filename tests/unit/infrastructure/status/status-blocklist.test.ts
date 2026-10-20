@@ -226,3 +226,40 @@ describe('statusBlocklistService process lifecycle branches', () => {
     expect(proc?.blocklistImport?.parsed).toBe('successful');
   });
 });
+
+describe('statusBlocklistService early-return branches', () => {
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it('mark* and set* methods no-op on unknown process ids', async () => {
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
+
+    expect(() => statusBlocklistService.markFetched('nope', 'blocklistImport')).not.toThrow();
+    expect(() => statusBlocklistService.markParsed('nope', 'blocklistImport', 1)).not.toThrow();
+    expect(() => statusBlocklistService.markDeleted('nope', 'blocklistImport')).not.toThrow();
+    expect(() => statusBlocklistService.addImportedIps('nope', 'blocklistImport', 1)).not.toThrow();
+    expect(() => statusBlocklistService.markBlocklistOpComplete('nope', 'blocklistImport')).not.toThrow();
+    expect(() => statusBlocklistService.setIpsToDelete('nope', 'blocklistDisable', 1)).not.toThrow();
+    expect(() => statusBlocklistService.setDeletedIps('nope', 'blocklistDisable', 1)).not.toThrow();
+    expect(() => statusBlocklistService.setCurrentBlocklist('nope', 0)).not.toThrow();
+    expect(() => statusBlocklistService.setBlocklistStepStatus('nope', 0, 'fetch', 'running')).not.toThrow();
+    expect(() => statusBlocklistService.addBlocklistIps('nope', 1)).not.toThrow();
+    statusBlocklistService.completeProcess('nope', true); // no throw
+  });
+
+  it('mark* methods no-op when the process exists but the field is missing', async () => {
+    const { statusBlocklistService } = await import('@/infrastructure/status/memory-process-tracker');
+    const id = statusBlocklistService.createBlocklistRefreshProcess([{ number: 1, name: 'bl-1' }]);
+
+    // a refresh process has no blocklistImport / blocklistEnable / blocklistDelete field
+    expect(() => statusBlocklistService.markFetched(id, 'blocklistImport')).not.toThrow();
+    expect(() => statusBlocklistService.markParsed(id, 'blocklistEnable', 1)).not.toThrow();
+    expect(() => statusBlocklistService.markDeleted(id, 'blocklistEnable')).not.toThrow();
+    expect(() => statusBlocklistService.addImportedIps(id, 'blocklistDelete' as never, 1)).not.toThrow();
+    expect(() => statusBlocklistService.markBlocklistOpComplete(id, 'blocklistDelete' as never)).not.toThrow();
+    expect(() => statusBlocklistService.setIpsToDelete(id, 'blocklistDisable', 1)).not.toThrow();
+    expect(() => statusBlocklistService.setDeletedIps(id, 'blocklistDisable', 1)).not.toThrow();
+    expect(() => statusBlocklistService.setCurrentBlocklist(id, 0)).not.toThrow();
+  });
+});

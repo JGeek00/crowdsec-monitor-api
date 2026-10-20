@@ -13,7 +13,6 @@ describe('SequelizeAlertRepository', () => {
     repo = new SequelizeAlertRepository();
   });
   beforeEach(cleanRepoDb);
-  afterAll(closeRepoDb);
 
   const seed = async (alerts: Alert<UnparsedMetaData>[]) => {
     await repo.upsertBatch(alerts);
@@ -230,3 +229,86 @@ describe('SequelizeAlertRepository', () => {
 
 // makeDecision imported to keep the factory dependency explicit for future decision fixtures
 void makeDecision;
+
+// Single file-level close: the hoisted in-memory DB is shared by both suites
+afterAll(closeRepoDb);
+
+describe('facet extraction on malformed rows', () => {
+  let repo: SequelizeAlertRepository;
+  beforeAll(() => {
+    // the in-memory DB was already synced by the suite above
+    repo = new SequelizeAlertRepository();
+  });
+  beforeEach(cleanRepoDb);
+
+  const seedEdgeRows = async () => {
+    // Raw inserts bypass the model's JSON shape — the facet extraction must
+    // tolerate whatever a broken LAPI sync could leave behind.
+    const seq = getRepoSequelize();
+    const insert = (id: number, source: string, events: string) =>
+      seq.query(
+        `INSERT INTO alerts (id, uuid, scenario, scenario_version, scenario_hash, message, capacity, leakspeed, simulated, remediation, events_count, machine_id, source, labels, meta, events, crowdsec_created_at, start_at, stop_at, created_at, updated_at)
+         VALUES (${id}, 'edge-${id}', 'crowdsec/ssh-bf', '0.1', 'h', 'm', 0, '0', 0, 1, 0, 'm', '${source}', NULL, '[]', '${events}', '2026-07-23T00:00:00', '2026-07-23T00:00:00', '2026-07-23T01:00:00', '2026-07-23T00:00:00', '2026-07-23T00:00:00')`,
+      );
+    await insert(2, '{"cn":"US","as_name":"EXAMPLE-AS","ip":"1.2.3.4"}', '{"nope":true}'); // events non-array
+    await insert(3, '{}', '[{"meta":"no"}]'); // source without fields, event meta non-array
+    await insert(4, '{}', '[{"meta":[{"key":"other","value":"x"}]}]'); // no target_fqdn
+    await insert(5, '{"as_name":"OTHER-AS"}', '[{"meta":[{"key":"target_fqdn","value":""}]}]'); // empty target
+  };
+
+  it('facets tolerate missing fields and still extract valid data', async () => {
+    await seedEdgeRows();
+    const page = await repo.findWithFilters({});
+    expect(page.total).toBe(4);
+    expect(page.filtering.scenarios).toEqual(['crowdsec/ssh-bf']);
+    expect(page.filtering.countries).toEqual(['US']);
+    expect(page.filtering.ipOwners).toEqual(['EXAMPLE-AS', 'OTHER-AS']);
+  });
+
+  it('target filter tolerates malformed events', async () => {
+    await seedEdgeRows();
+    expect((await repo.findWithFilters({ target: ['example.com'] })).total).toBe(0);
+  });
+
+  it('top countries and ip owners tolerate empty source objects', async () => {
+    await seedEdgeRows();
+    const countries = await repo.getTopCountries();
+    expect(countries[0].countryCode).toBe('US');
+    const owners = await repo.getTopIpOwners();
+    expect(owners[0].ipOwner).toBe('EXAMPLE-AS');
+  });
+
+  it('getTargetHistory matches the target in any event position', async () => {
+    const base = makeAlert({ id: 9 });
+    const events = base.events as Alert_EventData<UnparsedMetaData>[];
+    await repo.upsertBatch([
+      {
+        ...base,
+        events: [
+          { timestamp: events[0].timestamp, meta: [{ key: 'event_type', value: 'connection' }] },
+          { timestamp: events[0].timestamp, meta: [{ key: 'target_fqdn', value: 'late.com' }] },
+        ],
+      },
+    ]);
+
+    expect(await repo.getTargetHistory('late.com')).toEqual([{ date: '2026-07-23', amount: 1 }]);
+    expect(await repo.getTargetHistory('missing.com')).toEqual([]);
+  });
+
+  it('getGeneralStats merges alert and decision activity on distinct dates', async () => {
+    const seq = getRepoSequelize();
+    await repo.upsertBatch([makeAlert({ id: 1 })]);
+    // decision on a date with no alerts (new activity entry branch)
+    await seq.query(
+      "INSERT INTO decisions (id, alert_id, origin, type, scope, value, expiration, scenario, simulated, source, crowdsec_created_at, created_at, updated_at) VALUES (5, 1, 'crowdsec', 'ban', 'Ip', '1.2.3.4', date('now','+1 day'), 'crowdsec/ssh-bf', 0, '{}', '2026-07-24', '2026-07-24', '2026-07-24')",
+    );
+
+    const stats = await repo.getGeneralStats(undefined, 1);
+    expect(stats.activityHistory).toEqual([
+      { date: '2026-07-23', amountAlerts: 1, amountDecisions: 0 },
+      { date: '2026-07-24', amountAlerts: 0, amountDecisions: 1 },
+    ]);
+    // topLimit=1 slices each top list to one item
+    expect(stats.topCountries).toHaveLength(1);
+  });
+});

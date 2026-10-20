@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { notificationProviders } from '@/constants/notification-providers';
 import {
   buildNtfyUrl,
+  isSecretKey,
   sanitizeChannelConfig,
   sanitizeProviderDefinitions,
   splitRecipients,
@@ -169,5 +170,52 @@ describe('channel helpers', () => {
 
   it('splits recipients', () => {
     expect(splitRecipients('a@b.c, d@e.f ,,')).toEqual(['a@b.c', 'd@e.f']);
+  });
+});
+
+
+describe('validator branches on real providers', () => {
+  const emailBase = { host: 'h', from: 'a@b.c', to: 'd@e.f' };
+
+  it('validates email format, list recipients and maxLength bounds', () => {
+    expect(validateChannelConfig('email', { ...emailBase, from: 'nope' })).toContainEqual(
+      'config.from must contain valid email addresses',
+    );
+    expect(validateChannelConfig('email', { ...emailBase, to: 'd@e.f, bad' })).toContainEqual(
+      'config.to must contain valid email addresses',
+    );
+    expect(validateChannelConfig('email', { ...emailBase, host: 'x'.repeat(254) })).toContainEqual(
+      'config.host must be at most 253 characters',
+    );
+    expect(validateChannelConfig('email', { ...emailBase, username: 'x'.repeat(1025) })).toContainEqual(
+      'config.username must be at most 1024 characters',
+    );
+  });
+
+  it('validates the port as an integer within bounds', () => {
+    expect(validateChannelConfig('email', { ...emailBase, port: 'x' })).toContainEqual('config.port must be a number');
+    expect(validateChannelConfig('email', { ...emailBase, port: 1.5 })).toContainEqual('config.port must be an integer');
+    expect(validateChannelConfig('email', { ...emailBase, port: 0 })).toContainEqual('config.port must be at least 1');
+    expect(validateChannelConfig('email', { ...emailBase, port: 70000 })).toContainEqual(
+      'config.port must be at most 65535',
+    );
+    expect(validateChannelConfig('email', { ...emailBase, port: 587 })).toEqual([]);
+  });
+
+  it('validates boolean and select fields', () => {
+    expect(validateChannelConfig('email', { ...emailBase, secure: 'yes' })).toContainEqual(
+      'config.secure must be a boolean',
+    );
+    expect(validateChannelConfig('email', { ...emailBase, secure: true })).toEqual([]);
+    expect(validateChannelConfig('ntfy', { topic: 't', priority: 'nope' })).toContainEqual(
+      'config.priority must be one of min, low, default, high, urgent, max',
+    );
+    expect(validateChannelConfig('ntfy', { topic: 't', priority: 'high' })).toEqual([]);
+  });
+
+  it('isSecretKey answers per provider type and unknown types', () => {
+    expect(isSecretKey('email', 'password')).toBe(true);
+    expect(isSecretKey('email', 'host')).toBe(false);
+    expect(isSecretKey('nope-type', 'password')).toBe(false);
   });
 });
