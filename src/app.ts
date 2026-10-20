@@ -61,7 +61,9 @@ export const buildJobRegistry = (): JobRegistryLike => {
     {
       ...buildRefreshBlocklistsJob({
         tracker: statusBlocklistService,
-        runRefresh: () => blocklistOpsService.refreshBlocklists(),
+        runRefresh: async () => {
+          await blocklistOpsService.refreshBlocklists();
+        },
         logger: log,
       }),
       everySeconds: config.blocklists.refreshTimeSeconds,

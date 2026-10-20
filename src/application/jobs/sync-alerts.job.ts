@@ -2,11 +2,7 @@ import appDefaults from '@/constants/app-defaults';
 import type { SyncAlertsUseCase } from '@/application/use-cases/alerts/sync-alerts.usecase';
 import type { LapiClient } from '@/application/ports/lapi-client.port';
 import type { StatusStore } from '@/application/ports/status-store.port';
-import type { JobDefinition } from './check-lapi-health.job';
-
-export interface SyncAlertsResult {
-  alerts: { synced: number; updated: number; errors: number; decisions: number };
-}
+import type { JobDefinition, JobResult } from './check-lapi-health.job';
 
 /**
  * Data sync job: pulls alerts + decisions from the LAPI into the local DB
@@ -21,12 +17,12 @@ export const buildSyncAlertsJob = (deps: {
   everySeconds: 60, // overridden by registry from config
   runOnBoot: false,
   overlap: 'skip',
-  run: async (): Promise<SyncAlertsResult> => {
+  run: async (): Promise<JobResult> => {
     await deps.syncAlerts.execute();
     deps.statusStore.updateLapi(
       deps.lapiClient.getLastLapiConnected(),
       deps.syncAlerts.getLastSuccessfulSync()?.toISOString() ?? null,
     );
-    return { alerts: { synced: 0, updated: 0, errors: 0, decisions: 0 } };
+    return { skipped: false };
   },
 });
