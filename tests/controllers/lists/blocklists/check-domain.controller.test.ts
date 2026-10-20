@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { checkDomainBlocklist } from '@/controllers/lists/blocklists/check-domain.controller';
+import { checkDomainBlocklist } from '@/delivery/http/controllers/lists/blocklists/check-domain.controller';
 
 describe('checkDomainBlocklist', () => {
   let req: Partial<Request>;

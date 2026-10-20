@@ -7,7 +7,7 @@ vi.mock('@/application/container', () => ({
   container: { useCases: { status: { getStatus: { execute: mocks.mockExecute } } } },
 }));
 
-import { getStatus } from '@/controllers/status/status.controller';
+import { getStatus } from '@/delivery/http/controllers/status/status.controller';
 
 describe('getStatus', () => {
   let req: Partial<Request>;

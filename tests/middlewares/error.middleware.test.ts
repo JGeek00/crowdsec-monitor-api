@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
-import { errorHandler } from '@/middlewares/error.middleware';
+import { errorHandler } from '@/delivery/http/middlewares/error.middleware';
 
 describe('errorHandler', () => {
   it('returns 500 with error message', () => {

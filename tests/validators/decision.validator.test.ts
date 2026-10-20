@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createDecisionValidators, ipParamValidators } from '@/validators/decision.validator';
+import { createDecisionValidators, ipParamValidators } from '@/delivery/http/schemas/decision.validator';
 import { validationResult } from 'express-validator';
 
 async function runBodyValidation(reqBody: Record<string, unknown>) {

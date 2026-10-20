@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 vi.mock('@/services/log.service', () => ({ log: { warn: vi.fn() } }));
 
-import { deprecate } from '@/middlewares/deprecation.middleware';
+import { deprecate } from '@/delivery/http/middlewares/deprecation.middleware';
 
 describe('deprecation middleware', () => {
   it('sets Deprecation header and calls next', () => {

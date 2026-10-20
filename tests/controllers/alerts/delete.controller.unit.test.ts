@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { deleteAlert } from '@/controllers/alerts/delete.controller';
+import { deleteAlert } from '@/delivery/http/controllers/alerts/delete.controller';
 import { NotFoundError } from '@/domain/errors';
 
 describe('deleteAlert unit', () => {

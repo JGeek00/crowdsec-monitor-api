@@ -33,12 +33,12 @@ vi.mock('@/utils/error-response', () => ({
 }));
 
 import { Request, Response } from 'express';
-import { getTopCountries } from '@/controllers/statistics/countries/list.controller';
-import { getCountryHistory } from '@/controllers/statistics/countries/history.controller';
-import { getTopIpOwners } from '@/controllers/statistics/ip-owners/list.controller';
-import { getIpOwnerHistory } from '@/controllers/statistics/ip-owners/history.controller';
-import { getTopTargets } from '@/controllers/statistics/targets/list.controller';
-import { getTargetHistory } from '@/controllers/statistics/targets/history.controller';
+import { getTopCountries } from '@/delivery/http/controllers/statistics/countries/list.controller';
+import { getCountryHistory } from '@/delivery/http/controllers/statistics/countries/history.controller';
+import { getTopIpOwners } from '@/delivery/http/controllers/statistics/ip-owners/list.controller';
+import { getIpOwnerHistory } from '@/delivery/http/controllers/statistics/ip-owners/history.controller';
+import { getTopTargets } from '@/delivery/http/controllers/statistics/targets/list.controller';
+import { getTargetHistory } from '@/delivery/http/controllers/statistics/targets/history.controller';
 
 describe('statistics controllers - error paths', () => {
   let req: Partial<Request>;

@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { getAllowlists } from '@/controllers/lists/allowlists/list.controller';
+import { getAllowlists } from '@/delivery/http/controllers/lists/allowlists/list.controller';
 
 describe('getAllowlists', () => {
   let req: Partial<Request>;

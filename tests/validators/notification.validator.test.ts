@@ -6,7 +6,7 @@ import {
   createChannelValidators,
   updateChannelValidators,
   testChannelValidators,
-} from '@/validators/notification.validator';
+} from '@/delivery/http/schemas/notification.validator';
 import { validationResult } from 'express-validator';
 
 async function runBody(validators: { run: (req: unknown) => Promise<void> }[] | unknown[], body: Record<string, unknown>, params: Record<string, unknown> = {}) {

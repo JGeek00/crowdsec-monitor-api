@@ -20,7 +20,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('returns valid when no API password is set', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = '';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const result = (AuthMiddleware as any)['checkAuth'](undefined);
     expect(result.isValid).toBe(true);
   });
@@ -28,7 +28,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('returns invalid for wrong token', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = 'test-secret';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const result = (AuthMiddleware as any)['checkAuth']('Bearer wrong-secret');
     expect(result.isValid).toBe(false);
   });
@@ -36,7 +36,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('returns invalid when auth header is missing', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = 'test-secret';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const result = (AuthMiddleware as any)['checkAuth'](undefined);
     expect(result.isValid).toBe(false);
     expect(result.message).toBe('Authorization header is required');
@@ -45,7 +45,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('returns invalid for wrong auth format', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = 'test-secret';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const result = (AuthMiddleware as any)['checkAuth']('Basic dGVzdA==');
     expect(result.isValid).toBe(false);
     expect(result.message).toContain('Bearer');
@@ -54,7 +54,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('returns invalid for token with different length', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = 'test-secret';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const result = (AuthMiddleware as any)['checkAuth']('Bearer short');
     expect(result.isValid).toBe(false);
   });
@@ -62,7 +62,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('returns valid for correct token', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = 'test-secret';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const result = (AuthMiddleware as any)['checkAuth']('Bearer test-secret');
     expect(result.isValid).toBe(true);
   });
@@ -70,7 +70,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('wsAuth passes when no password set', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = '';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const socket = { write: vi.fn(), destroy: vi.fn() } as any;
     AuthMiddleware.wsAuth({ headers: {} } as any, socket, Buffer.from(''));
     expect(socket.write).not.toHaveBeenCalled();
@@ -79,7 +79,7 @@ describe('AuthMiddleware.checkAuth', () => {
   it('wsAuth rejects when auth header missing and password set', async () => {
     vi.resetModules();
     process.env.API_PASSWORD = 'test-secret';
-    const { AuthMiddleware } = await import('@/middlewares/auth.middleware');
+    const { AuthMiddleware } = await import('@/delivery/http/middlewares/auth.middleware');
     const socket = { write: vi.fn(), destroy: vi.fn() } as any;
     AuthMiddleware.wsAuth({ headers: {} } as any, socket, Buffer.from(''));
     expect(socket.write).toHaveBeenCalledWith('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');

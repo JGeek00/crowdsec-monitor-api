@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { paginationValidators, alertQueryValidators, decisionQueryValidators } from '@/validators/pagination.validator';
+import { paginationValidators, alertQueryValidators, decisionQueryValidators } from '@/delivery/http/schemas/pagination.validator';
 import { validationResult } from 'express-validator';
 
 async function runPaginationValidation(query: Record<string, unknown>) {

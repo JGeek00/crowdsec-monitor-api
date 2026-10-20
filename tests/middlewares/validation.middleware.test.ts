@@ -5,7 +5,7 @@ vi.mock('express-validator', () => ({
   validationResult: vi.fn(),
 }));
 
-import { handleValidationErrors } from '@/middlewares/validation.middleware';
+import { handleValidationErrors } from '@/delivery/http/middlewares/validation.middleware';
 import { validationResult } from 'express-validator';
 
 describe('handleValidationErrors', () => {

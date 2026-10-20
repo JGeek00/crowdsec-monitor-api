@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { createBlocklist } from '@/controllers/lists/blocklists/create.controller';
+import { createBlocklist } from '@/delivery/http/controllers/lists/blocklists/create.controller';
 import {
   ValidationError,
   ConflictError,

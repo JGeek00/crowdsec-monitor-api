@@ -1,6 +1,6 @@
 import { IncomingMessage, Server } from 'http';
 import { WsChannel } from '@/utils/ws-channel';
-import { AuthMiddleware } from '@/middlewares/auth.middleware';
+import { AuthMiddleware } from '@/delivery/http/middlewares/auth.middleware';
 import { statusSocket } from '@/sockets/routes/status.socket';
 
 export class WebSocketApp {

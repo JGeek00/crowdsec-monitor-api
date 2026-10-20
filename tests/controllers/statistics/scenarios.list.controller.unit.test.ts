@@ -15,7 +15,7 @@ vi.mock('@/utils/error-response', () => ({
 }));
 
 import { Request, Response } from 'express';
-import { getTopScenarios } from '@/controllers/statistics/scenarios/list.controller';
+import { getTopScenarios } from '@/delivery/http/controllers/statistics/scenarios/list.controller';
 
 describe('getTopScenarios unit', () => {
   let req: Partial<Request>;

@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { toggleBlocklist } from '@/controllers/lists/blocklists/toggle.controller';
+import { toggleBlocklist } from '@/delivery/http/controllers/lists/blocklists/toggle.controller';
 import {
   ValidationError,
   NotFoundError,

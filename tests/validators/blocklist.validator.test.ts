@@ -3,7 +3,7 @@ import {
   createBlocklistValidators,
   checkBlocklistValidators,
   checkDomainBlocklistValidators,
-} from '@/validators/blocklist.validator';
+} from '@/delivery/http/schemas/blocklist.validator';
 import { validationResult } from 'express-validator';
 
 async function runValidation(validators: any[], reqBody: Record<string, unknown>) {

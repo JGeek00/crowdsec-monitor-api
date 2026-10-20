@@ -4,9 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config } from '@/config';
-import routes from '@/routes';
-import { errorHandler } from '@/middlewares/error.middleware';
-import { notFoundHandler } from '@/middlewares/not-found.middleware';
+import routes from '@/delivery/http/routes';
+import { errorHandler } from '@/delivery/http/middlewares/error.middleware';
+import { notFoundHandler } from '@/delivery/http/middlewares/not-found.middleware';
 import { JobRegistry } from '@/infrastructure/scheduling/job-registry';
 
 export interface JobRegistryLike {

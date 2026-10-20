@@ -15,7 +15,7 @@ vi.mock('@/utils/error-response', () => ({
 }));
 
 import { Request, Response } from 'express';
-import { getScenarioHistory } from '@/controllers/statistics/scenarios/history.controller';
+import { getScenarioHistory } from '@/delivery/http/controllers/statistics/scenarios/history.controller';
 
 describe('getScenarioHistory unit', () => {
   let req: Partial<Request>;

@@ -6,7 +6,7 @@ vi.mock('@/utils/blocklist-lookup', () => ({ lookupIpsInBlocklists: mockLookupIp
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { checkBlocklist } from '@/controllers/lists/blocklists/check.controller';
+import { checkBlocklist } from '@/delivery/http/controllers/lists/blocklists/check.controller';
 
 describe('checkBlocklist', () => {
   let req: Partial<Request>;

@@ -10,7 +10,7 @@ vi.mock('@/utils/allowlist-lookup', () => ({ lookupIpsInAllowlists: mockLookupIp
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { checkIpsInList } from '@/controllers/lists/check-ips.controller';
+import { checkIpsInList } from '@/delivery/http/controllers/lists/check-ips.controller';
 
 describe('checkIpsInList', () => {
   let req: Partial<Request>;

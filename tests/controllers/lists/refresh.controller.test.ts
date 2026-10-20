@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { refreshLists } from '@/controllers/lists/refresh.controller';
+import { refreshLists } from '@/delivery/http/controllers/lists/refresh.controller';
 import { ServiceUnavailableError } from '@/domain/errors';
 
 describe('refreshLists', () => {

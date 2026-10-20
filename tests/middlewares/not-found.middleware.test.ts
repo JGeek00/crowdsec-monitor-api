@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 
-import { notFoundHandler } from '@/middlewares/not-found.middleware';
+import { notFoundHandler } from '@/delivery/http/middlewares/not-found.middleware';
 
 describe('notFoundHandler', () => {
   it('returns 404 with ErrorResponse shape', () => {

@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { refreshSingleBlocklist } from '@/controllers/lists/blocklists/refresh.controller';
+import { refreshSingleBlocklist } from '@/delivery/http/controllers/lists/blocklists/refresh.controller';
 import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 
 describe('refreshSingleBlocklist', () => {

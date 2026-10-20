@@ -14,7 +14,7 @@ vi.mock('@/application/container', () => ({
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { deleteBlocklist } from '@/controllers/lists/blocklists/delete.controller';
+import { deleteBlocklist } from '@/delivery/http/controllers/lists/blocklists/delete.controller';
 import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 
 describe('deleteBlocklist', () => {

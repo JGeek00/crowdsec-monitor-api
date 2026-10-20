@@ -13,7 +13,7 @@ vi.mock('@/application/container', () => ({
 }));
 
 import { Request, Response } from 'express';
-import { createDecision } from '@/controllers/decisions/create.controller';
+import { createDecision } from '@/delivery/http/controllers/decisions/create.controller';
 import { CreateDecisionUseCase } from '@/application/use-cases/decisions/create-decision.usecase';
 
 describe('createDecision', () => {

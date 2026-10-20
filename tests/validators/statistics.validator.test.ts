@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statisticsQueryValidators } from '@/validators/statistics.validator';
+import { statisticsQueryValidators } from '@/delivery/http/schemas/statistics.validator';
 import { validationResult } from 'express-validator';
 
 async function runStatisticsValidation(query: Record<string, unknown>) {

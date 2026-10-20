@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Request, Response } from 'express';
-import { healthCheck } from '@/controllers/status/health.controller';
+import { healthCheck } from '@/delivery/http/controllers/status/health.controller';
 
 describe('healthCheck', () => {
   it('returns 200 with message and timestamp', () => {

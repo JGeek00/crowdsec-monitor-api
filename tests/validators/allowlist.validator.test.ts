@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkAllowlistValidators } from '@/validators/allowlist.validator';
+import { checkAllowlistValidators } from '@/delivery/http/schemas/allowlist.validator';
 import { validationResult } from 'express-validator';
 
 async function runValidation(reqBody: Record<string, unknown>) {

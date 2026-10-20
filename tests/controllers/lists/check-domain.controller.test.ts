@@ -13,7 +13,7 @@ vi.mock('@/config', () => ({ config: { dns: { server: '1.1.1.1' } } }));
 vi.mock('@/services/log.service', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
-import { checkDomainInList } from '@/controllers/lists/check-domain.controller';
+import { checkDomainInList } from '@/delivery/http/controllers/lists/check-domain.controller';
 
 describe('checkDomainInList', () => {
   let req: Partial<Request>;
