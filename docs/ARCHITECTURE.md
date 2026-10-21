@@ -56,7 +56,7 @@ src/
 └── delivery/               # Inbound adapters
     ├── http/               # Express: routes, controllers, middlewares, schemas, presenters
     ├── websocket/          # WS gateway + channels (status)
-    └── mcp/                # MCP server stub (planned, not implemented)
+    └── mcp/                # MCP server (Streamable HTTP, stateless) + tool registry
 ```
 
 ## Layers
@@ -93,7 +93,7 @@ Inbound adapters that translate transport-specific input into use-case calls:
   - `presenters/` — response DTO models that shape the API contract.
   - `middlewares/` — auth, validation, error handler, not-found, deprecation warnings.
 - **websocket/** — `WebSocketApp` intercepts the HTTP server `upgrade` event, authenticates with the same middleware, and routes to registered channels. Currently `/api/v1/status` streams status snapshots.
-- **mcp/** — Model Context Protocol server stub. Tools must call the same application use cases as HTTP/WS; pending SDK approval.
+- **mcp/** — Model Context Protocol server (`server.ts` factory + `tools/` registry + `http.ts` Streamable HTTP transport). Every tool calls the same application use cases as the HTTP and WebSocket layers. Exposed scope: statistics (all), alerts (all), decisions (all), blocklists/allowlists (list + detail only); notifications are intentionally absent. Authentication reuses `AuthMiddleware.expressAuth`, so the Bearer-token rule is exactly the REST one. See [MCP.md](./MCP.md).
 
 ## Composition root
 
@@ -164,4 +164,4 @@ Authentication is optional: when `API_PASSWORD` is set, protected resources requ
 - **Ports & adapters**: use cases are testable without Express/Sequelize; infrastructure can be swapped (e.g., DB mode) without touching business logic.
 - **Store↔tracker cycle broken at the composition root**: the status store pulls process snapshots through an injected provider instead of a circular import.
 - **Incremental sync with an integrated blocklist manager**: the API owns persistence and blocklist orchestration, so clients (iOS/Android apps) only consume the REST/WS surface.
-- **MCP as a future delivery adapter**: planned tools reuse the same use cases, enforcing a single application core.
+- **MCP as a delivery adapter**: the MCP tools reuse the same use cases, enforcing a single application core. Endpoint: `POST /mcp` (stateless; `GET`/`DELETE` answer 405), mounted separately from the REST API with its own optional rate limit (`MCP_RATE_LIMIT`).
