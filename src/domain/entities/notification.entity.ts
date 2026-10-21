@@ -1,0 +1,122 @@
+import { Alert_SourceInfo } from './alert.entity';
+
+export type NotificationField = 'scenario' | 'country' | 'target' | 'origin' | 'type' | 'scope' | 'ipOwner';
+
+export type NotificationOperator = 'equals' | 'not_equals' | 'in' | 'not_in' | 'contains';
+
+export interface NotificationLeaf {
+  type: 'leaf';
+  field: NotificationField;
+  operator: NotificationOperator;
+  value: string | string[];
+}
+
+export interface NotificationAnd {
+  type: 'and';
+  children: ConditionNode[];
+}
+
+export interface NotificationOr {
+  type: 'or';
+  children: ConditionNode[];
+}
+
+export interface NotificationNot {
+  type: 'not';
+  child: ConditionNode;
+}
+
+export type ConditionNode = NotificationLeaf | NotificationAnd | NotificationOr | NotificationNot;
+
+export interface NotificationThreshold {
+  count: number;
+  windowSeconds: number;
+  cooldownSeconds?: number;
+}
+
+export type NotificationChannelType = 'ntfy' | 'email';
+
+export interface NtfyChannelConfig {
+  server?: string;
+  topic: string;
+  username?: string;
+  password?: string;
+  accessToken?: string;
+  priority?: string;
+  tags?: string;
+  /** Provider configs are validated against provider field definitions, so extra keys stay possible. */
+  [key: string]: string | undefined;
+}
+
+export interface EmailChannelConfig {
+  host: string;
+  port?: number;
+  secure?: boolean;
+  username?: string;
+  password?: string;
+  from: string;
+  to: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
+export type NotificationChannelConfig = NtfyChannelConfig | EmailChannelConfig;
+
+export interface NotificationChannelRef {
+  type: NotificationChannelType;
+  config: NotificationChannelConfig;
+}
+
+/** Event meta as received from CrowdSec (single string value per key). */
+export interface NotificationAlertEventMeta {
+  key: string;
+  value: string;
+}
+
+/** Alert snapshot retained by the engine for providers that support alert info. */
+export interface NotificationAlertSnapshot {
+  alertId?: number;
+  scenario: string;
+  source: Alert_SourceInfo;
+  origin?: string;
+  alertType?: string;
+  /** When CrowdSec declared (created) the alert. */
+  declaredAt: Date;
+  /** Meta of each event, in event order. */
+  events: NotificationAlertEventMeta[][];
+}
+
+export interface UserNotificationChannel {
+  id: number;
+  name: string;
+  type: NotificationChannelType;
+  config: NotificationChannelConfig;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/** Channel row as served by the API: adds the provider-derived alert-info support flag. */
+export type NotificationChannelResponse = UserNotificationChannel & { supportsAlertInfo: boolean };
+
+export interface UserNotification {
+  id: number;
+  name: string;
+  description: string | null;
+  enabled: boolean;
+  condition: ConditionNode;
+  threshold: NotificationThreshold | null;
+  message: string;
+  includeAlertInfo: boolean;
+  channelIds: number[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface NotificationHistoryEntry {
+  id: string;
+  notificationId: number;
+  notificationName: string;
+  message: string;
+  triggeredAt: string;
+  alertIds: number[];
+  channels: { type: string; ok: boolean; detail: string | null }[];
+}

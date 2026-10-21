@@ -191,7 +191,11 @@ This process is repeated for each blocklist added to the database.
 
 ## API endpoints documentation
 
-See [API.md](./API.md) for complete response schemas and examples.
+See [API.md](./docs/API.md) for complete response schemas and examples.
+
+## Architecture and development
+
+See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the layer layout, the dependency rule and the main request/job flows, and [DEVELOPMENT.md](./docs/DEVELOPMENT.md) for the local development and build workflow.
 
 ## Disclaimer
 This is a third party software that is not related in any way with the official CrowdSec software or with the CrowdSec team.

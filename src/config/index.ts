@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 import { defaults } from '@/config/env-defaults';
 import { dnsServers } from '@/constants/dns-servers';
-import { DB_MODE, DbMode } from '@/types/database.types';
-import { LOG_LEVELS } from '@/types/log.types';
+import { DB_MODE, DbMode } from '@/config/db-mode.types';
+import { LOG_LEVELS } from '@/config/log.types';
 
 dotenv.config();
 
