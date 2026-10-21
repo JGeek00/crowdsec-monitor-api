@@ -37,6 +37,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@sequelize/core": "7.0.0-alpha.48",
     "@sequelize/postgres": "7.0.0-alpha.48",
     "@sequelize/sqlite3": "7.0.0-alpha.48",
@@ -51,7 +52,8 @@
     "morgan": "1.12.1",
     "nodemailer": "10.0.12",
     "sqlite3": "npm:@vscode/sqlite3@5.1.14-vscode",
-    "ws": "8.21.3"
+    "ws": "8.21.3",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "13.1.0",

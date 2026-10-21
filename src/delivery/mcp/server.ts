@@ -1,23 +1,31 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import packageJson from '../../../package.json';
+import type { McpToolDefinition } from './tool';
+import { mcpToolRegistry } from './tools/registry';
+
 /**
- * MCP (Model Context Protocol) server stub.
+ * MCP server factory (delivery/mcp).
  *
- * The MCP surface is planned (S1) but not approved for implementation yet.
- * This stub only establishes the folder structure and the dependency
- * direction: MCP tools must call the same application use cases as the HTTP
- * and WebSocket delivery layers (D11). Each tool file carries a TODO(mcp)
- * marker until the MCP SDK is approved.
+ * Creates an `McpServer` with every registered tool wired to the same
+ * application use cases the HTTP/WS layers call (D11). One server instance
+ * is built per Streamable HTTP request (stateless mode); see `../http.ts`.
  */
+export const createMcpServer = (tools: McpToolDefinition[] = mcpToolRegistry): McpServer => {
+  const server = new McpServer({
+    name: 'crowdsec-monitor',
+    version: packageJson.version,
+  });
 
-// TODO(mcp): wire the MCP server transport once the SDK is approved.
-export interface McpTool {
-  name: string;
-  description: string;
-  handler: (input: unknown) => Promise<unknown>;
-}
+  for (const tool of tools) {
+    server.registerTool(
+      tool.name,
+      {
+        description: tool.description,
+        ...(tool.inputSchema !== undefined ? { inputSchema: tool.inputSchema } : {}),
+      },
+      async (args: unknown) => tool.handler(args),
+    );
+  }
 
-export const registerMcpTools = (tools: McpTool[]): McpTool[] => tools;
-
-export const mcpServerStub = {
-  status: 'stub',
-  note: 'MCP delivery layer pending SDK approval (D11). Tools call application use cases.',
+  return server;
 };
