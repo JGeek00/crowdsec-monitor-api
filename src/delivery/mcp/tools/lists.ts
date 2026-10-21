@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { container } from '@/container';
+import { ipv6Regex } from '@/constants/regexps';
+import { isIpv4 } from '@/shared/utils/ip';
 import { runTool, type McpToolDefinition } from '../tool';
 
 /**
@@ -87,6 +89,24 @@ export const listTools: McpToolDefinition[] = [
     name: 'list_allowlists',
     description: 'List all allowlists from CrowdSec LAPI.',
     handler: () => runTool(() => container.useCases.blocklists.listAllowlists.execute()),
+  },
+  {
+    name: 'check_ip_in_lists',
+    description: 'Check whether a single IPv4/IPv6 address is in any blocklist or allowlist.',
+    inputSchema: {
+      ip: z
+        .string()
+        .refine((value) => isIpv4(value) || ipv6Regex.test(value), {
+          message: 'ip must be a valid IPv4 or IPv6 address',
+        })
+        .describe('IPv4 or IPv6 address to check'),
+    },
+    handler: (args) =>
+      runTool(async () => {
+        const { ip } = args as { ip: string };
+        const { results } = await container.useCases.blocklists.checkIpsInList.execute([ip]);
+        return results[0];
+      }),
   },
   {
     name: 'get_allowlist',

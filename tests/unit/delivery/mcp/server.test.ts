@@ -23,7 +23,7 @@ const listTools = async (toolNames?: string[]): Promise<{ name: string; descript
 describe('createMcpServer', () => {
   it('is named crowdsec-monitor and lists the full registry', async () => {
     const tools = await listTools();
-    expect(tools).toHaveLength(25);
+    expect(tools).toHaveLength(26);
     expect(tools.map((tool) => tool.name)).toEqual(expect.arrayContaining(['get_statistics', 'delete_alert']));
   });
 

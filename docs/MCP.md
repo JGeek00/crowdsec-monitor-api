@@ -59,8 +59,9 @@ curl -X POST http://localhost:3000/mcp \
 | `get_blocklist_ips` (`id`, pagination, `ip_string?`) | `GET /blocklists/:id/ips` |
 | `list_allowlists` | `GET /allowlists` |
 | `get_allowlist` (`allowlist_name`) | `GET /allowlists/:allowlist_name` |
+| `check_ip_in_lists` (`ip`) | `POST /lists/check-ips` (single IP; returns `{ip, blocklists, allowlists}`) |
 
-Notifications are intentionally **not** exposed. Blocklist/allowlists writes (create, delete, toggle, refresh) and `check-ips`/`check-domain` are intentionally **not** exposed (read-only scope).
+Notifications are intentionally **not** exposed. Blocklist/allowlist writes (create, delete, toggle, refresh) and `check-domain` are intentionally **not** exposed.
 
 ## MCP client configuration
 

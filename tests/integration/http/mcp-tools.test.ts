@@ -118,6 +118,19 @@ describe('MCP tools/call', () => {
     expect(activeOnly.decisions).toHaveLength(1);
   });
 
+  it('check_ip_in_lists finds a seeded IP in its blocklist', async () => {
+    await app.seedDb({ blocklists: [makeBlocklist()], blocklistIps: [makeBlocklistIp()] });
+    const hit = textOf(await callTool(app, 'check_ip_in_lists', { ip: '10.0.0.1' }));
+    expect(hit).toEqual({ ip: '10.0.0.1', blocklists: ['test-blocklist'], allowlists: [] });
+    const miss = textOf(await callTool(app, 'check_ip_in_lists', { ip: '192.0.2.1' }));
+    expect(miss).toEqual({ ip: '192.0.2.1', blocklists: [], allowlists: [] });
+  });
+
+  it('check_ip_in_lists rejects an invalid IP with an isError result', async () => {
+    const bad = await callTool(app, 'check_ip_in_lists', { ip: 'not-an-ip' });
+    expect(bad.isError).toBe(true);
+  });
+
   it('list_blocklists, get_blocklist and get_blocklist_ips read seeded blocklists', async () => {
     await app.seedDb({ blocklists: [makeBlocklist()], blocklistIps: [makeBlocklistIp()] });
     const list = textOf(await callTool(app, 'list_blocklists', { unpaged: true }));

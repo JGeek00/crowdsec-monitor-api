@@ -93,7 +93,7 @@ Inbound adapters that translate transport-specific input into use-case calls:
   - `presenters/` — response DTO models that shape the API contract.
   - `middlewares/` — auth, validation, error handler, not-found, deprecation warnings.
 - **websocket/** — `WebSocketApp` intercepts the HTTP server `upgrade` event, authenticates with the same middleware, and routes to registered channels. Currently `/api/v1/status` streams status snapshots.
-- **mcp/** — Model Context Protocol server (`server.ts` factory + `tools/` registry + `http.ts` Streamable HTTP transport). Every tool calls the same application use cases as the HTTP and WebSocket layers. Exposed scope: statistics (all), alerts (all), decisions (all), blocklists/allowlists (list + detail only); notifications are intentionally absent. Authentication reuses `AuthMiddleware.expressAuth`, so the Bearer-token rule is exactly the REST one. See [MCP.md](./MCP.md).
+- **mcp/** — Model Context Protocol server (`server.ts` factory + `tools/` registry + `http.ts` Streamable HTTP transport). Every tool calls the same application use cases as the HTTP and WebSocket layers. Exposed scope: statistics (all), alerts (all), decisions (all), blocklists/allowlists (list + detail + single-IP check); notifications are intentionally absent. Authentication reuses `AuthMiddleware.expressAuth`, so the Bearer-token rule is exactly the REST one. See [MCP.md](./MCP.md).
 
 ## Composition root
 

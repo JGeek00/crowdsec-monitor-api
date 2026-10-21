@@ -31,12 +31,14 @@ const EXPECTED_TOOLS = [
   'get_blocklist_ips',
   'list_allowlists',
   'get_allowlist',
+  // lists, single-IP check (1)
+  'check_ip_in_lists',
 ];
 
 describe('mcp tool registry', () => {
   it('exposes exactly the authorized tools', () => {
     const names = mcpToolRegistry.map((tool) => tool.name);
-    expect(names).toHaveLength(25);
+    expect(names).toHaveLength(26);
     expect(names).toEqual(expect.arrayContaining(EXPECTED_TOOLS));
     expect(new Set(names).size).toBe(names.length);
   });

@@ -51,9 +51,9 @@ describe('e2e MCP session', () => {
     await app.closeDb();
   });
 
-  it('lists 25 tools with no notification tools', async () => {
+  it('lists 26 tools with no notification tools', async () => {
     const { tools } = await mcpRequest(app, 'tools/list');
-    expect(tools).toHaveLength(25);
+    expect(tools).toHaveLength(26);
     expect(tools.some((tool: { name: string }) => tool.name.includes('notif'))).toBe(false);
   });
 
