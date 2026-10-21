@@ -32,7 +32,6 @@ export default defineConfig({
         'src/application/jobs/**', // thin bootstrap wiring, exercised via tests/e2e (legacy src/server.ts scope)
         'src/infrastructure/scheduling/job-registry.ts', // thin bootstrap wiring (legacy src/server.ts scope)
         'src/server-bootstrap.ts', // bootstrap wiring (legacy src/server.ts scope)
-        'src/delivery/mcp/**', // compile stub, no behavior yet
         'src/domain/events/**', // placeholder event types, no behavior yet
         'src/app.ts', // tests/integration/http/app.test.ts
         'tests/setup/**',
