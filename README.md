@@ -88,6 +88,7 @@ Instructions on the [wiki page](https://github.com/JGeek00/crowdsec-monitor-api/
 | `FINISHED_PROCESSES_RETENTION_TIME` | Time in seconds to retain the finished tasks done by this service (ej: importing a blocklist) | 3600 | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |
+| `MCP_RATE_LIMIT` | MCP endpoint rate limit in format `<requests>/<minutes>` (independent from `RATE_LIMIT`) | disabled | No |
 
 #### Data Retention Examples
 
@@ -129,6 +130,8 @@ You can optionally configure rate limiting using the `RATE_LIMIT` environment va
 
 - If `RATE_LIMIT` is **not set**: Rate limiting is disabled
 - If `RATE_LIMIT` is **set**: API endpoints are rate-limited based on the configured value
+
+The MCP endpoint (`POST /mcp`) has its own independent limit via `MCP_RATE_LIMIT` (same format; unset disables it).
 
 **Format:** `<requests>/<minutes>`
 
