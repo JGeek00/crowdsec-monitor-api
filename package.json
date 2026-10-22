@@ -1,6 +1,6 @@
 {
   "name": "crowdsec-monitor-api",
-  "version": "1.16.0-beta.3",
+  "version": "1.16.0-beta.4",
   "description": "Self-hosted API to monitor a CrowdSec instance: REST API, WebSocket, notifications, and an MCP server for AI assistants",
   "license": "MIT",
   "author": "JGeek00",
