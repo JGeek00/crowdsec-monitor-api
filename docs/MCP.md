@@ -43,11 +43,11 @@ curl -X POST http://localhost:3000/mcp \
 | `get_scenario_history` (`scenario`) | `GET /statistics/scenarios/:item` |
 | `get_top_targets` | `GET /statistics/targets` |
 | `get_target_history` (`target`) | `GET /statistics/targets/:item` |
-| `list_alerts` (filters + pagination) | `GET /alerts` |
+| `list_alerts` (filters + pagination, `start_timestamp?`, `end_timestamp?`) | `GET /alerts` |
 | `get_alert` (`id`) | `GET /alerts/:id` |
 | `get_alerts_stats` | `GET /alerts/stats` |
 | `delete_alert` (`id`) | `DELETE /alerts/:id` |
-| `list_decisions` (filters + pagination) | `GET /decisions` |
+| `list_decisions` (filters + pagination, `start_timestamp?`, `end_timestamp?`) | `GET /decisions` |
 | `get_decision` (`id`) | `GET /decisions/:id` |
 | `list_decisions_by_ip` (`include_decisions?`, …) | `GET /decisions/by-ip` |
 | `get_decision_by_ip` (`ip`, `only_active?`) | `GET /decisions/by-ip/:ip` |

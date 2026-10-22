@@ -249,6 +249,16 @@ Retrieve all alerts with optional filtering and pagination.
 | `country` | string/array | No | - | Filter by source country (2-letter ISO code). Accepts single or multiple values |
 | `ip_owner` | string/array | No | - | Filter by IP owner/organization name (partial match). Accepts single or multiple values |
 | `target` | string/array | No | - | Filter by target FQDN. Accepts single or multiple values |
+| `start_timestamp` | string | No | - | Inclusive lower bound for filtering by the alert creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss` |
+| `end_timestamp` | string | No | - | Inclusive upper bound for filtering by the alert creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss`. When both bounds are provided, `end_timestamp` must be later than `start_timestamp`, and neither value may be in the future |
+
+**Timestamp range validation:**
+- Values must follow the format `yyyy-MM-dd:hh:mm:ss` and represent a valid calendar instant
+- **Both timestamps are always interpreted as UTC**, regardless of the server's local timezone
+- When both are provided, `end_timestamp` must be later than `start_timestamp`
+- Neither value may be later than the current date and time
+- Both bounds are inclusive
+- Invalid values return a `400` response with a `Validation error`
 
 **Example Request:**
 ```bash
@@ -271,6 +281,11 @@ curl "http://localhost:3000/api/v1/alerts?ip_owner=Amazon&ip_owner=Google"
 # Filter by target FQDN
 curl "http://localhost:3000/api/v1/alerts?target=api.example.com"
 curl "http://localhost:3000/api/v1/alerts?target=api.example.com&target=web.example.com"
+
+# Timestamp range filtering (UTC)
+curl "http://localhost:3000/api/v1/alerts?start_timestamp=2026-01-01:00:00:00&end_timestamp=2026-01-31:23:59:59"
+curl "http://localhost:3000/api/v1/alerts?start_timestamp=2026-01-01:00:00:00"
+curl "http://localhost:3000/api/v1/alerts?end_timestamp=2026-01-31:23:59:59"
 
 # Combined filters
 curl "http://localhost:3000/api/v1/alerts?country=RU&scenario=ssh-bf&limit=20"
@@ -530,6 +545,16 @@ Retrieve all decisions with optional filtering and pagination.
 | `ip_address` | string/array | No | - | Filter by IP address in decision value. Accepts single or multiple IPv4/IPv6 addresses |
 | `country` | string/array | No | - | Filter by country from related alert (2-letter ISO code). Accepts single or multiple values |
 | `ip_owner` | string/array | No | - | Filter by IP owner/organization from related alert (partial match). Accepts single or multiple values |
+| `start_timestamp` | string | No | - | Inclusive lower bound for filtering by the decision creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss` |
+| `end_timestamp` | string | No | - | Inclusive upper bound for filtering by the decision creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss`. When both bounds are provided, `end_timestamp` must be later than `start_timestamp`, and neither value may be in the future |
+
+**Timestamp range validation:**
+- Values must follow the format `yyyy-MM-dd:hh:mm:ss` and represent a valid calendar instant
+- **Both timestamps are always interpreted as UTC**, regardless of the server's local timezone
+- When both are provided, `end_timestamp` must be later than `start_timestamp`
+- Neither value may be later than the current date and time
+- Both bounds are inclusive
+- Invalid values return a `400` response with a `Validation error`
 
 **Example Request:**
 ```bash
@@ -551,6 +576,11 @@ curl "http://localhost:3000/api/v1/decisions?country=CN&type=ban"
 # Filter by IP owner/organization (from related alert)
 curl "http://localhost:3000/api/v1/decisions?ip_owner=Amazon"
 curl "http://localhost:3000/api/v1/decisions?ip_owner=Alibaba&ip_owner=Tencent"
+
+# Timestamp range filtering (UTC)
+curl "http://localhost:3000/api/v1/decisions?start_timestamp=2026-01-01:00:00:00&end_timestamp=2026-01-31:23:59:59"
+curl "http://localhost:3000/api/v1/decisions?start_timestamp=2026-01-01:00:00:00"
+curl "http://localhost:3000/api/v1/decisions?end_timestamp=2026-01-31:23:59:59"
 
 # Combined filters
 curl "http://localhost:3000/api/v1/decisions?scenario=ssh-bf&country=RU&limit=10"

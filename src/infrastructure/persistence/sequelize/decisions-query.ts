@@ -9,7 +9,16 @@ import type { FilteringInfo, GetDecisionsQueryParams } from '@/application/use-c
 
 export function buildDecisionsWhere(query: GetDecisionsQueryParams, hasGroup: boolean): WhereOptions<Decision> {
   const where: WhereOptions<Decision> = {};
-  const { type, scope, value, simulated, scenario, ip_address, only_active } = query;
+  const { type, scope, value, simulated, scenario, ip_address, only_active, start_timestamp, end_timestamp } = query;
+
+  // The list use case normalizes these to UTC Dates; raw wire strings are ignored here.
+  if (start_timestamp instanceof Date && end_timestamp instanceof Date) {
+    where.crowdsec_created_at = { [Op.gte]: start_timestamp, [Op.lte]: end_timestamp };
+  } else if (start_timestamp instanceof Date) {
+    where.crowdsec_created_at = { [Op.gte]: start_timestamp };
+  } else if (end_timestamp instanceof Date) {
+    where.crowdsec_created_at = { [Op.lte]: end_timestamp };
+  }
 
   if (type) {
     where.type = String(type);

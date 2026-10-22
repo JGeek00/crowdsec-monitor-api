@@ -8,4 +8,8 @@ export interface GetAlertsQueryParams {
   country?: string;
   ip_owner?: string;
   target?: string;
+  /** `yyyy-MM-dd:hh:mm:ss` in UTC, inclusive; validated by the list use case. */
+  start_timestamp?: string;
+  /** `yyyy-MM-dd:hh:mm:ss` in UTC, inclusive; validated by the list use case. */
+  end_timestamp?: string;
 }

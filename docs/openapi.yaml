@@ -240,6 +240,29 @@ paths:
                 items:
                   type: string
           example: api.example.com
+        - name: start_timestamp
+          in: query
+          description: >-
+            Inclusive lower bound for filtering by the alert creation timestamp
+            (crowdsec_created_at). IMPORTANT: the value is always interpreted as UTC.
+            Format: yyyy-MM-dd:hh:mm:ss.
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}:\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-01:00:00:00'
+        - name: end_timestamp
+          in: query
+          description: >-
+            Inclusive upper bound for filtering by the alert creation timestamp
+            (crowdsec_created_at). Must be later than start_timestamp when both are
+            provided, and neither value may be in the future. IMPORTANT: the value is
+            always interpreted as UTC. Format: yyyy-MM-dd:hh:mm:ss.
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}:\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-31:23:59:59'
       responses:
         '200':
           description: List of alerts
@@ -425,6 +448,29 @@ paths:
               - type: array
                 items:
                   type: string
+        - name: start_timestamp
+          in: query
+          description: >-
+            Inclusive lower bound for filtering by the decision creation timestamp
+            (crowdsec_created_at). IMPORTANT: the value is always interpreted as UTC.
+            Format: yyyy-MM-dd:hh:mm:ss.
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}:\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-01:00:00:00'
+        - name: end_timestamp
+          in: query
+          description: >-
+            Inclusive upper bound for filtering by the decision creation timestamp
+            (crowdsec_created_at). Must be later than start_timestamp when both are
+            provided, and neither value may be in the future. IMPORTANT: the value is
+            always interpreted as UTC. Format: yyyy-MM-dd:hh:mm:ss.
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}:\d{2}:\d{2}:\d{2}$'
+          example: '2026-01-31:23:59:59'
       responses:
         '200':
           description: List of decisions

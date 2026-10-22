@@ -104,6 +104,54 @@ describe('MCP tools/call', () => {
     expect(stats.total).toBe(1);
   });
 
+  it('list_alerts filters with start_timestamp / end_timestamp', async () => {
+    await app.seedDb({
+      alerts: [
+        makeAlert({ id: 1, crowdsec_created_at: new Date('2020-01-01T00:00:00Z') }),
+        makeAlert({ id: 2, crowdsec_created_at: new Date('2020-01-03T00:00:00Z') }),
+      ],
+    });
+    const range = textOf(
+      await callTool(app, 'list_alerts', { start_timestamp: '2020-01-01:00:00:00', end_timestamp: '2020-01-02:00:00:00' }),
+    );
+    expect(range.items).toHaveLength(1);
+    expect(range.items[0].id).toBe(1);
+  });
+
+  it('list_alerts rejects an invalid start_timestamp format before reaching the use case (SDK zod validation)', async () => {
+    const res = await app.request
+      .post(MCP_PATH)
+      .set(JSONRPC_HEADERS)
+      .send({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'list_alerts', arguments: { start_timestamp: '2020-01-01T00:00:00' } } });
+    expect(res.status).toBe(200);
+    const payload = parseMcpBody(res);
+    expect(payload.error).toBeUndefined();
+    expect(payload.result.isError).toBe(true);
+    expect(payload.result.content[0].text).toMatch(/MCP error.*start_timestamp/s);
+  });
+
+  it('list_decisions filters with start_timestamp / end_timestamp', async () => {
+    await app.seedDb({ alerts: [makeAlert({ id: 3 })] });
+    await app.seedDb({
+      decisions: [
+        makeDecision({ id: 5, alert_id: 3, crowdsec_created_at: new Date('2020-01-01T00:00:00Z') }),
+        makeDecision({ id: 6, alert_id: 3, crowdsec_created_at: new Date('2020-01-03T00:00:00Z') }),
+      ],
+    });
+    const startOnly = textOf(await callTool(app, 'list_decisions', { start_timestamp: '2020-01-02:00:00:00' }));
+    expect(startOnly.items).toHaveLength(1);
+    expect(startOnly.items[0].id).toBe(6);
+  });
+
+  it('list_decisions returns an isError result when end_timestamp is not later than start_timestamp', async () => {
+    const result = await callTool(app, 'list_decisions', {
+      start_timestamp: '2020-01-02:00:00:00',
+      end_timestamp: '2020-01-01:00:00:00',
+    });
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(result.content[0].text).error).toBe('Validation error');
+  });
+
   it('list_decisions_by_ip and get_decision_by_ip group by IP', async () => {
     await app.seedDb({
       alerts: [makeAlert({ id: 3 })],

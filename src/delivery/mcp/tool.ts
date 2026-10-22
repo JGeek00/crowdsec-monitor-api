@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ZodRawShapeCompat } from '@modelcontextprotocol/sdk/server/zod-compat.js';
-import { NotFoundError } from '@/domain/errors';
+import { NotFoundError, ValidationError } from '@/domain/errors';
 
 /** Text payload returned by every MCP tool (results are JSON-encoded domain data). */
 export interface McpTextResult {
@@ -23,14 +23,21 @@ export const textResult = (data: unknown): McpTextResult => ({
 });
 
 /**
- * Maps handler errors to MCP results. Domain `NotFoundError`s (unknown id/name)
- * become non-throwing `isError` results so the client sees the reason; anything
- * else propagates and the SDK turns it into a JSON-RPC internal error.
+ * Maps handler errors to MCP results. Domain `NotFoundError`s (unknown id/name) and
+ * domain `ValidationError`s (invalid parameters) become non-throwing `isError`
+ * results so the client sees the reason; anything else propagates and the SDK
+ * turns it into a JSON-RPC internal error.
  */
 export const toolErrorResult = (err: unknown): McpTextResult => {
   if (err instanceof NotFoundError) {
     return {
       content: [{ type: 'text' as const, text: JSON.stringify({ error: 'Not found', message: err.message }) }],
+      isError: true,
+    };
+  }
+  if (err instanceof ValidationError) {
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify({ error: err.kind, message: err.detail }) }],
       isError: true,
     };
   }

@@ -79,3 +79,37 @@ describe('fetchFilteringOptions', () => {
     findAll.mockRestore();
   });
 });
+
+describe('buildDecisionsWhere — timestamp range', () => {
+  const start = new Date('2020-01-01T00:00:00Z');
+  const end = new Date('2020-01-31T23:59:59Z');
+
+  it('restricts crowdsec_created_at with a normalized start_timestamp', () => {
+    const where = buildDecisionsWhere({ start_timestamp: start }, false);
+    expect(where.crowdsec_created_at).toEqual({ [Op.gte]: start });
+  });
+
+  it('restricts crowdsec_created_at with a normalized end_timestamp', () => {
+    const where = buildDecisionsWhere({ end_timestamp: end }, false);
+    expect(where.crowdsec_created_at).toEqual({ [Op.lte]: end });
+  });
+
+  it('combines both bounds on the same column', () => {
+    const where = buildDecisionsWhere({ start_timestamp: start, end_timestamp: end }, false);
+    expect(where.crowdsec_created_at).toEqual({ [Op.gte]: start, [Op.lte]: end });
+  });
+
+  it('ignores raw string values (strings must be normalized by the use case first)', () => {
+    const where = buildDecisionsWhere(
+      { start_timestamp: '2020-01-01:00:00:00', end_timestamp: '2020-01-31:23:59:59' } as never,
+      false,
+    );
+    expect(where.crowdsec_created_at).toBeUndefined();
+  });
+
+  it('does not interfere with the only_active expiration clause', () => {
+    const where = buildDecisionsWhere({ only_active: 'true', start_timestamp: start }, false);
+    expect(where.expiration).toEqual({ [Op.gt]: expect.any(Date) });
+    expect(where.crowdsec_created_at).toEqual({ [Op.gte]: start });
+  });
+});

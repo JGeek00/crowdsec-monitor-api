@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { container } from '@/container';
 import { ipv4Regex, ipv6Regex } from '@/constants/regexps';
 import { runTool, type McpToolDefinition } from '../tool';
+import { TIMESTAMP_RANGE_PATTERN, TIMESTAMP_RANGE_FORMAT } from '@/shared/utils/timestamp-range';
 
 const stringOrStringArray = z.union([z.string(), z.array(z.string())]).optional();
 
@@ -20,6 +21,24 @@ const decisionsFilters = {
   only_active: z.boolean().optional().describe('Only active decisions (expiration in the future)'),
 };
 
+/** Optional UTC timestamp range bound (`yyyy-MM-dd:hh:mm:ss`); semantic validation lives in the list use case. */
+const timestampRangeFields = {
+  start_timestamp: z
+    .string()
+    .regex(TIMESTAMP_RANGE_PATTERN, `must follow the format ${TIMESTAMP_RANGE_FORMAT} in UTC`)
+    .optional()
+    .describe(
+      `Inclusive lower bound for the creation timestamp. Always interpreted as UTC. Format: ${TIMESTAMP_RANGE_FORMAT}`,
+    ),
+  end_timestamp: z
+    .string()
+    .regex(TIMESTAMP_RANGE_PATTERN, `must follow the format ${TIMESTAMP_RANGE_FORMAT} in UTC`)
+    .optional()
+    .describe(
+      `Inclusive upper bound for the creation timestamp. Must be later than start_timestamp and not in the future. Always interpreted as UTC. Format: ${TIMESTAMP_RANGE_FORMAT}`,
+    ),
+};
+
 /**
  * Decisions tools (S3): the full REST decisions surface.
  * Each tool calls the same use case as its HTTP controller.
@@ -27,8 +46,8 @@ const decisionsFilters = {
 export const decisionTools: McpToolDefinition[] = [
   {
     name: 'list_decisions',
-    description: 'List decisions with filtering and pagination.',
-    inputSchema: { ...decisionsFilters },
+    description: 'List decisions with filtering and pagination (timestamp range optional).',
+    inputSchema: { ...decisionsFilters, ...timestampRangeFields },
     handler: (args) =>
       runTool(() =>
         container.useCases.decisions.listDecisions.execute(

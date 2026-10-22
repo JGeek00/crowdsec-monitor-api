@@ -3,6 +3,7 @@ import { createRequestSignal } from '@/delivery/http/request-signal';
 import { errorResponse } from '@/delivery/http/error-response';
 import { container } from '@/container';
 import { PaginationError } from '@/application/use-cases/decisions/list.helpers';
+import { ValidationError } from '@/domain/errors';
 import type { GetDecisionsQueryParams, GetDecisionsResponse, ResponseWithError } from '@/delivery/http/contracts';
 
 /**
@@ -21,6 +22,10 @@ export async function getAllDecisions(
     if (signal.aborted) return;
     if (error instanceof PaginationError) {
       res.status(400).json(errorResponse('Validation error', error.message));
+      return;
+    }
+    if (error instanceof ValidationError) {
+      res.status(400).json(errorResponse('Validation error', error.detail));
       return;
     }
     res

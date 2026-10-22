@@ -29,6 +29,10 @@ export interface GetDecisionsQueryParams {
   ip_owner?: string;
   only_active?: boolean;
   include_decisions?: boolean;
+  /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */
+  start_timestamp?: string | Date;
+  /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */
+  end_timestamp?: string | Date;
 }
 
 /** Decision as delivered: date-typed fields rendered as canonical RFC 3339 strings. */

@@ -1,8 +1,27 @@
 import { z } from 'zod';
 import { container } from '@/container';
 import { runTool, type McpToolDefinition } from '../tool';
+import { TIMESTAMP_RANGE_PATTERN, TIMESTAMP_RANGE_FORMAT } from '@/shared/utils/timestamp-range';
 
 const stringOrStringArray = z.union([z.string(), z.array(z.string())]).optional();
+
+/** Optional UTC timestamp range bound (`yyyy-MM-dd:hh:mm:ss`); semantic validation lives in the list use case. */
+const timestampRangeFields = {
+  start_timestamp: z
+    .string()
+    .regex(TIMESTAMP_RANGE_PATTERN, `must follow the format ${TIMESTAMP_RANGE_FORMAT} in UTC`)
+    .optional()
+    .describe(
+      `Inclusive lower bound for the creation timestamp. Always interpreted as UTC. Format: ${TIMESTAMP_RANGE_FORMAT}`,
+    ),
+  end_timestamp: z
+    .string()
+    .regex(TIMESTAMP_RANGE_PATTERN, `must follow the format ${TIMESTAMP_RANGE_FORMAT} in UTC`)
+    .optional()
+    .describe(
+      `Inclusive upper bound for the creation timestamp. Must be later than start_timestamp and not in the future. Always interpreted as UTC. Format: ${TIMESTAMP_RANGE_FORMAT}`,
+    ),
+};
 
 /**
  * Alerts tools (S2): the full REST alerts surface.
@@ -11,7 +30,8 @@ const stringOrStringArray = z.union([z.string(), z.array(z.string())]).optional(
 export const alertTools: McpToolDefinition[] = [
   {
     name: 'list_alerts',
-    description: 'List alerts with filtering and pagination (scenario, simulated, IP, country, IP owner, target).',
+    description:
+      'List alerts with filtering and pagination (scenario, simulated, IP, country, IP owner, target, timestamp range).',
     inputSchema: {
       limit: z.number().int().positive().optional().describe('Items to return (default 100)'),
       offset: z.number().int().nonnegative().optional().describe('Starting index (default 0)'),
@@ -22,6 +42,7 @@ export const alertTools: McpToolDefinition[] = [
       country: stringOrStringArray.describe('Filter by source country (2-letter ISO code)'),
       ip_owner: stringOrStringArray.describe('Filter by IP owner/organization name (partial match)'),
       target: stringOrStringArray.describe('Filter by target FQDN'),
+      ...timestampRangeFields,
     },
     handler: (args) =>
       runTool(async () => {
