@@ -30,8 +30,8 @@ function createSequelize(): Sequelize {
   }
 
   // SQLite
-  // Con una BD temporal (':memory:') Sequelize v7 exige un pool de una sola
-  // conexión que nunca cierre ni recicle conexiones (perdería los datos).
+  // With an in-memory DB (':memory:'), Sequelize v7 requires a single-connection
+  // pool that never closes or recycles connections (otherwise data is lost).
   const isTemporaryDb = config.database.path === ':memory:';
   return new Sequelize({
     dialect: SqliteDialect,

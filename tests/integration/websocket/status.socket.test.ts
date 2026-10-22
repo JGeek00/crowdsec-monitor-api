@@ -5,7 +5,7 @@ vi.mock('@/config/database', () => {
     dialect: SqliteDialect,
     storage: ':memory:',
     logging: false,
-    // BD temporal: Sequelize v7 exige pool de 1 conexión que nunca se recicle.
+    // In-memory DB: Sequelize v7 requires a 1-connection pool that is never recycled.
     pool: { max: 1, min: 0, idle: Infinity, maxUses: Infinity },
   });
   return { sequelize: seq, initDatabase: vi.fn().mockResolvedValue(undefined) };
@@ -34,9 +34,9 @@ import http from 'http';
 import WebSocket from 'ws';
 import type { WebSocketApp } from '@/delivery/websocket/gateway';
 
-// NOTE: vitest 5 no comparte las factories de vi.mock con la cadena de imports
-// estáticos de '@/delivery/websocket/gateway' (se evalúan antes de registrar el mock). Hay que
-// importarlos dinámicamente dentro de beforeAll.
+// NOTE: vitest 5 does not share the vi.mock factories with the static import
+// chain of '@/delivery/websocket/gateway' (it is evaluated before the mock is registered). Import
+// them dynamically inside beforeAll.
 
 function listen(server: http.Server): Promise<number> {
   return new Promise((resolve) => {

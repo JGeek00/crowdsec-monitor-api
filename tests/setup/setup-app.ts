@@ -39,7 +39,7 @@ vi.mock('@/config/database', () => {
     dialect: SqliteDialect,
     storage: ':memory:',
     logging: false,
-    // BD temporal: Sequelize v7 exige pool de 1 conexión que nunca se recicle.
+    // In-memory DB: Sequelize v7 requires a 1-connection pool that is never recycled.
     pool: { max: 1, min: 0, idle: Infinity, maxUses: Infinity },
     define: {
       timestamps: true,
@@ -55,8 +55,8 @@ vi.mock('@/config/database', () => {
 
 // ponytail: mock base-client so CS API calls return empty arrays without network
 vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
-  // NOTE: la implementación debe ser una función normal (no arrow) porque
-  // vitest 5 lanza "is not a constructor" al hacer `new` sobre una arrow.
+  // NOTE: the implementation must be a regular function (not an arrow) because
+  // vitest 5 throws "is not a constructor" when calling `new` on an arrow.
   const MockBaseClient = vi.fn(function MockBaseClient(this: unknown) {
     const instance = {
       client: {

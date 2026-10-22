@@ -54,9 +54,9 @@ vi.mock('@/infrastructure/crowdsec/lapi/base-client', () => {
 import { setupApp, type TestApp } from '@tests/setup/setup-app';
 import type { WebSocketApp } from '@/delivery/websocket/gateway';
 
-// NOTE: vitest 5 no comparte las factories de vi.mock con la cadena de imports
-// estáticos de '@/delivery/websocket/gateway' (se evalúan antes de registrar el mock). Hay que
-// importarlos dinámicamente dentro de beforeAll.
+// NOTE: vitest 5 does not share the vi.mock factories with the static import
+// chain of '@/delivery/websocket/gateway' (it is evaluated before the mock is registered). Import
+// them dynamically inside beforeAll.
 describe('e2e status ws', () => {
   let app: TestApp;
   let server: http.Server;
