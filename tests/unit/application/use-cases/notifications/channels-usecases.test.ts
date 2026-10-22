@@ -83,7 +83,7 @@ describe('TestInlineChannelUseCase validation branches', () => {
 
   it('throws ValidationError with the config errors', async () => {
     const useCase = new TestInlineChannelUseCase({ sender: sender as never });
-    await expect(useCase.execute({ type: 'email', config: {} })).rejects.toThrow(ValidationError);
+    await expect(useCase.execute({ type: 'email', config: {} as never })).rejects.toThrow(ValidationError);
     expect(sender.dispatch).not.toHaveBeenCalled();
   });
 

@@ -16,7 +16,7 @@ describe('buildDecisionsWhere', () => {
 
   it('filters by type and scope', async () => {
     const { buildDecisionsWhere } = await import('@/infrastructure/persistence/sequelize/decisions-query');
-    const result = buildDecisionsWhere({ type: 'ban', scope: 'Ip' }, false);
+    const result = buildDecisionsWhere({ type: 'ban', scope: 'Ip' }, false) as any;
     expect(result.type).toBe('ban');
     expect(result.scope).toBe('Ip');
   });

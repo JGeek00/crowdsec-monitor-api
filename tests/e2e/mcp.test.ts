@@ -26,8 +26,8 @@ const mcpRequest = async (app: TestApp, method: string, params: Record<string, u
   const text = res.text ?? '';
   const dataLine = text
     .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.startsWith('data: '));
+    .map((line: string) => line.trim())
+    .find((line: string) => line.startsWith('data: '));
   if (!dataLine) throw new Error(`No JSON-RPC payload: ${text.slice(0, 200)}`);
   const payload = JSON.parse(dataLine.slice('data: '.length));
   expect(payload.error).toBeUndefined();

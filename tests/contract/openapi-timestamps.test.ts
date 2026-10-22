@@ -31,7 +31,7 @@ function collectStringProperties(
       collectStringProperties(prop, `${schemaName}.${name}`, hits, visited);
     }
   }
-  const items = schema.items as OpenAPIV3.SchemaObject | undefined;
+  const items = (schema as OpenAPIV3.ArraySchemaObject).items as OpenAPIV3.SchemaObject | undefined;
   if (items) collectStringProperties(items, `${schemaName}[]`, hits, visited);
 }
 

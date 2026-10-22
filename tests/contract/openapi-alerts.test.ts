@@ -17,7 +17,7 @@ describe('openapi contract — alert events timestamp', () => {
     expect(alert).toBeDefined();
     const events = alert?.properties?.events as OpenAPIV3.SchemaObject | undefined;
     expect(events?.type).toBe('array');
-    const items = events?.items as OpenAPIV3.SchemaObject | undefined;
+    const items = (events as OpenAPIV3.ArraySchemaObject | undefined)?.items as OpenAPIV3.SchemaObject | undefined;
     expect(items?.type).toBe('object');
     const timestamp = items?.properties?.timestamp as OpenAPIV3.SchemaObject | undefined;
     expect(timestamp?.type).toBe('string');

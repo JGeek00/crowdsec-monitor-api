@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateCondition, isValidCondition, matchOperator } from '@/domain/value-objects/notification-condition';
+import type { ConditionNode } from '@/domain/entities';
 
 const baseAlert = {
   scenario: 'crowdsecurity/http-probing',
@@ -38,9 +39,9 @@ describe('evaluateCondition', () => {
         },
         { type: 'leaf', field: 'country', operator: 'equals', value: 'ES' },
       ],
-    } as const;
-    expect(evaluateCondition(baseAlert, condition)).toBe(true);
-    expect(evaluateCondition({ ...baseAlert, source: { ...baseAlert.source, cn: 'FR' } }, condition)).toBe(false);
+    };
+    expect(evaluateCondition(baseAlert, condition as ConditionNode)).toBe(true);
+    expect(evaluateCondition({ ...baseAlert, source: { ...baseAlert.source, cn: 'FR' } }, condition as ConditionNode)).toBe(false);
   });
 
   it('supports not nodes', () => {

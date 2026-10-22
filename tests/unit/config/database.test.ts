@@ -69,11 +69,11 @@ describe('database config', () => {
     const { sequelize } = await import('@/config/database');
     vi.spyOn(sequelize, 'authenticate').mockResolvedValue(undefined);
     // Return a result with old 'lists' table
-    vi.spyOn(sequelize, 'query').mockImplementation(async (sql: string) => {
+    vi.spyOn(sequelize, 'query').mockImplementation((async (sql: string) => {
       if (sql.includes("name='lists'")) return [[{ name: 'lists' }]];
       if (sql.includes('ALTER TABLE')) throw new Error('column already exists');
       return [[], [] as any];
-    });
+    }) as never);
     vi.spyOn(sequelize, 'sync').mockResolvedValue(undefined as any);
 
     const { initDatabase } = await import('@/config/database');
@@ -90,11 +90,11 @@ describe('database config', () => {
     // Re-import with postgres env
     const { sequelize } = await import('@/config/database');
     vi.spyOn(sequelize, 'authenticate').mockResolvedValue(undefined);
-    vi.spyOn(sequelize, 'query').mockImplementation(async (sql: string) => {
+    vi.spyOn(sequelize, 'query').mockImplementation((async (sql: string) => {
       if (sql.includes("tablename='lists'")) return [[{ tablename: 'lists' }]];
       if (sql.includes('ALTER TABLE')) throw new Error('already exists');
       return [[], [] as any];
-    });
+    }) as never);
     vi.spyOn(sequelize, 'sync').mockResolvedValue(undefined as any);
 
     const { initDatabase } = await import('@/config/database');
@@ -110,11 +110,11 @@ describe('database config', () => {
 
     const { sequelize } = await import('@/config/database');
     vi.spyOn(sequelize, 'authenticate').mockResolvedValue(undefined);
-    vi.spyOn(sequelize, 'query').mockImplementation(async (sql: string) => {
+    vi.spyOn(sequelize, 'query').mockImplementation((async (sql: string) => {
       if (sql.includes("tablename='lists'")) return [[]];
       if (sql.includes('ALTER TABLE')) throw new Error('already exists');
       return [[], [] as any];
-    });
+    }) as never);
     vi.spyOn(sequelize, 'sync').mockResolvedValue(undefined as any);
 
     const { initDatabase } = await import('@/config/database');

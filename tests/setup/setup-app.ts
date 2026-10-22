@@ -144,7 +144,7 @@ export async function setupApp(): Promise<TestApp> {
 
   return {
     app,
-    request: supertest(app),
+    request: supertest(app) as unknown as SuperTest<Test>,
     sequelize: sequelizeRef.current,
     seedDb,
     closeDb,

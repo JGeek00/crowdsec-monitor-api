@@ -1,7 +1,8 @@
 import { vi, describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 
 vi.mock('@/infrastructure/status/memory-process-tracker', async (importOriginal) => {
-  const mod = await importOriginal();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mod: any = await importOriginal();
   const orig = mod.statusBlocklistService;
   return {
     ...mod,

@@ -15,6 +15,7 @@ vi.mock('@/delivery/http/error-response', () => ({
 }));
 
 import { Request, Response } from 'express';
+import type { GetScenarioHistoryParams } from '@/delivery/http/contracts';
 import { getScenarioHistory } from '@/delivery/http/controllers/statistics/scenarios/history.controller';
 
 describe('getScenarioHistory unit', () => {
@@ -33,13 +34,13 @@ describe('getScenarioHistory unit', () => {
 
   it('returns 200 with history', async () => {
     mocks.mockExecute.mockResolvedValue([{ date: '2024-01-01', amount: 5 }]);
-    await getScenarioHistory(req as Request, res as Response);
+    await getScenarioHistory(req as unknown as Request<GetScenarioHistoryParams>, res as Response);
     expect(jsonSpy).toHaveBeenCalledWith([{ date: '2024-01-01', amount: 5 }]);
   });
 
   it('returns 500 on DB error', async () => {
     mocks.mockExecute.mockRejectedValue(new Error('query failed'));
-    await getScenarioHistory(req as Request, res as Response);
+    await getScenarioHistory(req as unknown as Request<GetScenarioHistoryParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching scenario history' }));
   });

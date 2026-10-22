@@ -11,6 +11,7 @@ describe('notificationHistoryService', () => {
       notificationId: 1,
       notificationName: 'n1',
       message: 'hello',
+      alertIds: [],
       channels: [{ type: 'email', ok: true, detail: null }],
     });
     notificationHistoryService.push({
@@ -18,6 +19,7 @@ describe('notificationHistoryService', () => {
       notificationName: 'n2',
       message: 'world',
       channels: [],
+        alertIds: [],
     });
     const list = notificationHistoryService.list();
     expect(list).toHaveLength(2);
@@ -35,6 +37,7 @@ describe('notificationHistoryService', () => {
         notificationName: `n${String(i)}`,
         message: 'm',
         channels: [],
+        alertIds: [],
       });
     }
     expect(notificationHistoryService.count()).toBe(200);
@@ -48,6 +51,7 @@ describe('notificationHistoryService', () => {
       notificationName: 'n1',
       message: 'm',
       channels: [],
+        alertIds: [],
     });
     notificationHistoryService.clear();
     expect(notificationHistoryService.count()).toBe(0);

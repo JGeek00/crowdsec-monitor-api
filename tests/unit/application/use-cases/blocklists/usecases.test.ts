@@ -182,7 +182,7 @@ describe('RefreshSingleBlocklistUseCase', () => {
 
   it('refreshes the blocklist in the background', async () => {
     await useCase.execute(1);
-    expect(deps.ops.refreshBlocklists).toHaveBeenCalledWith(deps.blocklistRepository.findById && expect.anything());
+    expect(deps.ops.refreshBlocklists).toHaveBeenCalledWith(expect.anything());
   });
 
   it('reports failed background refreshes', async () => {
@@ -237,7 +237,7 @@ describe('GetBlocklistIpsUseCase', () => {
   it('returns raw IP entities by default', async () => {
     const res = await makeUseCase({ total: 2, items: blocklistIps }).execute('1', opts);
     expect(res.items).toEqual(blocklistIps);
-    expect(res.pagination).toEqual({ page: 1, amount: 2, total: 2 });
+    expect((res as { pagination: unknown }).pagination).toEqual({ page: 1, amount: 2, total: 2 });
   });
 
   it('maps items to plain strings with onlyStrings', async () => {
@@ -273,7 +273,7 @@ describe('ListBlocklistsUseCase', () => {
     expect(res.items[0].type).toBe('api');
     expect(res.items[1].type).toBe('cs');
     expect(res.items[0].id).toBe('3');
-    expect(res.pagination).toEqual({ page: 1, amount: 2, total: 2 });
+    expect((res as { pagination: unknown }).pagination).toEqual({ page: 1, amount: 2, total: 2 });
   });
 
   it('maps IPs to plain strings with include_ips=ip_string', async () => {
@@ -291,8 +291,8 @@ describe('ListBlocklistsUseCase', () => {
   it('omits pagination when unpaged', async () => {
     const useCase = makeUseCase({ apiRows: [], csRows: [row()], total: 1 });
     const res = await useCase.execute({ unpaged: true } as never);
-    expect(res.total).toBe(1);
-    expect(res.pagination).toBeUndefined();
+    expect((res as { total: unknown }).total).toBe(1);
+    expect((res as { pagination: unknown }).pagination).toBeUndefined();
   });
 });
 

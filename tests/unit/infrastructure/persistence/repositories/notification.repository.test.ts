@@ -3,7 +3,7 @@ import { cleanRepoDb, closeRepoDb, initRepoDb } from '@tests/setup/repo-db';
 import { SequelizeNotificationRepository } from '@/infrastructure/persistence/sequelize/repositories/sequelize-notification.repository';
 import type { ConditionNode } from '@/domain/entities';
 
-const condition: ConditionNode = { field: 'scenario', operator: 'equals', value: 'ssh-bf' };
+const condition: ConditionNode = { type: 'leaf', field: 'scenario', operator: 'equals', value: 'ssh-bf' };
 
 describe('SequelizeNotificationRepository', () => {
   let repo: SequelizeNotificationRepository;

@@ -98,12 +98,12 @@ describe('sanitizeChannelConfig', () => {
       topic: 't',
       username: 'u',
     });
-    expect(sanitizeChannelConfig('email', { host: 'h', password: 'p' })).toEqual({ host: 'h' });
+    expect(sanitizeChannelConfig('email', { host: 'h', password: 'p' } as never)).toEqual({ host: 'h' });
   });
 
   it('returns empty for unknown types or non-objects', () => {
-    expect(sanitizeChannelConfig('sms', { a: 1 })).toEqual({});
-    expect(sanitizeChannelConfig('ntfy', null)).toEqual({});
+    expect(sanitizeChannelConfig('sms', { a: 1 } as never)).toEqual({});
+    expect(sanitizeChannelConfig('ntfy', null as never)).toEqual({});
   });
 });
 
@@ -115,6 +115,7 @@ describe('sanitizeProviderDefinitions', () => {
         icon: 'acme',
         labelKey: 'provider_acme',
         supportsTest: false,
+        supportsAlertInfo: false,
         sections: [{ key: 'auth', labelKey: 'section_auth' }],
         fields: [
           {

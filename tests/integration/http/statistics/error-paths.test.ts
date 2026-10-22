@@ -33,6 +33,7 @@ vi.mock('@/delivery/http/error-response', () => ({
 }));
 
 import { Request, Response } from 'express';
+import type { GetCountryHistoryParams, GetIpOwnerHistoryParams, GetTargetHistoryParams } from '@/delivery/http/contracts';
 import { getTopCountries } from '@/delivery/http/controllers/statistics/countries/list.controller';
 import { getCountryHistory } from '@/delivery/http/controllers/statistics/countries/history.controller';
 import { getTopIpOwners } from '@/delivery/http/controllers/statistics/ip-owners/list.controller';
@@ -65,7 +66,7 @@ describe('statistics controllers - error paths', () => {
     mocks.getCountryHistory.mockRejectedValue(new Error('db error'));
     req = { params: { item: 'US' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
-    await getCountryHistory(req as Request, res as Response);
+    await getCountryHistory(req as unknown as Request<GetCountryHistoryParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching country history' }));
   });
@@ -81,7 +82,7 @@ describe('statistics controllers - error paths', () => {
     mocks.getIpOwnerHistory.mockRejectedValue(new Error('db error'));
     req = { params: { item: 'Example-AS' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
-    await getIpOwnerHistory(req as Request, res as Response);
+    await getIpOwnerHistory(req as unknown as Request<GetIpOwnerHistoryParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching IP owner history' }));
   });
@@ -97,7 +98,7 @@ describe('statistics controllers - error paths', () => {
     mocks.getTargetHistory.mockRejectedValue(new Error('db error'));
     req = { params: { item: 'example.com' } };
     res = { status: statusSpy, json: jsonSpy } as unknown as Response;
-    await getTargetHistory(req as Request, res as Response);
+    await getTargetHistory(req as unknown as Request<GetTargetHistoryParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error fetching target history' }));
   });

@@ -26,7 +26,7 @@ const callTool = (app: TestApp, name: string, args: Record<string, unknown> = {}
     .post(MCP_PATH)
     .set(JSONRPC_HEADERS)
     .send({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } })
-    .then((res) => {
+    .then((res: { status: number; text?: string }) => {
       expect(res.status).toBe(200);
       const payload = parseMcpBody(res);
       expect(payload.error).toBeUndefined();
