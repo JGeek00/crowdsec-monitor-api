@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import packageJson from '../../../package.json';
+import { log } from '@/infrastructure/system/logger';
 import type { McpToolDefinition } from './tool';
 import { mcpToolRegistry } from './tools/registry';
 
@@ -23,7 +24,16 @@ export const createMcpServer = (tools: McpToolDefinition[] = mcpToolRegistry): M
         description: tool.description,
         ...(tool.inputSchema !== undefined ? { inputSchema: tool.inputSchema } : {}),
       },
-      async (args: unknown) => tool.handler(args),
+      async (args: unknown) => {
+        try {
+          const result = await tool.handler(args);
+          log.info(`[mcp] tool: '${tool.name}'${result.isError ? ' (error)' : ''}`);
+          return result;
+        } catch (err: unknown) {
+          log.error(`[mcp] tool: '${tool.name}' (internal error)`);
+          throw err;
+        }
+      },
     );
   }
 

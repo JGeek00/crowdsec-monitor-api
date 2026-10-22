@@ -107,7 +107,12 @@ export const createApp = (): Application => {
     const format = config.server.nodeEnv === 'development' ? 'dev' : 'combined';
     app.use(
       morgan(format, {
-        skip: (req) => req.path === '/health' && config.logs.level !== 'debug',
+        // ponytail: morgan evaluates skip when the response finishes, after Express
+        // mounts may have stripped req.url; originalUrl keeps the real request path.
+        skip: (req) => {
+          const path = (req.originalUrl ?? req.url).split('?')[0];
+          return (path === '/health' || path.startsWith('/mcp')) && config.logs.level !== 'debug';
+        },
       }),
     );
   }

@@ -13,6 +13,11 @@ POST /mcp
 - Results are returned as JSON-encoded text content, mirroring the REST response bodies documented in [API.md](./API.md).
 - Unknown ids/names are returned as `isError` tool results (`{"error": "Not found", ...}`); invalid arguments are rejected by input validation with an `isError` result naming the tool.
 
+## Logging
+
+- Transport-level HTTP requests to `/mcp` are skipped by the HTTP request logger (same as `/health`); they only say an assistant is connected, not what it did.
+- Instead, each executed tool is logged once at `info` level, e.g. `[mcp] tool: 'get_alerts_stats'`, with `(error)` appended when the tool answered an error result.
+
 ## Authentication
 
 Same rule as the REST API:
