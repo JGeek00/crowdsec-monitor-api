@@ -2,16 +2,23 @@ import { canonicalizeFields } from '@/shared/utils/timestamp-format';
 import type { CanonicalDecision, DecisionsListResult, GetDecisionsQueryParams } from './decisions.dto';
 import type { DecisionRepository } from '@/application/ports/decision-repository.port';
 import { buildPaginatedResponse } from './list.helpers';
+import { parseTimestampRange } from '@/shared/utils/timestamp-range';
 
-// Called by: delivery/http controllers (decisions list endpoint)
+// Called by: delivery/http controllers (decisions list endpoint) and the MCP `list_decisions` tool
 export class ListDecisionsUseCase {
   constructor(private readonly deps: { decisionRepository: DecisionRepository }) {}
 
   async execute(query: GetDecisionsQueryParams): Promise<DecisionsListResult> {
     const { limit = 100, offset = 0, unpaged = false } = query;
+    const range = parseTimestampRange(query);
+    const normalized = {
+      ...query,
+      start_timestamp: range.start_timestamp as Date | undefined,
+      end_timestamp: range.end_timestamp as Date | undefined,
+    };
     const [filtering, decisions] = await Promise.all([
       this.deps.decisionRepository.fetchFilteringOptions(),
-      this.deps.decisionRepository.findByQuery(query),
+      this.deps.decisionRepository.findByQuery(normalized),
     ]);
 
     const { items, pagination, total } = buildPaginatedResponse(

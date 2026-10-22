@@ -96,7 +96,7 @@ describe('SequelizeDecisionRepository', () => {
 
     await repo.expireById(decisionId);
     const expired = await repo.findById(decisionId);
-    expect(new Date((expired as { expiration: string }).expiration).getTime()).toBeLessThanOrEqual(Date.now());
+    expect(new Date(((expired as unknown as { expiration: string })).expiration).getTime()).toBeLessThanOrEqual(Date.now());
   });
 
   it('getStats totals and groups by type and scope', async () => {

@@ -14,7 +14,7 @@ vi.mock('@/config/database', () => {
     dialect: SqliteDialect,
     storage: ':memory:',
     logging: false,
-    // Sequelize v7 exige pool de 1 conexión que nunca se recicle.
+    // In-memory DB: Sequelize v7 requires a 1-connection pool that is never recycled.
     pool: { max: 1, min: 0, idle: Infinity, maxUses: Infinity },
     define: {
       timestamps: true,

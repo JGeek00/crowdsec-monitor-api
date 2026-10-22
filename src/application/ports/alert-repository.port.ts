@@ -13,6 +13,10 @@ export interface AlertFilters {
   country?: string | string[];
   ip_owner?: string | string[];
   target?: string | string[];
+  /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */
+  start_timestamp?: string | Date;
+  /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */
+  end_timestamp?: string | Date;
 }
 
 /** Facets extracted from the whole table for the filtering UI. */

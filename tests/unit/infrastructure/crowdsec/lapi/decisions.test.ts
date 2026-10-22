@@ -136,7 +136,8 @@ describe('DecisionsService fallback branches', () => {
 
     const { DecisionsService } = await import('@/infrastructure/crowdsec/lapi/decisions');
     const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
-    const service = new DecisionsService(new CrowdSecBaseClient());
+    const { AlertsService: AlertsSvc } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const service = new DecisionsService(new CrowdSecBaseClient(), new AlertsSvc(new CrowdSecBaseClient()));
 
     await expect(service.getActiveDecisions()).resolves.toEqual(new Set());
   });

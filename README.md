@@ -1,6 +1,6 @@
 # CrowdSec Monitor API
 
-A RESTful API to monitor and query data from CrowdSec LAPI (Local API) using Express.js, SQLite3 (or PostgreSQL), and Sequelize with TypeScript.
+A RESTful API and MCP server to monitor and query data from CrowdSec LAPI (Local API) using Express.js, SQLite3 (or PostgreSQL), and Sequelize with TypeScript.
 
 ## Mobile clients
 <table>
@@ -30,11 +30,16 @@ CrowdSec Monitor API provides a persistent storage layer and query interface for
 - **Automatic Synchronization**: Only new alerts are added, preventing duplicates
 - **TypeScript**: Strong typing for improved security and maintainability
 - **Rate Limiting**: Protection against API abuse (optional)
+- **MCP server**: Query alerts, decisions, statistics and lists from AI assistants via Model Context Protocol (`POST /mcp`)
 - **PostgreSQL support**: You can use PostgreSQL instead of SQLite if you prefer it.
 
 #### Blocklists support
 
 CrowdSec Monitor API has an **integrated blocklists management system**, so you don't need to use extra tools. You can add a blocklist using an URL, and this service will automatically fetch the list and block that IP addresses on CrowdSec. It will also refresh the blocklists after a certain period of time.
+
+#### MCP server support
+
+Besides the REST API, this service exposes a **Model Context Protocol (MCP) server** at `POST /mcp`, so AI assistants can query statistics, alerts and decisions, manage blocklists/allowlists (list and detail) and check whether an IP is in any list. It reuses the same application core and the same Bearer-token authentication as the REST API, with its own independent rate limit (`MCP_RATE_LIMIT`).
 
 ## Deployment
 Instructions on the [wiki page](https://github.com/JGeek00/crowdsec-monitor-api/wiki/Setup). 
@@ -88,6 +93,7 @@ Instructions on the [wiki page](https://github.com/JGeek00/crowdsec-monitor-api/
 | `FINISHED_PROCESSES_RETENTION_TIME` | Time in seconds to retain the finished tasks done by this service (ej: importing a blocklist) | 3600 | No |
 | `API_PASSWORD` | Optional API authentication password | disabled | No |
 | `RATE_LIMIT` | Rate limit in format `<requests>/<minutes>` | disabled | No |
+| `MCP_RATE_LIMIT` | MCP endpoint rate limit in format `<requests>/<minutes>` (independent from `RATE_LIMIT`) | disabled | No |
 
 #### Data Retention Examples
 
@@ -129,6 +135,8 @@ You can optionally configure rate limiting using the `RATE_LIMIT` environment va
 
 - If `RATE_LIMIT` is **not set**: Rate limiting is disabled
 - If `RATE_LIMIT` is **set**: API endpoints are rate-limited based on the configured value
+
+The MCP endpoint (`POST /mcp`) has its own independent limit via `MCP_RATE_LIMIT` (same format; unset disables it).
 
 **Format:** `<requests>/<minutes>`
 
@@ -182,7 +190,7 @@ This process is repeated for each blocklist added to the database.
 ## Security
 
 - **Optional Authentication**: Bearer token authentication with `API_PASSWORD` (optional)
-- **Rate Limiting**: Configurable rate limiting with `RATE_LIMIT` (optional)
+- **Rate Limiting**: Configurable rate limiting with `RATE_LIMIT` (REST) and `MCP_RATE_LIMIT` (MCP endpoint), both optional
 - **Helmet**: Security headers configured
 - **CORS**: Cross-origin requests controlled
 - **Input Validation**: express-validator on all query parameters
@@ -192,6 +200,8 @@ This process is repeated for each blocklist added to the database.
 ## API endpoints documentation
 
 See [API.md](./docs/API.md) for complete response schemas and examples.
+
+See [MCP.md](./docs/MCP.md) for the MCP server tools and authentication.
 
 ## Architecture and development
 

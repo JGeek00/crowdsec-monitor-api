@@ -46,7 +46,10 @@ const parsePostgresHost = (hostStr?: string): { host: string; port: number } => 
 };
 
 // Parse rate limit from environment variable (format: <requests>/<minutes>)
-const parseRateLimit = (rateLimitStr: string | undefined): { max: number; windowMs: number } | null => {
+const parseRateLimit = (
+  rateLimitStr: string | undefined,
+  varName = 'RATE_LIMIT',
+): { max: number; windowMs: number } | null => {
   if (!rateLimitStr) {
     return null;
   }
@@ -54,7 +57,7 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
   const parts = rateLimitStr.split('/');
   if (parts.length !== 2) {
     console.warn(
-      `ERROR: Invalid RATE_LIMIT format: "${rateLimitStr}". Expected format: <requests>/<minutes> (e.g., "100/15"). Rate limiting disabled.`,
+      `ERROR: Invalid ${varName} format: "${rateLimitStr}". Expected format: <requests>/<minutes> (e.g., "100/15"). Rate limiting disabled.`,
     );
     return null;
   }
@@ -64,7 +67,7 @@ const parseRateLimit = (rateLimitStr: string | undefined): { max: number; window
 
   if (isNaN(max) || isNaN(minutes) || max <= 0 || minutes <= 0) {
     console.warn(
-      `ERROR: Invalid RATE_LIMIT values: "${rateLimitStr}". Both requests and minutes must be positive numbers. Rate limiting disabled.`,
+      `ERROR: Invalid ${varName} values: "${rateLimitStr}". Both requests and minutes must be positive numbers. Rate limiting disabled.`,
     );
     return null;
   }
@@ -159,6 +162,7 @@ export const config = {
     apiPassword: process.env.API_PASSWORD || undefined,
   },
   rateLimit: parseRateLimit(process.env.RATE_LIMIT),
+  mcpRateLimit: parseRateLimit(process.env.MCP_RATE_LIMIT, 'MCP_RATE_LIMIT'),
   processes: {
     finishedRetentionMs:
       (process.env.PROCESSES_FINISHED_RETENTION_TIME

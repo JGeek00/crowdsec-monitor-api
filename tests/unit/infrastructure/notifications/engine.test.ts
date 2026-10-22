@@ -49,7 +49,7 @@ function seedChannel(id: number): void {
     id,
     name: `channel ${String(id)}`,
     type: 'test-ok' as never,
-    config: {},
+    config: {} as never,
     created_at: new Date(),
     updated_at: new Date(),
   };
@@ -210,7 +210,7 @@ describe('notification-engine', () => {
       id: 12,
       name: 'mail',
       type: 'email',
-      config: {},
+      config: {} as never,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -218,7 +218,7 @@ describe('notification-engine', () => {
       id: 13,
       name: 'push',
       type: 'ntfy',
-      config: {},
+      config: {} as never,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -247,7 +247,7 @@ describe('notification-engine', () => {
       id: 12,
       name: 'mail',
       type: 'email',
-      config: {},
+      config: {} as never,
       created_at: new Date(),
       updated_at: new Date(),
     });

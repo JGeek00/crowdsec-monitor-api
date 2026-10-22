@@ -69,7 +69,8 @@ describe('BulkRefreshReporter', () => {
   it('adds pushed IPs on success and ignores parse/import progress', () => {
     const addSpy = vi.spyOn(statusBlocklistService, 'addBlocklistIps').mockImplementation(() => undefined);
     expect(() => reporter.onParsed()).not.toThrow();
-    expect(() => reporter.onImportProgress(5)).not.toThrow();
+    // BulkRefreshReporter ignores progress args; call through a wider signature on purpose.
+    (reporter.onImportProgress as (chunkSize: number) => void)(5);
     reporter.recordSuccess(7);
     expect(addSpy).toHaveBeenCalledWith('p2', 7);
     addSpy.mockRestore();

@@ -25,7 +25,7 @@ describe('handleValidationErrors', () => {
 
   it('calls next when validation passes', () => {
     vi.mocked(validationResult).mockReturnValue({ isEmpty: () => true } as any);
-    handleValidationErrors(req as Request, res as Response, nextSpy);
+    handleValidationErrors(req as Request, res as Response, nextSpy as NextFunction);
     expect(nextSpy).toHaveBeenCalled();
   });
 
@@ -34,7 +34,7 @@ describe('handleValidationErrors', () => {
       isEmpty: () => false,
       array: () => [{ msg: 'Invalid value' }],
     } as any);
-    handleValidationErrors(req as Request, res as Response, nextSpy);
+    handleValidationErrors(req as Request, res as Response, nextSpy as NextFunction);
     expect(statusSpy).toHaveBeenCalledWith(400);
     expect(jsonSpy).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Validation error', message: 'Invalid value' }),
@@ -47,7 +47,7 @@ describe('handleValidationErrors', () => {
       isEmpty: () => false,
       array: () => [{ msg: 'First error' }, { msg: 'Second error' }],
     } as any);
-    handleValidationErrors(req as Request, res as Response, nextSpy);
+    handleValidationErrors(req as Request, res as Response, nextSpy as NextFunction);
     expect(statusSpy).toHaveBeenCalledWith(400);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'First error, Second error' }));
   });

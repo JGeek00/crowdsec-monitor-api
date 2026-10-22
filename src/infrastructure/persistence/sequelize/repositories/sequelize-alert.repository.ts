@@ -37,9 +37,18 @@ const asArray = (value: string | string[] | undefined): string[] =>
  */
 export class SequelizeAlertRepository implements AlertRepositoryPort {
   async findWithFilters(filters: AlertFilters): Promise<AlertPage> {
-    const { limit = 100, offset = 0, unpaged = false, scenario, simulated } = filters;
+    const { limit = 100, offset = 0, unpaged = false, scenario, simulated, start_timestamp, end_timestamp } = filters;
 
     const where: WhereOptions<Row> = {};
+
+    // The list use case normalizes these to UTC Dates; raw wire strings are ignored here.
+    if (start_timestamp instanceof Date && end_timestamp instanceof Date) {
+      where.crowdsec_created_at = { [Op.gte]: start_timestamp, [Op.lte]: end_timestamp };
+    } else if (start_timestamp instanceof Date) {
+      where.crowdsec_created_at = { [Op.gte]: start_timestamp };
+    } else if (end_timestamp instanceof Date) {
+      where.crowdsec_created_at = { [Op.lte]: end_timestamp };
+    }
 
     if (scenario) {
       const scenarios = asArray(scenario);

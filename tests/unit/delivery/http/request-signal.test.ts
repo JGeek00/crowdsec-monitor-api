@@ -33,9 +33,9 @@ describe('createRequestSignal', () => {
 
     // Simulate the close event
     const closeHandler = (req.on as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call: [string]) => call[0] === 'close',
+      (call) => call[0] === 'close',
     )?.[1];
-    closeHandler();
+    closeHandler?.();
 
     expect(signal.aborted).toBe(true);
   });

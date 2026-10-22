@@ -63,7 +63,7 @@ describe('evaluateCondition field resolution', () => {
   });
 
   it('combines and/or/not nodes including empty groups', () => {
-    const leaf = { type: 'leaf', field: 'scenario', operator: 'equals', value: 'ssh-bf' };
+    const leaf = { type: 'leaf', field: 'scenario', operator: 'equals', value: 'ssh-bf' } as const;
     expect(evaluateCondition(alert, { type: 'and', children: [leaf] })).toBe(true);
     expect(evaluateCondition(alert, { type: 'and', children: [] })).toBe(true); // vacuous truth
     expect(evaluateCondition(alert, { type: 'or', children: [leaf, { ...leaf, value: 'x' }] })).toBe(true);

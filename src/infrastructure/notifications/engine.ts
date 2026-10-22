@@ -7,6 +7,7 @@ import type {
   UserNotification,
   UserNotificationChannel,
 } from '@/domain/entities';
+import { Alert_SourceInfo } from '@/domain/entities';
 import { evaluateCondition, type AlertLike } from '@/domain/value-objects/notification-condition';
 import { resolveCooldownSeconds } from '@/application/use-cases/notifications/threshold-defaults';
 import { dispatchChannels } from '@/infrastructure/notifications/sender';
@@ -126,7 +127,7 @@ class NotificationEngineService {
   async handleAlert(raw: {
     alertId?: number;
     scenario: string;
-    source: AlertLike['source'];
+    source: Alert_SourceInfo;
     origin?: string;
     alertType?: string;
     declaredAt: Date;

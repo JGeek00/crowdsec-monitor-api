@@ -14,6 +14,7 @@ vi.mock('@/container', () => ({
 vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
 
 import { Request, Response } from 'express';
+import type { PostToggleBlocklistParams } from '@/delivery/http/contracts';
 import { toggleBlocklist } from '@/delivery/http/controllers/lists/blocklists/toggle.controller';
 import {
   ValidationError,
@@ -39,7 +40,7 @@ describe('toggleBlocklist', () => {
 
   it('returns 200 when enabling a blocklist', async () => {
     mocks.mockExecute.mockResolvedValue({ id: 1, enabled: true });
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(200);
     expect(mocks.mockExecute).toHaveBeenCalledWith(1, true);
   });
@@ -47,20 +48,20 @@ describe('toggleBlocklist', () => {
   it('returns 200 when disabling a blocklist', async () => {
     req.body = { enabled: false };
     mocks.mockExecute.mockResolvedValue({ id: 1, enabled: false });
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(200);
   });
 
   it('returns 400 when enabled is not a boolean', async () => {
     req.body = { enabled: 'yes' };
     mocks.mockExecute.mockRejectedValue(new ValidationError('"enabled" must be a boolean'));
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(400);
   });
 
   it('returns 404 when blocklist is not found', async () => {
     mocks.mockExecute.mockRejectedValue(new NotFoundError('BlocklistsTable not found'));
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
 
@@ -68,7 +69,7 @@ describe('toggleBlocklist', () => {
     mocks.mockExecute.mockRejectedValue(
       new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.'),
     );
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(503);
   });
 
@@ -78,7 +79,7 @@ describe('toggleBlocklist', () => {
         'A process is already running for this blocklist. Wait for it to complete before performing another action.',
       ),
     );
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(409);
   });
 
@@ -88,7 +89,7 @@ describe('toggleBlocklist', () => {
         'Unable to reach CrowdSec LAPI with the configured bouncer key. BlocklistsTable operations are unavailable.',
       ),
     );
-    await toggleBlocklist(req as Request, res as Response);
+    await toggleBlocklist(req as unknown as Request<PostToggleBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(500);
   });
 });

@@ -14,6 +14,7 @@ vi.mock('@/container', () => ({
 vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
+import type { DeleteBlocklistParams } from '@/delivery/http/contracts';
 import { refreshSingleBlocklist } from '@/delivery/http/controllers/lists/blocklists/refresh.controller';
 import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 
@@ -33,13 +34,13 @@ describe('refreshSingleBlocklist', () => {
 
   it('returns 202 on success', async () => {
     mocks.mockExecute.mockResolvedValue(undefined);
-    await refreshSingleBlocklist(req as Request, res as Response);
+    await refreshSingleBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(202);
   });
 
   it('returns 404 when blocklist is not found', async () => {
     mocks.mockExecute.mockRejectedValue(new NotFoundError('Blocklist not found'));
-    await refreshSingleBlocklist(req as Request, res as Response);
+    await refreshSingleBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
 
@@ -47,7 +48,7 @@ describe('refreshSingleBlocklist', () => {
     mocks.mockExecute.mockRejectedValue(
       new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.'),
     );
-    await refreshSingleBlocklist(req as Request, res as Response);
+    await refreshSingleBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(503);
   });
 
@@ -57,7 +58,7 @@ describe('refreshSingleBlocklist', () => {
         'A process is already running for this blocklist. Wait for it to complete before performing another action.',
       ),
     );
-    await refreshSingleBlocklist(req as Request, res as Response);
+    await refreshSingleBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(409);
   });
 });

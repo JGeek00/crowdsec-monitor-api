@@ -226,7 +226,7 @@ describe('AlertsSyncService', () => {
 
   describe('cleanupOldData', () => {
     it('skips cleanup when no retention is configured', async () => {
-      mockCalculateRetentionCutoff.mockReturnValue(null);
+      mockCalculateRetentionCutoff.mockReturnValue(null as never);
 
       const { alertsSyncService: svc } = await import('@/infrastructure/sync/alerts-sync');
       const result = await svc.cleanupOldData();

@@ -6,7 +6,7 @@
   "ignore": [
     "src/**/*.spec.ts"
   ],
-  "exec": "ts-node -P tsconfig.app.json -r tsconfig-paths/register src/server.ts",
+  "exec": "tsx --tsconfig tsconfig.app.json src/server.ts",
   "events": {
     "restart": "eslint --fix --quiet {{changed}} 2>/dev/null || true"
   }

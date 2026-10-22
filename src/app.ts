@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config } from '@/config';
 import routes from '@/delivery/http/routes';
+import { mcpHttpRouter } from '@/delivery/mcp/http';
+import { AuthMiddleware } from '@/delivery/http/middlewares/auth.middleware';
 import { errorHandler } from '@/delivery/http/middlewares/error.middleware';
 import { notFoundHandler } from '@/delivery/http/middlewares/not-found.middleware';
 import { JobRegistry } from '@/infrastructure/scheduling/job-registry';
@@ -82,14 +84,18 @@ export const createApp = (): Application => {
   app.use(helmet());
   app.use(cors());
 
-  // Rate limiting
-  if (config.rateLimit) {
-    const limiter = rateLimit({
-      windowMs: config.rateLimit.windowMs,
-      max: config.rateLimit.max,
+  // Rate limiting (REST and MCP have independent limits)
+  const buildLimiter = (limit: { max: number; windowMs: number }) =>
+    rateLimit({
+      windowMs: limit.windowMs,
+      max: limit.max,
       message: { error: 'Too many requests', message: 'Too many requests from this IP, please try again later.' },
     });
-    app.use('/api/v1/', limiter);
+  if (config.rateLimit) {
+    app.use('/api/v1/', buildLimiter(config.rateLimit));
+  }
+  if (config.mcpRateLimit) {
+    app.use('/mcp', buildLimiter(config.mcpRateLimit));
   }
 
   // Body parsing middleware
@@ -101,13 +107,21 @@ export const createApp = (): Application => {
     const format = config.server.nodeEnv === 'development' ? 'dev' : 'combined';
     app.use(
       morgan(format, {
-        skip: (req) => req.path === '/health' && config.logs.level !== 'debug',
+        // ponytail: morgan evaluates skip when the response finishes, after Express
+        // mounts may have stripped req.url; originalUrl keeps the real request path.
+        skip: (req) => {
+          const path = (req.originalUrl ?? req.url).split('?')[0];
+          return (path === '/health' || path.startsWith('/mcp')) && config.logs.level !== 'debug';
+        },
       }),
     );
   }
 
   // Routes
   app.use('/api/v1', routes);
+
+  // MCP server (its own protocol, not part of the REST API)
+  app.use('/mcp', AuthMiddleware.expressAuth, mcpHttpRouter);
 
   // Root endpoint
   app.get('/', (req, res) => {

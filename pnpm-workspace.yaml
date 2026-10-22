@@ -9,13 +9,14 @@ minimumReleaseAge: 1440
 saveExact: true
 trustPolicy: "no-downgrade"
 overrides:
-  # @vercel/oidc >=3.8.1 perdió la evidencia de trusted publisher y pnpm las
-  # bloquea como posible package takeover. Fijamos a la 3.8.0, que sí la tiene.
+  # @vercel/oidc >=3.8.1 lost trusted-publisher evidence and pnpm blocks those
+  # versions as a possible package takeover. Pinned to 3.8.0, which still has it.
   "@vercel/oidc": "3.8.0"
-  # Vulnerabilidades transitivas vía vite>postcss>nanoid (deps de dev).
-  "nanoid": "3.3.18"
-  "postcss": "8.5.23"
-  # node-sqlite3 (TryGhost) está deprecado y sin mantenimiento. Lo sustituimos
-  # por @vscode/sqlite3, el fork mantenido por Microsoft, API-compatible.
-  # Es el mismo fix que aplicó Sequelize upstream (PR sequelize/sequelize#18117).
+  # Transitive vulnerabilities via vite>postcss>nanoid (dev deps); bump the
+  # pins together when upstream publishes fixed patch releases.
+  "nanoid": "3.3.20"
+  "postcss": "8.5.31"
+  # node-sqlite3 (TryGhost) is deprecated and unmaintained. Replaced with
+  # @vscode/sqlite3, the Microsoft-maintained fork, API-compatible.
+  # Same fix as the one applied by Sequelize upstream (PR sequelize/sequelize#18117).
   "sqlite3": "npm:@vscode/sqlite3@5.1.14-vscode"

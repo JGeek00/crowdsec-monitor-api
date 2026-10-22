@@ -29,7 +29,7 @@ describe('notification-sender', () => {
   });
 
   it('rejects email without host, from or recipient', async () => {
-    const results = await dispatchChannels([{ type: 'email', config: {} }], 'msg', 'title');
+    const results = await dispatchChannels([{ type: 'email', config: {} as never }], 'msg', 'title');
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.detail).toContain('missing');
     expect(createTransportMock).not.toHaveBeenCalled();
@@ -94,7 +94,7 @@ describe('notification-sender', () => {
   });
 
   it('rejects ntfy without topic', async () => {
-    const results = await dispatchChannels([{ type: 'ntfy', config: {} }], 'msg', 'title');
+    const results = await dispatchChannels([{ type: 'ntfy', config: {} as never }], 'msg', 'title');
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.detail).toContain('topic');
   });
@@ -152,7 +152,7 @@ describe('notification-sender', () => {
   });
 
   it('reports unsupported channels', async () => {
-    const results = await dispatchChannels([{ type: 'sms' as never, config: {} }], 'msg', 'title');
+    const results = await dispatchChannels([{ type: 'sms' as never, config: {} as never }], 'msg', 'title');
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.detail).toContain('unsupported');
   });
@@ -160,13 +160,13 @@ describe('notification-sender', () => {
   it('supports custom registry entries and captures sender throws', async () => {
     registerNotificationChannel('custom-test', async () => null);
     expect(supportedNotificationChannels()).toContain('custom-test');
-    const custom = await dispatchChannels([{ type: 'custom-test', config: {} }], 'm', 't');
+    const custom = await dispatchChannels([{ type: 'custom-test' as never, config: {} as never }], 'm', 't');
     expect(custom[0]?.ok).toBe(true);
 
     registerNotificationChannel('custom-boom', async () => {
       throw new Error('boom');
     });
-    const boom = await dispatchChannels([{ type: 'custom-boom', config: {} }], 'm', 't');
+    const boom = await dispatchChannels([{ type: 'custom-boom' as never, config: {} as never }], 'm', 't');
     expect(boom[0]?.ok).toBe(false);
     expect(boom[0]?.detail).toContain('boom');
   });

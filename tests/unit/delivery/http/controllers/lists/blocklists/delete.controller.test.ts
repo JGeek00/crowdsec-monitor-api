@@ -14,6 +14,7 @@ vi.mock('@/container', () => ({
 vi.mock('@/infrastructure/system/logger', () => ({ log: { error: vi.fn() } }));
 
 import { Request, Response } from 'express';
+import type { DeleteBlocklistParams } from '@/delivery/http/contracts';
 import { deleteBlocklist } from '@/delivery/http/controllers/lists/blocklists/delete.controller';
 import { NotFoundError, ConflictError, ServiceUnavailableError } from '@/domain/errors';
 
@@ -33,14 +34,14 @@ describe('deleteBlocklist', () => {
 
   it('returns 202 on successful deletion', async () => {
     mocks.mockExecute.mockResolvedValue(undefined);
-    await deleteBlocklist(req as Request, res as Response);
+    await deleteBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(202);
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'BlocklistsTable deletion requested' }));
   });
 
   it('returns 404 when blocklist is not found', async () => {
     mocks.mockExecute.mockRejectedValue(new NotFoundError('BlocklistsTable not found'));
-    await deleteBlocklist(req as Request, res as Response);
+    await deleteBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(404);
   });
 
@@ -48,7 +49,7 @@ describe('deleteBlocklist', () => {
     mocks.mockExecute.mockRejectedValue(
       new ServiceUnavailableError('Blocklist refresh is in progress. Please try again later.'),
     );
-    await deleteBlocklist(req as Request, res as Response);
+    await deleteBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(503);
   });
 
@@ -58,7 +59,7 @@ describe('deleteBlocklist', () => {
         'A process is already running for this blocklist. Wait for it to complete before performing another action.',
       ),
     );
-    await deleteBlocklist(req as Request, res as Response);
+    await deleteBlocklist(req as unknown as Request<DeleteBlocklistParams>, res as Response);
     expect(statusSpy).toHaveBeenCalledWith(409);
   });
 });

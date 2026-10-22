@@ -73,8 +73,10 @@ describe('DatabaseService', () => {
     expect(result.synced).toBe(3);
   });
 
-  it('getLastSuccessfulSync delegates to alertsSyncService', () => {
-    const { alertsSyncService } = vi.importActual('@/infrastructure/sync/alerts-sync');
+  it('getLastSuccessfulSync delegates to alertsSyncService', async () => {
+    const { alertsSyncService } = await vi.importActual<typeof import('@/infrastructure/sync/alerts-sync')>(
+      '@/infrastructure/sync/alerts-sync',
+    );
     // Already mocked, test the delegation via databaseService
   });
 
@@ -106,11 +108,11 @@ describe('DatabaseService', () => {
 
   it('cleanupOldData delegates to alertsSyncService', async () => {
     const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
-    vi.mocked(alertsSyncService.cleanupOldData).mockResolvedValue({ deleted: 10 });
+    vi.mocked(alertsSyncService.cleanupOldData).mockResolvedValue({ deletedAlerts: 10, deletedDecisions: 5 });
 
     const { databaseService } = await import('@/infrastructure/persistence/database-facade');
     const result = await databaseService.cleanupOldData();
-    expect(result).toEqual({ deleted: 10 });
+    expect(result).toEqual({ deletedAlerts: 10, deletedDecisions: 5 });
   });
 
   it('syncDecisions delegates to alertsSyncService', async () => {

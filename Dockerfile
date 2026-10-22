@@ -3,7 +3,7 @@
 #################
 FROM node:24-slim AS builder
 
-ARG PNPM_VERSION=12.6.0
+ARG PNPM_VERSION=12.15.0
 
 WORKDIR /app
 

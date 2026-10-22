@@ -1,8 +1,8 @@
 import type { Alert_SourceInfo, ConditionNode, NotificationField, NotificationOperator } from '@/domain/entities';
 
 export interface AlertLike {
-  scenario: string;
-  source: Alert_SourceInfo;
+  scenario?: string;
+  source?: Alert_SourceInfo;
   origin?: string;
   alertType?: string;
 }
