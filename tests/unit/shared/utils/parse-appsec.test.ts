@@ -47,9 +47,7 @@ describe('crowdsec-taxonomy', () => {
     expect(isAppSecAlert('waf', 'crowdsecurity/ssh-bf')).toBe(true);
     expect(isAppSecAlert('bot-detection', 'crowdsecurity/ssh-bf')).toBe(true);
     expect(isAppSecAlert('crowdsec', 'crowdsecurity/ssh-bf')).toBe(false);
-    // kind presente gana: aunque el scenario parezca AppSec, no es AppSec
     expect(isAppSecAlert('crowdsec', 'crowdsecurity/vpatch-env-access')).toBe(false);
-    // Sin kind (CrowdSec <1.7.7): fallback por marcadores, case-insensitive
     expect(isAppSecAlert(undefined, 'crowdsecurity/vpatch-env-access')).toBe(true);
     expect(isAppSecAlert(undefined, 'crowdsecurity/appsec-generic-test')).toBe(true);
     expect(isAppSecAlert(undefined, 'crowdsecurity/VPATCH-CVE-2023-42793')).toBe(true);
@@ -86,18 +84,14 @@ describe('extractAppSecSummary', () => {
   });
 
   it('handles array values, scalar JSON and unparseable brackets', () => {
-    // Rama Array.isArray de firstValue (runtime tolerante aunque el tipo sea string)
     expect(
       extractAppSecSummary({
         meta: [{ key: 'method', value: ['PUT', 'POST'] } as never],
         events: [],
       })?.method,
     ).toBe('PUT');
-    // Array JSON vacío: primer elemento ausente -> no aporta
     expect(extractAppSecSummary({ meta: [{ key: 'method', value: '[]' }], events: [] })).toBeNull();
-    // Rama catch: empieza por '[' pero no es JSON -> se conserva tal cual
     expect(extractAppSecSummary({ meta: [{ key: 'method', value: '[broken' }], events: [] })?.method).toBe('[broken');
-    // Array vacío y string vacío no aportan -> null si no hay nada más
     expect(extractAppSecSummary({ meta: [{ key: 'method', value: [] } as never], events: [] })).toBeNull();
     expect(extractAppSecSummary({ meta: [{ key: 'method', value: '   ' }], events: [] })).toBeNull();
   });

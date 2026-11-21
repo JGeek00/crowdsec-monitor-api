@@ -1,7 +1,3 @@
-// Única fuente de verdad para kinds y origins de alertas CrowdSec.
-// El `kind` (crowdsec/waf/bot-detection/...) solo se usa en memoria para
-// clasificar; no se persiste en DB. Ver odd/tasks/appsec-waf-support.md.
-
 export const ALERT_KINDS = ['crowdsec', 'waf', 'bot-detection', 'capi', 'papi', 'cscli'] as const;
 
 export const APPSEC_KINDS = ['waf', 'bot-detection'] as const;
@@ -12,7 +8,6 @@ export const ALERT_ORIGINS_EXCLUDED = ['lists', 'cs-monitor-blocklist-import'] a
 
 export const ALERT_SCENARIOS_EXCLUDED = [/^external\/blocklist \((.+)\)$/] as const;
 
-// Fallback para CrowdSec <1.7.7 (sin `kind`): escenarios que siempre son AppSec.
 export const APPSEC_SCENARIO_MARKERS = ['appsec', 'vpatch-'] as const;
 
 export function isAppSecAlert(kind?: string | null, scenario?: string | null): boolean {

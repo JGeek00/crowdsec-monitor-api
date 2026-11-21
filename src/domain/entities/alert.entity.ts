@@ -18,8 +18,6 @@ export interface Alert<T extends MetaData> {
   labels: string[] | null;
   meta: T[];
   events: Alert_EventData<T>[];
-  // Derivado en memoria desde `kind` (no se persiste el kind crudo).
-  // Opcional para no romper fixtures pre-migración; runtime/DB siempre lo proveen.
   is_appsec?: boolean;
   appsec_rule?: string | null;
   appsec_uri?: string | null;

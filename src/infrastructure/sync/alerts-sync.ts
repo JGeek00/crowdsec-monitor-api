@@ -68,7 +68,6 @@ class AlertsSyncService {
 
         for (const alert of alerts) {
           try {
-            // Blocklists nunca entran a la tabla normal (tienen su propio pipeline).
             const decisionOrigins = (alert.decisions ?? []).map((d) => d.origin);
             if (isExcludedScenario(alert.scenario) || decisionOrigins.some((o) => isExcludedOrigin(o))) {
               log.debug(`  Skipping blocklist alert #${alert.id} (${alert.scenario})`);

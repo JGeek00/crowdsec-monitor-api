@@ -1,7 +1,6 @@
 import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
 
-// Dormida: creada por la migración 0004, sin writer hasta activar METRICS_HISTORY_ENABLED.
 class MetricsRollupsTable extends Model {
   public id!: number;
   public bucket_start!: Date;

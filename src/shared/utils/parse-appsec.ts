@@ -17,11 +17,8 @@ function firstValue(value?: string | string[]): string | undefined {
   }
   const trimmed = value.trim();
   if (trimmed === '') return undefined;
-  // LAPI serializa arrays como "[\"GET\"]"
   if (trimmed.startsWith('[')) {
     try {
-      // Un JSON válido que empieza por '[' siempre es un array; si no lo es,
-      // el parse lanza y caemos al catch.
       const parsed: unknown = JSON.parse(trimmed);
       const first = Array.isArray(parsed) ? parsed[0] : undefined;
       return first === undefined ? undefined : String(first);
@@ -40,10 +37,6 @@ function metaMap(meta?: CrowdSecMeta[]): Map<string, string | undefined> {
   return map;
 }
 
-/**
- * Resumen genérico para cualquier regla WAF/bot-detection.
- * No hardcodea nombres de reglas: lee rule_name/uri/host/method.
- */
 export function extractAppSecSummary(alert: Pick<CrowdSecAlert, 'meta' | 'events'>): AppSecSummary | null {
   const top = metaMap(alert.meta);
   const firstEventMeta = metaMap(alert.events?.[0]?.meta);

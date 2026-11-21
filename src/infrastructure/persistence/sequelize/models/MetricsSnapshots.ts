@@ -1,7 +1,6 @@
 import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@/config/database';
 
-// Dormida: creada por la migración 0004, sin writer hasta activar METRICS_HISTORY_ENABLED.
 class MetricsSnapshotsTable extends Model {
   public id!: number;
   public captured_at!: Date;
@@ -23,7 +22,13 @@ MetricsSnapshotsTable.init(
     source: { type: DataTypes.STRING(64), allowNull: false, defaultValue: 'crowdsec-prometheus' },
     payload: { type: DataTypes.JSON, allowNull: false },
   },
-  { sequelize, tableName: 'metrics_snapshots', underscored: true, timestamps: false, indexes: [{ name: 'idx_metrics_snapshots_captured_at', fields: ['captured_at'] }] },
+  {
+    sequelize,
+    tableName: 'metrics_snapshots',
+    underscored: true,
+    timestamps: false,
+    indexes: [{ name: 'idx_metrics_snapshots_captured_at', fields: ['captured_at'] }],
+  },
 );
 
 export default MetricsSnapshotsTable;

@@ -1,11 +1,11 @@
 import { sequelize } from '@/config/database';
 
 /**
- * Migration 0004: AppSec (waf + bot-detection) + histórico de métricas (dormido)
+ * Migration 0004: AppSec (waf + bot-detection) + dormant metrics history.
  *
- * - alerts: is_appsec + appsec_rule/uri/host/method (kind crudo no se persiste).
- * - metrics_snapshots + metrics_rollups: creadas vacías, job apagado por flag.
- * - backfill histórico por scenario (pre-1.7.7 sin `kind`).
+ * - alerts: is_appsec + appsec_rule/uri/host/method (raw kind is not persisted).
+ * - metrics_snapshots + metrics_rollups: created empty, job disabled by flag.
+ * - historic backfill by scenario (pre-1.7.7 rows carry no `kind`).
  */
 
 const ADD_COLUMNS = [
@@ -77,7 +77,7 @@ export default {
     await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_alerts_is_appsec ON alerts (is_appsec)`);
     await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_alerts_appsec_rule ON alerts (appsec_rule)`);
 
-    // Backfill pre-1.7.7 (sin `kind` en LAPI): todo lo appsec/vpatch es AppSec.
+    // Backfill pre-1.7.7 rows (no `kind` in LAPI): everything appsec/vpatch is AppSec.
     await sequelize.query(`
       UPDATE alerts SET is_appsec = TRUE
       WHERE LOWER(scenario) LIKE '%appsec%' OR LOWER(scenario) LIKE '%vpatch%'

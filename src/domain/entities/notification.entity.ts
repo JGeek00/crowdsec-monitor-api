@@ -67,7 +67,7 @@ export interface NotificationChannelRef {
   config: NotificationChannelConfig;
 }
 
-/** Event meta as received from CrowdSec (single string value per key, puede faltar en WAF). */
+/** Event meta as received from CrowdSec (single string value per key). */
 export interface NotificationAlertEventMeta {
   key: string;
   value?: string;

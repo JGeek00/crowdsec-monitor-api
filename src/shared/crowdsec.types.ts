@@ -6,7 +6,7 @@ export interface CrowdSecLoginResponse {
   token: string;
 }
 
-// Meta key-value pair (value puede faltar en eventos WAF, ej. {"key":"data"})
+// Meta key-value pair
 export interface CrowdSecMeta {
   key: string;
   value?: string;
