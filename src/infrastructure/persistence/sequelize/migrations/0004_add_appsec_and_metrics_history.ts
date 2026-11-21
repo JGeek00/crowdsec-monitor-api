@@ -1,4 +1,5 @@
 import { sequelize } from '@/config/database';
+import { ensureAppsecColumns } from './ensure-appsec-columns';
 
 /**
  * Migration 0004: AppSec (waf + bot-detection) + dormant metrics history.
@@ -8,43 +9,10 @@ import { sequelize } from '@/config/database';
  * - historic backfill by scenario (pre-1.7.7 rows carry no `kind`).
  */
 
-const ADD_COLUMNS = [
-  'ALTER TABLE alerts ADD COLUMN is_appsec BOOLEAN DEFAULT FALSE',
-  'ALTER TABLE alerts ADD COLUMN appsec_rule VARCHAR(255)',
-  'ALTER TABLE alerts ADD COLUMN appsec_uri VARCHAR(1024)',
-  'ALTER TABLE alerts ADD COLUMN appsec_host VARCHAR(255)',
-  'ALTER TABLE alerts ADD COLUMN appsec_method VARCHAR(16)',
-] as const;
-
-function isDuplicateColumn(error: unknown): boolean {
-  const err = error as {
-    parent?: { errno?: number; code?: string; message?: string };
-    message?: string;
-    code?: string;
-  };
-  return (
-    (err?.parent?.errno === 1 && err?.parent?.message?.includes('duplicate column name')) ||
-    err?.message?.includes('duplicate column name') ||
-    err?.message?.includes('already exists') ||
-    err?.parent?.code === '42701' ||
-    err?.code === 'SQLITE_ERROR'
-  );
-}
-
 export default {
   name: '0004_add_appsec_and_metrics_history',
   up: async () => {
-    for (const sql of ADD_COLUMNS) {
-      try {
-        await sequelize.query(sql);
-      } catch (error) {
-        if (isDuplicateColumn(error)) {
-          console.log(`Columna ya existe - saltando: ${sql}`);
-          continue;
-        }
-        throw error;
-      }
-    }
+    await ensureAppsecColumns(sequelize);
 
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS metrics_snapshots (

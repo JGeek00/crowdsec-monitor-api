@@ -5,6 +5,7 @@ import { config } from '@/config/index';
 import { DB_MODE } from '@/config/db-mode.types';
 import { MigrationService } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration.service';
 import { MigrationRunner } from '@/infrastructure/persistence/sequelize/migrations-legacy/migration-runner.service';
+import { ensureAppsecColumns } from '@/infrastructure/persistence/sequelize/migrations/ensure-appsec-columns';
 
 function createSequelize(): Sequelize {
   if (config.database.mode === DB_MODE.POSTGRES) {
@@ -81,6 +82,10 @@ async function initSQLite(): Promise<void> {
   await sequelize.query('DROP TABLE IF EXISTS cs_blocklists;').catch(() => {});
   console.log('✓ cs_blocklists dropped (will be recreated with VARCHAR id and re-synced on startup).');
 
+  // AppSec columns (migration 0004) must exist before sync(): sync() never alters
+  // existing tables but creates the model-declared indexes.
+  await ensureAppsecColumns(sequelize);
+
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();
   console.log('✓ Database models synchronized.');
@@ -130,6 +135,10 @@ async function initPostgres(): Promise<void> {
     .query('ALTER TABLE blocklist_ips ALTER COLUMN cs_blocklist_id TYPE VARCHAR(50) USING cs_blocklist_id::text;')
     .catch(() => {});
   console.log('✓ cs_blocklists schema migrated to VARCHAR id (will be re-synced on startup).');
+
+  // AppSec columns (migration 0004) must exist before sync(): sync() never alters
+  // existing tables but creates the model-declared indexes.
+  await ensureAppsecColumns(sequelize);
 
   // Create tables that don't exist yet without modifying existing ones.
   await sequelize.sync();
