@@ -30,7 +30,9 @@ export class MigrationRunner {
   private migrationsDir: string;
 
   constructor(private migrationService: MigrationService) {
-    // Compiled migrations live next to this file: dist/infrastructure/persistence/sequelize/migrations
+    // Compiled migrations live next to this file: dist/infrastructure/persistence/sequelize/migrations.
+    // Under tsx (`pnpm dev`) the directory holds .ts sources instead — both are discovered
+    // so dev and prod apply the same migrations.
     this.migrationsDir = path.resolve(__dirname, '../migrations');
   }
 
@@ -144,39 +146,42 @@ export class MigrationRunner {
     }
 
     const files = fs.readdirSync(this.migrationsDir);
-    const migrationFiles = files.filter((file) => /.*\.js$/.test(file));
+    const migrationFiles = files.filter((file) => /\.(js|ts)$/.test(file) && !file.endsWith('.d.ts'));
 
-    const migrationNames = migrationFiles
+    const entries = migrationFiles
       .map((file) => {
         const match = file.match(/^(\d+)_/);
         if (!match) return null;
-        return { name: file, prefix: match[1] };
+        return { file, name: this.getMigrationName(file), prefix: match[1], compiled: file.endsWith('.js') };
       })
-      .filter((item): item is { name: string; prefix: string } => item !== null);
+      .filter((item): item is { file: string; name: string; prefix: string; compiled: boolean } => item !== null);
 
-    migrationNames.sort((a, b) => parseInt(a.prefix, 10) - parseInt(b.prefix, 10));
+    // Numeric order; prefer the compiled .js when both flavours of a migration exist.
+    entries.sort((a, b) => parseInt(a.prefix, 10) - parseInt(b.prefix, 10) || Number(b.compiled) - Number(a.compiled));
 
-    for (const { name } of migrationNames) {
+    const ordered: { file: string; name: string }[] = [];
+    const seen = new Set<string>();
+    for (const { file, name } of entries) {
+      if (seen.has(name)) continue;
+      seen.add(name);
       try {
-        const migrationPath = path.join(this.migrationsDir, name);
-        const migrationName = this.getMigrationName(name);
+        const migration = loadMigration(path.join(this.migrationsDir, file));
 
-        const migration = loadMigration(migrationPath);
-
-        this.migrationsCache.set(migrationName, migration);
+        this.migrationsCache.set(name, migration);
       } catch (err) {
-        log.error(`Failed to load migration ${name}:`, err);
+        log.error(`Failed to load migration ${file}:`, err);
       }
+      ordered.push({ file, name });
     }
 
-    return migrationNames.map((m) => this.getMigrationName(m.name));
+    return ordered.map((m) => m.name);
   }
 
   /**
-   * Get the migration name without extension
+   * Get the migration name without extension (.js in dist, .ts under tsx)
    */
   private getMigrationName(filename: string): string {
-    return filename.replace(/\.js$/, '');
+    return filename.replace(/\.(js|ts)$/, '');
   }
 
   /**

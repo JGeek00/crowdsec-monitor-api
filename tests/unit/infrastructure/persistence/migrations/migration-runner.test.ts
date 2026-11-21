@@ -64,6 +64,11 @@ describe('MigrationRunner', () => {
       const name = (runner as any).getMigrationName('001_test.js');
       expect(name).toBe('001_test');
     });
+
+    it('strips .ts extension (tsx dev)', () => {
+      const name = (runner as any).getMigrationName('0004_add_appsec.ts');
+      expect(name).toBe('0004_add_appsec');
+    });
   });
 
   describe('loadMigrations', () => {
@@ -94,6 +99,20 @@ describe('MigrationRunner', () => {
       // all names matching the numeric prefix pattern.
       const result = (runner as any).loadMigrations();
       expect(result).toEqual(['001_good', '002_bad']);
+    });
+
+    it('discovers .ts sources (tsx dev) and ignores declaration files', () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readdirSync.mockReturnValue(['0001_first.ts', '0002_second.d.ts', 'readme.txt', '0003_third.js']);
+      const result = (runner as any).loadMigrations();
+      expect(result).toEqual(['0001_first', '0003_third']);
+    });
+
+    it('deduplicates .js/.ts pairs to a single migration', () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readdirSync.mockReturnValue(['0004_add_appsec.js', '0004_add_appsec.ts', '0001_first.js']);
+      const result = (runner as any).loadMigrations();
+      expect(result).toEqual(['0001_first', '0004_add_appsec']);
     });
   });
 
