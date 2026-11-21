@@ -61,6 +61,24 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       where.simulated = String(simulated) === 'true';
     }
 
+    if (filters.is_appsec !== undefined) {
+      where.is_appsec = String(filters.is_appsec) === 'true';
+    }
+
+    const appsecRules = asArray(filters.appsec_rule);
+    if (appsecRules.length > 0) {
+      where.appsec_rule = {
+        [Op.or]: appsecRules.map((r) => ({ [Op.like]: `%${escapeLike(String(r))}%` })),
+      };
+    }
+
+    const appsecHosts = asArray(filters.appsec_host);
+    if (appsecHosts.length > 0) {
+      where.appsec_host = {
+        [Op.or]: appsecHosts.map((h) => ({ [Op.like]: `%${escapeLike(String(h))}%` })),
+      };
+    }
+
     // Facets: extracted from the entire table (same as legacy controller).
     const allAlerts = await AlertsTable.findAll({
       attributes: [AlertsTable.col.scenario, AlertsTable.col.source, AlertsTable.col.events],
@@ -249,7 +267,43 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       return { cn: source?.cn, as_name: source?.as_name };
     });
 
-    return { total, simulated, topScenarios, sources };
+    const appsecTotal = (await AlertsTable.count({ where: { is_appsec: true } })) as number;
+
+    const rulesData = asRows<{ appsec_rule: string; count: string | number }>(
+      await AlertsTable.findAll({
+        attributes: [
+          AlertsTable.col.appsecRule,
+          [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
+        ],
+        where: { is_appsec: true },
+        group: [AlertsTable.col.appsecRule],
+        order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
+        limit: 10,
+        raw: true,
+      }),
+    );
+    const hostsData = asRows<{ appsec_host: string; count: string | number }>(
+      await AlertsTable.findAll({
+        attributes: [
+          AlertsTable.col.appsecHost,
+          [AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), 'count'],
+        ],
+        where: { is_appsec: true },
+        group: [AlertsTable.col.appsecHost],
+        order: [[AlertsTable.sequelize!.fn('COUNT', AlertsTable.sequelize!.col(AlertsTable.col.id)), DB_SORTING.DESC]],
+        limit: 10,
+        raw: true,
+      }),
+    );
+
+    const topAppsecRules = rulesData
+      .filter((item) => item.appsec_rule)
+      .map((item) => ({ rule: item.appsec_rule, count: parseInt(String(item.count), 10) }));
+    const topAppsecHosts = hostsData
+      .filter((item) => item.appsec_host)
+      .map((item) => ({ host: item.appsec_host, count: parseInt(String(item.count), 10) }));
+
+    return { total, simulated, appsecTotal, topScenarios, topAppsecRules, topAppsecHosts, sources };
   }
 
   // ── Statistics aggregations (moved from statistics controllers) ──

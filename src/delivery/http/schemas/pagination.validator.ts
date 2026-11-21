@@ -77,6 +77,30 @@ export const alertQueryValidators: ValidationChain[] = [
       return false;
     })
     .withMessage('target must be a string or array of strings'),
+
+  query('is_appsec').optional().isBoolean().withMessage('is_appsec must be a boolean (true or false)').toBoolean(),
+
+  query('appsec_rule')
+    .optional()
+    .custom((value) => {
+      if (typeof value === 'string') return true;
+      if (Array.isArray(value)) {
+        return value.every((item) => typeof item === 'string');
+      }
+      return false;
+    })
+    .withMessage('appsec_rule must be a string or array of strings'),
+
+  query('appsec_host')
+    .optional()
+    .custom((value) => {
+      if (typeof value === 'string') return true;
+      if (Array.isArray(value)) {
+        return value.every((item) => typeof item === 'string');
+      }
+      return false;
+    })
+    .withMessage('appsec_host must be a string or array of strings'),
 ];
 
 /**

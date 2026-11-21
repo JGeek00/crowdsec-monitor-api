@@ -13,6 +13,9 @@ export interface AlertFilters {
   country?: string | string[];
   ip_owner?: string | string[];
   target?: string | string[];
+  is_appsec?: boolean | string;
+  appsec_rule?: string | string[];
+  appsec_host?: string | string[];
   /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */
   start_timestamp?: string | Date;
   /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */
@@ -53,7 +56,10 @@ export interface AlertRepository {
   getStats(): Promise<{
     total: number;
     simulated: number;
+    appsecTotal: number;
     topScenarios: { scenario: string; count: number }[];
+    topAppsecRules: { rule: string; count: number }[];
+    topAppsecHosts: { host: string; count: number }[];
     sources: { cn: string | undefined; as_name: string | undefined }[];
   }>;
 

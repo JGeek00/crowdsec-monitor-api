@@ -7,6 +7,8 @@ import { calculateExpiration, calculateRetentionCutoff } from '@/shared/utils/du
 import { toCanonicalTimestamp } from '@/shared/utils/timestamp-format';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
+import { isAppSecAlert, isExcludedOrigin, isExcludedScenario } from '@/constants/crowdsec-taxonomy';
+import { extractAppSecSummary } from '@/shared/utils/parse-appsec';
 import { log } from '@/infrastructure/system/logger';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
 
@@ -58,13 +60,24 @@ class AlertsSyncService {
           source: (typeof alerts)[number]['source'];
           origin?: string;
           alertType?: string;
+          appsecRule?: string;
+          appsecHost?: string;
           declaredAt: Date;
           events: (typeof alerts)[number]['events'][number]['meta'][];
         }[] = [];
 
         for (const alert of alerts) {
           try {
+            // Blocklists nunca entran a la tabla normal (tienen su propio pipeline).
+            const decisionOrigins = (alert.decisions ?? []).map((d) => d.origin);
+            if (isExcludedScenario(alert.scenario) || decisionOrigins.some((o) => isExcludedOrigin(o))) {
+              log.debug(`  Skipping blocklist alert #${alert.id} (${alert.scenario})`);
+              continue;
+            }
+
             const existingAlert = await AlertsTable.findByPk(alert.id);
+            const isAppSec = isAppSecAlert(alert.kind, alert.scenario);
+            const appsec = isAppSec ? extractAppSecSummary(alert) : null;
 
             const alertData: Omit<Alert<UnparsedMetaData>, 'created_at'> = {
               id: alert.id,
@@ -81,6 +94,11 @@ class AlertsSyncService {
               machine_id: alert.machine_id,
               source: alert.source,
               labels: alert.labels,
+              is_appsec: isAppSec,
+              appsec_rule: appsec?.rule ?? null,
+              appsec_uri: appsec?.uri ?? null,
+              appsec_host: appsec?.host ?? null,
+              appsec_method: appsec?.method ?? null,
               meta: alert.meta || [],
               // Persist event timestamps in canonical format (REQ-007); unparseable
               // values are stored as received rather than dropping the record.
@@ -110,6 +128,8 @@ class AlertsSyncService {
                 source: alert.source,
                 origin: alert.decisions?.[0]?.origin,
                 alertType: alert.decisions?.[0]?.type,
+                appsecRule: appsec?.rule,
+                appsecHost: appsec?.host,
                 declaredAt: new Date(alert.created_at),
                 events: (alert.events || []).map((event) => event.meta ?? []),
               });

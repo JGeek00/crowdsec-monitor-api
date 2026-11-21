@@ -240,6 +240,31 @@ paths:
                 items:
                   type: string
           example: api.example.com
+        - name: is_appsec
+          in: query
+          description: Filter AppSec alerts (waf + bot-detection)
+          schema:
+            type: boolean
+        - name: appsec_rule
+          in: query
+          description: Filter by AppSec rule name (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: vpatch-env-access
+        - name: appsec_host
+          in: query
+          description: Filter by AppSec target host (partial match, accepts multiple values)
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example: linkwarden.jgeek00.com
         - name: start_timestamp
           in: query
           description: >-
@@ -2371,7 +2396,7 @@ components:
           type: boolean
         condition:
           type: object
-          description: Block-based condition tree (leaf/and/or/not). Leaf fields scenario|country|target|origin|type|scope|ipOwner (ipOwner reads source.as_name), operators equals|not_equals|in|not_in|contains. An empty `and` (no children) matches every alert (no condition).
+          description: Block-based condition tree (leaf/and/or/not). Leaf fields scenario|country|target|origin|type|scope|ipOwner|appsecRule|appsecHost (ipOwner reads source.as_name, appsecRule/Host from the AppSec summary), operators equals|not_equals|in|not_in|contains. An empty `and` (no children) matches every alert (no condition).
         threshold:
           type: object
           nullable: true
@@ -2765,6 +2790,31 @@ components:
         real:
           type: integer
           example: 125
+        appsecTotal:
+          type: integer
+          example: 12
+        topAppsecRules:
+          type: array
+          items:
+            type: object
+            properties:
+              rule:
+                type: string
+                example: crowdsecurity/vpatch-env-access
+              count:
+                type: integer
+                example: 8
+        topAppsecHosts:
+          type: array
+          items:
+            type: object
+            properties:
+              host:
+                type: string
+                example: linkwarden.jgeek00.com
+              count:
+                type: integer
+                example: 8
         topScenarios:
           type: array
           items:

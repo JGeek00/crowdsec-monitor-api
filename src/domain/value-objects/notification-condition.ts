@@ -5,6 +5,8 @@ export interface AlertLike {
   source?: Alert_SourceInfo;
   origin?: string;
   alertType?: string;
+  appsecRule?: string;
+  appsecHost?: string;
 }
 
 function readField(alert: AlertLike, field: NotificationField): string {
@@ -23,6 +25,10 @@ function readField(alert: AlertLike, field: NotificationField): string {
       return alert.source?.scope ?? '';
     case 'ipOwner':
       return alert.source?.as_name ?? '';
+    case 'appsecRule':
+      return alert.appsecRule ?? '';
+    case 'appsecHost':
+      return alert.appsecHost ?? '';
     default:
       return '';
   }
@@ -75,7 +81,7 @@ export function isValidCondition(node: unknown): boolean {
   if (typeof node !== 'object' || node === null) return false;
   const n = node as Record<string, unknown>;
   if (n['type'] === 'leaf') {
-    const fields = ['scenario', 'country', 'target', 'origin', 'type', 'scope', 'ipOwner'];
+    const fields = ['scenario', 'country', 'target', 'origin', 'type', 'scope', 'ipOwner', 'appsecRule', 'appsecHost'];
     const operators = ['equals', 'not_equals', 'in', 'not_in', 'contains'];
     if (typeof fields.includes !== 'function') return false;
     if (!fields.includes(n['field'] as string)) return false;

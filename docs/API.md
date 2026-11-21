@@ -249,6 +249,9 @@ Retrieve all alerts with optional filtering and pagination.
 | `country` | string/array | No | - | Filter by source country (2-letter ISO code). Accepts single or multiple values |
 | `ip_owner` | string/array | No | - | Filter by IP owner/organization name (partial match). Accepts single or multiple values |
 | `target` | string/array | No | - | Filter by target FQDN. Accepts single or multiple values |
+| `is_appsec` | boolean | No | - | Filter AppSec alerts (`waf` + `bot-detection`) |
+| `appsec_rule` | string/array | No | - | Filter by AppSec rule name (partial match). Accepts single or multiple values |
+| `appsec_host` | string/array | No | - | Filter by AppSec target host (partial match). Accepts single or multiple values |
 | `start_timestamp` | string | No | - | Inclusive lower bound for filtering by the alert creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss` |
 | `end_timestamp` | string | No | - | Inclusive upper bound for filtering by the alert creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss`. When both bounds are provided, `end_timestamp` must be later than `start_timestamp`, and neither value may be in the future |
 
@@ -281,6 +284,11 @@ curl "http://localhost:3000/api/v1/alerts?ip_owner=Amazon&ip_owner=Google"
 # Filter by target FQDN
 curl "http://localhost:3000/api/v1/alerts?target=api.example.com"
 curl "http://localhost:3000/api/v1/alerts?target=api.example.com&target=web.example.com"
+
+# AppSec (waf + bot-detection)
+curl "http://localhost:3000/api/v1/alerts?is_appsec=true"
+curl "http://localhost:3000/api/v1/alerts?is_appsec=true&appsec_rule=vpatch-env-access"
+curl "http://localhost:3000/api/v1/alerts?is_appsec=true&appsec_host=linkwarden.jgeek00.com"
 
 # Timestamp range filtering (UTC)
 curl "http://localhost:3000/api/v1/alerts?start_timestamp=2026-01-01:00:00:00&end_timestamp=2026-01-31:23:59:59"
@@ -425,6 +433,19 @@ curl "http://localhost:3000/api/v1/alerts/stats"
   "total": 150,
   "simulated": 25,
   "real": 125,
+  "appsecTotal": 12,
+  "topAppsecRules": [
+    {
+      "rule": "crowdsecurity/vpatch-env-access",
+      "count": 8
+    }
+  ],
+  "topAppsecHosts": [
+    {
+      "host": "linkwarden.jgeek00.com",
+      "count": 8
+    }
+  ],
   "topScenarios": [
     {
       "scenario": "crowdsecurity/ssh-bf",
@@ -2706,9 +2727,10 @@ target, IP owner) and one table per event with only the available fields among M
 and Datasource path (`datasource_path`). The plain-text part keeps just the user message.
 
 Condition DSL: `ConditionNode = {type:leaf, field, operator, value} | {type:and|or, children[]} | {type:not, child}`.
-Leaf `field`: `scenario | country | target | origin | type | scope | ipOwner` (`country` =
+Leaf `field`: `scenario | country | target | origin | type | scope | ipOwner | appsecRule | appsecHost` (`country` =
 `source.cn`, `target` = `source.value` fallback `source.ip`, `origin`/`type` from the first
-decision, `ipOwner` = `source.as_name`).
+decision, `ipOwner` = `source.as_name`, `appsecRule`/`appsecHost` from the AppSec summary;
+empty when the alert is not AppSec or has no decisions).
 Leaf `operator`: `equals | not_equals | in | not_in | contains` (case-insensitive).
 Example: `(scenario is xxx OR scenario is yyy) AND country is ES` + threshold `{count: 5, windowSeconds: 60, cooldownSeconds: 60}`.
 No condition: `condition: {"type": "and", "children": []}` matches every alert, so combined

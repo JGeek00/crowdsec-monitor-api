@@ -27,6 +27,11 @@ class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes
   public labels!: string[] | null;
   public meta!: UnparsedMetaData[];
   public events!: Alert_EventData<UnparsedMetaData>[];
+  public is_appsec!: boolean;
+  public appsec_rule!: string | null;
+  public appsec_uri!: string | null;
+  public appsec_host!: string | null;
+  public appsec_method!: string | null;
   public crowdsec_created_at!: Date;
   public start_at!: Date;
   public stop_at!: Date;
@@ -54,6 +59,11 @@ class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes
     labels: 'labels',
     meta: 'meta',
     events: 'events',
+    isAppsec: 'is_appsec',
+    appsecRule: 'appsec_rule',
+    appsecUri: 'appsec_uri',
+    appsecHost: 'appsec_host',
+    appsecMethod: 'appsec_method',
     crowdsecCreatedAt: 'crowdsec_created_at',
     startAt: 'start_at',
     stopAt: 'stop_at',
@@ -132,6 +142,27 @@ AlertsTable.init(
       type: DataTypes.JSON,
       allowNull: false,
     },
+    is_appsec: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    appsec_rule: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    appsec_uri: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    appsec_host: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    appsec_method: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     crowdsec_created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -176,6 +207,14 @@ AlertsTable.init(
       {
         name: 'idx_alerts_start_at',
         fields: ['start_at'],
+      },
+      {
+        name: 'idx_alerts_is_appsec',
+        fields: ['is_appsec'],
+      },
+      {
+        name: 'idx_alerts_appsec_rule',
+        fields: ['appsec_rule'],
       },
     ],
   },

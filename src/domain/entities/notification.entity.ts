@@ -1,6 +1,7 @@
 import { Alert_SourceInfo } from './alert.entity';
 
-export type NotificationField = 'scenario' | 'country' | 'target' | 'origin' | 'type' | 'scope' | 'ipOwner';
+export type NotificationField =
+  'scenario' | 'country' | 'target' | 'origin' | 'type' | 'scope' | 'ipOwner' | 'appsecRule' | 'appsecHost';
 
 export type NotificationOperator = 'equals' | 'not_equals' | 'in' | 'not_in' | 'contains';
 
@@ -66,10 +67,10 @@ export interface NotificationChannelRef {
   config: NotificationChannelConfig;
 }
 
-/** Event meta as received from CrowdSec (single string value per key). */
+/** Event meta as received from CrowdSec (single string value per key, puede faltar en WAF). */
 export interface NotificationAlertEventMeta {
   key: string;
-  value: string;
+  value?: string;
 }
 
 /** Alert snapshot retained by the engine for providers that support alert info. */
@@ -79,6 +80,8 @@ export interface NotificationAlertSnapshot {
   source: Alert_SourceInfo;
   origin?: string;
   alertType?: string;
+  appsecRule?: string;
+  appsecHost?: string;
   /** When CrowdSec declared (created) the alert. */
   declaredAt: Date;
   /** Meta of each event, in event order. */

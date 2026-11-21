@@ -6,6 +6,8 @@ import CsBlocklistsTable from '@/infrastructure/persistence/sequelize/models/CsB
 import NotificationsTable from '@/infrastructure/persistence/sequelize/models/Notifications';
 import NotificationChannelsTable from '@/infrastructure/persistence/sequelize/models/NotificationChannels';
 import { Migration } from '@/infrastructure/persistence/sequelize/models/Migration';
+import MetricsSnapshotsTable from '@/infrastructure/persistence/sequelize/models/MetricsSnapshots';
+import MetricsRollupsTable from '@/infrastructure/persistence/sequelize/models/MetricsRollups';
 
 // Define associations
 AlertsTable.hasMany(DecisionsTable, {
@@ -50,4 +52,6 @@ export {
   NotificationsTable,
   NotificationChannelsTable,
   Migration,
+  MetricsSnapshotsTable,
+  MetricsRollupsTable,
 };

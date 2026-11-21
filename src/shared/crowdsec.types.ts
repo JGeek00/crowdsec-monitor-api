@@ -6,10 +6,10 @@ export interface CrowdSecLoginResponse {
   token: string;
 }
 
-// Meta key-value pair
+// Meta key-value pair (value puede faltar en eventos WAF, ej. {"key":"data"})
 export interface CrowdSecMeta {
   key: string;
-  value: string;
+  value?: string;
 }
 
 // Event data within an alert
@@ -48,7 +48,8 @@ export interface CrowdSecAlert {
   labels: string[] | null;
   meta: CrowdSecMeta[];
   events: CrowdSecEvent[];
-  decisions?: CrowdSecDecision[];
+  decisions?: CrowdSecDecision[] | null;
+  kind?: string;
   created_at: string;
   start_at: string;
   stop_at: string;

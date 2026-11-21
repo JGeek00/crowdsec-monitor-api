@@ -27,8 +27,17 @@ function toAlertLike(raw: {
   source: AlertLike['source'];
   origin?: string;
   alertType?: string;
+  appsecRule?: string;
+  appsecHost?: string;
 }): AlertLike {
-  return { scenario: raw.scenario, source: raw.source, origin: raw.origin, alertType: raw.alertType };
+  return {
+    scenario: raw.scenario,
+    source: raw.source,
+    origin: raw.origin,
+    alertType: raw.alertType,
+    appsecRule: raw.appsecRule,
+    appsecHost: raw.appsecHost,
+  };
 }
 
 interface WindowHit {
@@ -130,6 +139,8 @@ class NotificationEngineService {
     source: Alert_SourceInfo;
     origin?: string;
     alertType?: string;
+    appsecRule?: string;
+    appsecHost?: string;
     declaredAt: Date;
     events: NotificationAlertEventMeta[][];
   }): Promise<void> {
@@ -145,6 +156,8 @@ class NotificationEngineService {
         source: raw.source,
         origin: raw.origin,
         alertType: raw.alertType,
+        appsecRule: raw.appsecRule,
+        appsecHost: raw.appsecHost,
         declaredAt: raw.declaredAt,
         events: raw.events,
       };

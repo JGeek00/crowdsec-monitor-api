@@ -99,7 +99,7 @@ function targetOf(snapshot: NotificationAlertSnapshot): string {
 function eventRows(meta: NotificationAlertEventMeta[]): AlertInfoEventRow[] {
   return Object.entries(eventRowLabels)
     .map(([key, label]) => {
-      const value = meta.find((m) => m.key === key && m.value.trim() !== '')?.value;
+      const value = meta.find((m) => m.key === key && (m.value ?? '').trim() !== '')?.value;
       return value !== undefined ? { label, value } : undefined;
     })
     .filter((row): row is AlertInfoEventRow => row !== undefined);

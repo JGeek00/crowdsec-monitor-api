@@ -42,6 +42,9 @@ export const alertTools: McpToolDefinition[] = [
       country: stringOrStringArray.describe('Filter by source country (2-letter ISO code)'),
       ip_owner: stringOrStringArray.describe('Filter by IP owner/organization name (partial match)'),
       target: stringOrStringArray.describe('Filter by target FQDN'),
+      is_appsec: z.union([z.boolean(), z.string()]).optional().describe('Filter AppSec (waf + bot-detection) alerts'),
+      appsec_rule: stringOrStringArray.describe('Filter by AppSec rule name (partial match)'),
+      appsec_host: stringOrStringArray.describe('Filter by AppSec target host (partial match)'),
       ...timestampRangeFields,
     },
     handler: (args) =>
@@ -81,7 +84,7 @@ export const alertTools: McpToolDefinition[] = [
   {
     name: 'get_alerts_stats',
     description:
-      'Get aggregated statistics about alerts (total, simulated/real, top scenarios/countries/organizations).',
+      'Get aggregated statistics about alerts (total, simulated/real, AppSec, top scenarios/rules/hosts/countries/organizations).',
     handler: () => runTool(() => container.useCases.alerts.getAlertsStats.execute()),
   },
   {

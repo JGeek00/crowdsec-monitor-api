@@ -1,6 +1,8 @@
+import { ALERT_ORIGINS_FETCH } from './crowdsec-taxonomy';
+
 export default {
   alerts: {
-    originsFetch: ['crowdsec', 'cscli', 'console', 'appsec', 'waf'],
+    originsFetch: [...ALERT_ORIGINS_FETCH],
   },
   blocklists: {
     scenarioRegex: /^external\/blocklist \((.+)\)$/,

@@ -4,7 +4,10 @@ export interface AlertStatsResult {
   total: number;
   simulated: number;
   real: number;
+  appsecTotal: number;
   topScenarios: { scenario: string; count: number }[];
+  topAppsecRules: { rule: string; count: number }[];
+  topAppsecHosts: { host: string; count: number }[];
   topCountries: { country: string; count: number }[];
   topOrganizations: { organization: string; count: number }[];
 }
@@ -14,7 +17,8 @@ export class GetAlertsStatsUseCase {
   constructor(private readonly deps: { alertRepository: AlertRepository }) {}
 
   async execute(): Promise<AlertStatsResult> {
-    const { total, simulated, topScenarios, sources } = await this.deps.alertRepository.getStats();
+    const { total, simulated, appsecTotal, topScenarios, topAppsecRules, topAppsecHosts, sources } =
+      await this.deps.alertRepository.getStats();
 
     // Group by country / organization (same JS grouping as legacy controller).
     const countryMap = new Map<string, number>();
@@ -35,6 +39,16 @@ export class GetAlertsStatsUseCase {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    return { total, simulated, real: total - simulated, topScenarios, topCountries, topOrganizations };
+    return {
+      total,
+      simulated,
+      real: total - simulated,
+      appsecTotal,
+      topScenarios,
+      topAppsecRules,
+      topAppsecHosts,
+      topCountries,
+      topOrganizations,
+    };
   }
 }

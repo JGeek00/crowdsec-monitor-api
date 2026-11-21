@@ -76,6 +76,35 @@ describe('evaluateCondition', () => {
     ).toBe(true);
   });
 
+  it('reads AppSec fields (appsecRule, appsecHost)', () => {
+    const appsecAlert = {
+      ...baseAlert,
+      appsecRule: 'crowdsecurity/vpatch-env-access',
+      appsecHost: 'linkwarden.jgeek00.com',
+    };
+    expect(
+      evaluateCondition(appsecAlert, {
+        type: 'leaf',
+        field: 'appsecRule',
+        operator: 'contains',
+        value: 'vpatch-env',
+      }),
+    ).toBe(true);
+    expect(
+      evaluateCondition(appsecAlert, {
+        type: 'leaf',
+        field: 'appsecHost',
+        operator: 'equals',
+        value: 'linkwarden.jgeek00.com',
+      }),
+    ).toBe(true);
+    expect(
+      evaluateCondition(baseAlert, { type: 'leaf', field: 'appsecRule', operator: 'contains', value: 'vpatch' }),
+    ).toBe(false);
+    expect(isValidCondition({ type: 'leaf', field: 'appsecRule', operator: 'equals', value: 'x' })).toBe(true);
+    expect(isValidCondition({ type: 'leaf', field: 'appsecHost', operator: 'equals', value: 'x' })).toBe(true);
+  });
+
   it('covers all operators including negatives', () => {
     expect(matchOperator('ES', 'not_equals', 'FR')).toBe(true);
     expect(matchOperator('ES', 'not_equals', 'es')).toBe(false);
