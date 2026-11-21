@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ALERT_KINDS,
   APPSEC_KINDS,
+  isAppSecAlert,
   isAppSecKind,
   isExcludedOrigin,
   isExcludedScenario,
@@ -42,11 +43,30 @@ describe('crowdsec-taxonomy', () => {
     expect(isAppSecKind(undefined)).toBe(false);
   });
 
+  it('isAppSecAlert honors kind first, then scenario fallback (pre-1.7.7)', () => {
+    expect(isAppSecAlert('waf', 'crowdsecurity/ssh-bf')).toBe(true);
+    expect(isAppSecAlert('bot-detection', 'crowdsecurity/ssh-bf')).toBe(true);
+    expect(isAppSecAlert('crowdsec', 'crowdsecurity/ssh-bf')).toBe(false);
+    // kind presente gana: aunque el scenario parezca AppSec, no es AppSec
+    expect(isAppSecAlert('crowdsec', 'crowdsecurity/vpatch-env-access')).toBe(false);
+    // Sin kind (CrowdSec <1.7.7): fallback por marcadores, case-insensitive
+    expect(isAppSecAlert(undefined, 'crowdsecurity/vpatch-env-access')).toBe(true);
+    expect(isAppSecAlert(undefined, 'crowdsecurity/appsec-generic-test')).toBe(true);
+    expect(isAppSecAlert(undefined, 'crowdsecurity/VPATCH-CVE-2023-42793')).toBe(true);
+    expect(isAppSecAlert(undefined, 'crowdsecurity/ssh-bf')).toBe(false);
+    expect(isAppSecAlert(undefined, undefined)).toBe(false);
+    expect(isAppSecAlert(null, null)).toBe(false);
+  });
+
   it('excludes blocklist origins and scenarios', () => {
+    expect(isExcludedOrigin(undefined)).toBe(false);
+    expect(isExcludedOrigin(null)).toBe(false);
     expect(isExcludedOrigin('lists')).toBe(true);
     expect(isExcludedOrigin('cs-monitor-blocklist-import')).toBe(true);
     expect(isExcludedOrigin('crowdsec')).toBe(false);
     expect(isExcludedScenario('external/blocklist (my-list)')).toBe(true);
+    expect(isExcludedScenario(undefined)).toBe(false);
+    expect(isExcludedScenario(null)).toBe(false);
     expect(isExcludedScenario('crowdsecurity/vpatch-env-access')).toBe(false);
   });
 });
@@ -62,9 +82,36 @@ describe('extractAppSecSummary', () => {
   });
 
   it('tolerates missing value and empty leakspeed-style inputs', () => {
+    expect(extractAppSecSummary({ meta: [{ key: 'data' }], events: [] })).toBeNull();
+  });
+
+  it('handles array values, scalar JSON and unparseable brackets', () => {
+    // Rama Array.isArray de firstValue (runtime tolerante aunque el tipo sea string)
     expect(
-      extractAppSecSummary({ meta: [{ key: 'data' }], events: [] }),
-    ).toBeNull();
+      extractAppSecSummary({
+        meta: [{ key: 'method', value: ['PUT', 'POST'] } as never],
+        events: [],
+      })?.method,
+    ).toBe('PUT');
+    // Array JSON vacío: primer elemento ausente -> no aporta
+    expect(extractAppSecSummary({ meta: [{ key: 'method', value: '[]' }], events: [] })).toBeNull();
+    // Rama catch: empieza por '[' pero no es JSON -> se conserva tal cual
+    expect(extractAppSecSummary({ meta: [{ key: 'method', value: '[broken' }], events: [] })?.method).toBe('[broken');
+    // Array vacío y string vacío no aportan -> null si no hay nada más
+    expect(extractAppSecSummary({ meta: [{ key: 'method', value: [] } as never], events: [] })).toBeNull();
+    expect(extractAppSecSummary({ meta: [{ key: 'method', value: '   ' }], events: [] })).toBeNull();
+  });
+
+  it('keeps the first value when a meta key is duplicated', () => {
+    expect(
+      extractAppSecSummary({
+        meta: [
+          { key: 'method', value: 'GET' },
+          { key: 'method', value: 'POST' },
+        ],
+        events: [],
+      })?.method,
+    ).toBe('GET');
   });
 
   it('is generic, not hardcoded to .env', () => {

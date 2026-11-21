@@ -20,12 +20,11 @@ function firstValue(value?: string | string[]): string | undefined {
   // LAPI serializa arrays como "[\"GET\"]"
   if (trimmed.startsWith('[')) {
     try {
+      // Un JSON válido que empieza por '[' siempre es un array; si no lo es,
+      // el parse lanza y caemos al catch.
       const parsed: unknown = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        const first = parsed[0];
-        return first === undefined ? undefined : String(first);
-      }
-      return String(parsed);
+      const first = Array.isArray(parsed) ? parsed[0] : undefined;
+      return first === undefined ? undefined : String(first);
     } catch {
       return trimmed;
     }

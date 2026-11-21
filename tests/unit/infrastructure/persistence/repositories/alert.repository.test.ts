@@ -94,6 +94,48 @@ describe('SequelizeAlertRepository', () => {
       expect((await repo.findWithFilters({ target: ['bad.com'] })).total).toBe(0);
     });
 
+    it('filters by is_appsec flag', async () => {
+      await seed([
+        makeAlert({ id: 1 }),
+        makeAlert({
+          id: 2,
+          scenario: 'crowdsecurity/vpatch-env-access',
+          is_appsec: true,
+          appsec_rule: 'crowdsecurity/vpatch-env-access',
+          appsec_host: 'waf.example.com',
+        }),
+      ]);
+
+      expect((await repo.findWithFilters({ is_appsec: 'true' })).total).toBe(1);
+      expect((await repo.findWithFilters({ is_appsec: 'false' })).total).toBe(1);
+      expect((await repo.findWithFilters({})).total).toBe(2);
+    });
+
+    it('filters by appsec rule and host with partial match', async () => {
+      await seed([
+        makeAlert({ id: 1 }),
+        makeAlert({
+          id: 2,
+          scenario: 'crowdsecurity/vpatch-env-access',
+          is_appsec: true,
+          appsec_rule: 'crowdsecurity/vpatch-env-access',
+          appsec_host: 'waf.example.com',
+        }),
+        makeAlert({
+          id: 3,
+          scenario: 'crowdsecurity/vpatch-CVE-2023-42793',
+          is_appsec: true,
+          appsec_rule: 'crowdsecurity/vpatch-CVE-2023-42793',
+          appsec_host: 'other.example.com',
+        }),
+      ]);
+
+      expect((await repo.findWithFilters({ appsec_rule: ['vpatch-env'] })).total).toBe(1);
+      expect((await repo.findWithFilters({ appsec_rule: ['vpatch'] })).total).toBe(2);
+      expect((await repo.findWithFilters({ appsec_host: ['waf.example'] })).total).toBe(1);
+      expect((await repo.findWithFilters({ appsec_host: ['nope.example'] })).total).toBe(0);
+    });
+
     it('paginates with offset and limit', async () => {
       await seed([makeAlert({ id: 1 }), makeAlert({ id: 2 }), makeAlert({ id: 3 })]);
 
@@ -180,6 +222,38 @@ describe('SequelizeAlertRepository', () => {
       expect(stats.sources).toHaveLength(3);
     });
 
+    it('getStats counts AppSec alerts and ranks rules/hosts', async () => {
+      await seed([
+        makeAlert({
+          id: 4,
+          scenario: 'crowdsecurity/vpatch-env-access',
+          is_appsec: true,
+          appsec_rule: 'crowdsecurity/vpatch-env-access',
+          appsec_host: 'waf.example.com',
+        }),
+        makeAlert({
+          id: 5,
+          scenario: 'crowdsecurity/vpatch-env-access',
+          is_appsec: true,
+          appsec_rule: 'crowdsecurity/vpatch-env-access',
+          appsec_host: 'waf.example.com',
+        }),
+        makeAlert({
+          id: 6,
+          scenario: 'other/rule',
+          is_appsec: true,
+          appsec_rule: 'other/rule',
+          appsec_host: 'other.example.com',
+        }),
+      ]);
+
+      const stats = await repo.getStats();
+      expect(stats.total).toBe(6);
+      expect(stats.appsecTotal).toBe(3);
+      expect(stats.topAppsecRules[0]).toEqual({ rule: 'crowdsecurity/vpatch-env-access', count: 2 });
+      expect(stats.topAppsecHosts[0]).toEqual({ host: 'waf.example.com', count: 2 });
+    });
+
     it('getTopCountries ranks countries by alerts', async () => {
       const top = await repo.getTopCountries();
       expect(top[0]).toEqual({ countryCode: 'US', amount: 2 });
@@ -214,9 +288,7 @@ describe('SequelizeAlertRepository', () => {
       const stats = await repo.getGeneralStats(undefined, 10);
       expect(stats.topCountries[0]).toEqual({ item: 'US', amount: 2 });
       expect(stats.topScenarios).toHaveLength(2);
-      expect(stats.activityHistory).toEqual([
-        { date: '2026-07-23', amountAlerts: 3, amountDecisions: 1 },
-      ]);
+      expect(stats.activityHistory).toEqual([{ date: '2026-07-23', amountAlerts: 3, amountDecisions: 1 }]);
     });
 
     it('getGeneralStats respects the since filter', async () => {
@@ -329,12 +401,15 @@ describe('event edge rows and top-list ties', () => {
 
     const page = await repo.findWithFilters({});
     expect(page.total).toBe(1);
-    expect((await repo.getTopTargets())).toEqual([]);
+    expect(await repo.getTopTargets()).toEqual([]);
     expect(await repo.getTargetHistory('example.com')).toEqual([]);
   });
 
   it('top lists break ties deterministically', async () => {
-    await repo.upsertBatch([makeAlert({ id: 1 }), makeAlert({ id: 2, source: { ...makeAlert().source, cn: 'FR', as_name: 'OTHER-AS' } })]);
+    await repo.upsertBatch([
+      makeAlert({ id: 1 }),
+      makeAlert({ id: 2, source: { ...makeAlert().source, cn: 'FR', as_name: 'OTHER-AS' } }),
+    ]);
 
     const stats = await repo.getGeneralStats(undefined, 10);
     // two countries with amount 1: comparator returns 0 on ties

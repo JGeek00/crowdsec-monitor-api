@@ -41,7 +41,9 @@ describe('evaluateCondition', () => {
       ],
     };
     expect(evaluateCondition(baseAlert, condition as ConditionNode)).toBe(true);
-    expect(evaluateCondition({ ...baseAlert, source: { ...baseAlert.source, cn: 'FR' } }, condition as ConditionNode)).toBe(false);
+    expect(
+      evaluateCondition({ ...baseAlert, source: { ...baseAlert.source, cn: 'FR' } }, condition as ConditionNode),
+    ).toBe(false);
   });
 
   it('supports not nodes', () => {
