@@ -23,6 +23,7 @@ export class AlertsService {
         queryParams.append('has_active_decision', String(params.has_active_decision));
       }
       if (params?.origin) queryParams.append('origin', params.origin);
+      if (params?.kind) queryParams.append('kind', params.kind);
       if (params?.scenario) queryParams.append('scenario', params.scenario);
 
       const response = await this.base.client.get('/v1/alerts', { params: queryParams, headers });

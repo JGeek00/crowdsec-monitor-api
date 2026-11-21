@@ -4,6 +4,8 @@ import type { CrowdSecAlert, CrowdSecCreateAlertPayload } from '@/shared/crowdse
 // Called by: application/use-cases/alerts/*, application/use-cases/status/*, application/use-cases/blocklists/*, application/jobs/*
 export interface LapiAlertsParams {
   origin?: string;
+  /** LAPI alert kind filter (crowdsec, waf, bot-detection, ...; requires CrowdSec >= 1.7.7). */
+  kind?: string;
   scenario?: string;
   since?: string;
   until?: string;

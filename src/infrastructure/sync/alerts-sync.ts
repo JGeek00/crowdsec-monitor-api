@@ -7,7 +7,7 @@ import { calculateExpiration, calculateRetentionCutoff } from '@/shared/utils/du
 import { toCanonicalTimestamp } from '@/shared/utils/timestamp-format';
 import { config } from '@/config';
 import appDefaults from '@/constants/app-defaults';
-import { isAppSecAlert, isExcludedOrigin, isExcludedScenario } from '@/constants/crowdsec-taxonomy';
+import { APPSEC_KINDS, isAppSecAlert, isExcludedOrigin, isExcludedScenario } from '@/constants/crowdsec-taxonomy';
 import { extractAppSecSummary } from '@/shared/utils/parse-appsec';
 import { log } from '@/infrastructure/system/logger';
 import { notificationEngineService } from '@/infrastructure/notifications/engine';
@@ -34,12 +34,23 @@ class AlertsSyncService {
     // --- Phase 1: fetch from network (outside the lock, never blocks DB writes) ---
     let alerts: Awaited<ReturnType<typeof crowdSecAPI.alerts.getAlerts>>;
     try {
-      log.debug(`Fetching alerts from ${appDefaults.alerts.originsFetch.length} origin(s)...`);
-      const results = await Promise.all(
+      log.debug(
+        `Fetching alerts from ${appDefaults.alerts.originsFetch.length} origin(s) + ${APPSEC_KINDS.length} AppSec kind(s)...`,
+      );
+      const originResults = await Promise.all(
         appDefaults.alerts.originsFetch.map((origin) => crowdSecAPI.alerts.getAlerts({ origin })),
       );
-      alerts = results.flat();
-      log.debug(`Fetched ${alerts.length} alerts from LAPI`);
+      // Alerts without decisions (e.g. WAF blocks) never match an `origin` filter:
+      // upstream matches it via HasDecisionsWith, so fetch AppSec kinds explicitly
+      // (LAPI >= 1.7.7; older servers answer 400 and getAlerts resolves []).
+      const kindResults = await Promise.all(APPSEC_KINDS.map((kind) => crowdSecAPI.alerts.getAlerts({ kind })));
+      const seen = new Set<number>();
+      alerts = [...originResults, ...kindResults].flat().filter((alert) => {
+        if (seen.has(alert.id)) return false;
+        seen.add(alert.id);
+        return true;
+      });
+      log.debug(`Fetched ${alerts.length} unique alerts from LAPI`);
     } catch (err) {
       log.error('Error fetching alerts from LAPI:', err);
       return { synced: 0, updated: 0, errors: 1, decisions: 0 };

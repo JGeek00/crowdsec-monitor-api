@@ -207,6 +207,51 @@ describe('AlertsSyncService', () => {
     );
   });
 
+  it('syncAlerts fetches AppSec kinds and dedupes alerts across fetches', async () => {
+    const lapiAlert = (id: number, kind: string, scenario: string) => ({
+      id,
+      uuid: `u-${id}`,
+      scenario,
+      scenario_version: '0.4',
+      scenario_hash: 'h',
+      message: 'WAF block',
+      capacity: 1,
+      leakspeed: '',
+      simulated: false,
+      remediation: true,
+      events_count: 1,
+      machine_id: 'm1',
+      source: { ip: '1.2.3.4', scope: 'Ip', value: '1.2.3.4' },
+      labels: null,
+      kind,
+      meta: [],
+      events: [],
+      decisions: null,
+      created_at: new Date().toISOString(),
+      start_at: new Date().toISOString(),
+      stop_at: new Date().toISOString(),
+    });
+    const wafAlert = lapiAlert(77, 'waf', 'crowdsecurity/vpatch-env-access');
+    const botAlert = lapiAlert(78, 'bot-detection', 'crowdsecurity/bot-challenge');
+    const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
+    vi.mocked(crowdSecAPI.alerts.getAlerts).mockImplementation(async (params: any) => {
+      if (params?.kind === 'waf') return [wafAlert];
+      if (params?.kind === 'bot-detection') return [botAlert];
+      return [wafAlert];
+    });
+    const { AlertsTable } = await import('@/infrastructure/persistence/sequelize/models');
+    vi.mocked(AlertsTable.findByPk).mockResolvedValue(null);
+    vi.mocked(AlertsTable.create).mockResolvedValue({ id: 1 } as any);
+
+    const { alertsSyncService } = await import('@/infrastructure/sync/alerts-sync');
+    const result = await alertsSyncService.syncAlerts();
+
+    expect(crowdSecAPI.alerts.getAlerts).toHaveBeenCalledWith({ kind: 'waf' });
+    expect(crowdSecAPI.alerts.getAlerts).toHaveBeenCalledWith({ kind: 'bot-detection' });
+    expect(result.synced).toBe(2);
+    expect(vi.mocked(AlertsTable.create)).toHaveBeenCalledTimes(2);
+  });
+
   it('syncAlerts returns empty counts on fetch error', async () => {
     const { crowdSecAPI } = await import('@/infrastructure/crowdsec/lapi/crowdsec-api');
     vi.mocked(crowdSecAPI.alerts.getAlerts).mockRejectedValue(new Error('network error'));

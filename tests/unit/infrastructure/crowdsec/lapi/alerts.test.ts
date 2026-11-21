@@ -147,6 +147,20 @@ describe('AlertsService param and fallback branches', () => {
     expect(params.get('scenario')).toBe('ssh-bf');
   });
 
+  it('getAlerts appends the kind filter', async () => {
+    mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
+    mockClient.get.mockResolvedValue({ data: [] });
+
+    const { AlertsService } = await import('@/infrastructure/crowdsec/lapi/alerts');
+    const { CrowdSecBaseClient } = await import('@/infrastructure/crowdsec/lapi/base-client');
+    const service = new AlertsService(new CrowdSecBaseClient());
+
+    await service.getAlerts({ kind: 'waf' });
+
+    const params = mockClient.get.mock.calls[0][1].params as URLSearchParams;
+    expect(params.get('kind')).toBe('waf');
+  });
+
   it('getAlerts returns empty array when the response data is falsy', async () => {
     mockGetAuthHeaders.mockResolvedValue({ Authorization: 'Bearer t' });
     mockClient.get.mockResolvedValue({ data: null });
