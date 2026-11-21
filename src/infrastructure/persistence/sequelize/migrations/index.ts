@@ -3,6 +3,7 @@ import migration0001 from './0001_add_last_refresh_failed_to_blocklists';
 import migration0002 from './0002_create_notifications';
 import migration0003 from './0003_add_include_alert_info_to_notifications';
 import migration0004 from './0004_add_appsec_and_metrics_history';
+import migration0005 from './0005_add_kind_to_alerts';
 
 export const migrations: MigrationTask[] = [
   {
@@ -19,6 +20,10 @@ export const migrations: MigrationTask[] = [
   },
   {
     ...migration0004,
+    timestamp: Date.now(),
+  },
+  {
+    ...migration0005,
     timestamp: Date.now(),
   },
 ];

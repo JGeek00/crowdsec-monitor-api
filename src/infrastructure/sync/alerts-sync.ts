@@ -105,6 +105,7 @@ class AlertsSyncService {
               source: alert.source,
               labels: alert.labels,
               is_appsec: isAppSec,
+              kind: alert.kind ?? null,
               appsec_rule: appsec?.rule ?? null,
               appsec_uri: appsec?.uri ?? null,
               appsec_host: appsec?.host ?? null,

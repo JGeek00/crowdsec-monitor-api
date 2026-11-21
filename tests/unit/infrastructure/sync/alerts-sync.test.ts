@@ -197,6 +197,7 @@ describe('AlertsSyncService', () => {
     expect(result.synced).toBe(1);
     expect(vi.mocked(AlertsTable.create).mock.calls[0][0]).toMatchObject({
       is_appsec: true,
+      kind: 'waf',
       appsec_rule: 'crowdsecurity/vpatch-env-access',
       appsec_uri: '/.env',
       appsec_host: 'linkwarden.jgeek00.com',

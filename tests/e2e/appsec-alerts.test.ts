@@ -94,6 +94,7 @@ describe('e2e AppSec alerts (waf + bot-detection)', () => {
     expect(list.body.items).toHaveLength(1);
     expect(list.body.items[0]).toMatchObject({
       is_appsec: true,
+      kind: 'waf',
       appsec_rule: 'crowdsecurity/vpatch-env-access',
       appsec_uri: '/.env',
       appsec_host: 'linkwarden.jgeek00.com',
@@ -107,6 +108,7 @@ describe('e2e AppSec alerts (waf + bot-detection)', () => {
     const detail = await app.request.get('/api/v1/alerts/77');
     expect(detail.status).toBe(200);
     expect(detail.body.is_appsec).toBe(true);
+    expect(detail.body.kind).toBe('waf');
     expect(detail.body.appsec_rule).toBe('crowdsecurity/vpatch-env-access');
 
     const stats = await app.request.get('/api/v1/alerts/stats');

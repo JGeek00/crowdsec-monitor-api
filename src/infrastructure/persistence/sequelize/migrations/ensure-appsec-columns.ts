@@ -7,6 +7,7 @@ export const APPSEC_ALTER_STATEMENTS = [
   'ALTER TABLE alerts ADD COLUMN appsec_uri VARCHAR(1024)',
   'ALTER TABLE alerts ADD COLUMN appsec_host VARCHAR(255)',
   'ALTER TABLE alerts ADD COLUMN appsec_method VARCHAR(16)',
+  'ALTER TABLE alerts ADD COLUMN kind VARCHAR(32)',
 ] as const;
 
 /**

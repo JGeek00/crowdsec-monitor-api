@@ -28,6 +28,7 @@ class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes
   public meta!: UnparsedMetaData[];
   public events!: Alert_EventData<UnparsedMetaData>[];
   public is_appsec!: boolean;
+  public kind!: string | null;
   public appsec_rule!: string | null;
   public appsec_uri!: string | null;
   public appsec_host!: string | null;
@@ -60,6 +61,7 @@ class AlertsTable extends Model<Alert<UnparsedMetaData>, AlertCreationAttributes
     meta: 'meta',
     events: 'events',
     isAppsec: 'is_appsec',
+    kind: 'kind',
     appsecRule: 'appsec_rule',
     appsecUri: 'appsec_uri',
     appsecHost: 'appsec_host',
@@ -146,6 +148,10 @@ AlertsTable.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
+    },
+    kind: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
     },
     appsec_rule: {
       type: DataTypes.STRING,

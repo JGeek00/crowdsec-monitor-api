@@ -4,7 +4,7 @@ import { ensureAppsecColumns } from './ensure-appsec-columns';
 /**
  * Migration 0004: AppSec (waf + bot-detection) + dormant metrics history.
  *
- * - alerts: is_appsec + appsec_rule/uri/host/method (raw kind is not persisted).
+ * - alerts: is_appsec + appsec_rule/uri/host/method (raw kind persisted since 0005).
  * - metrics_snapshots + metrics_rollups: created empty, job disabled by flag.
  * - historic backfill by scenario (pre-1.7.7 rows carry no `kind`).
  */

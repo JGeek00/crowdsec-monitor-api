@@ -30,10 +30,10 @@ describe('ensureAppsecColumns', () => {
 
     await ensureAppsecColumns(sequelize as never);
     const cols = await columnNames(sequelize);
-    for (const col of ['is_appsec', 'appsec_rule', 'appsec_uri', 'appsec_host', 'appsec_method']) {
+    for (const col of ['is_appsec', 'appsec_rule', 'appsec_uri', 'appsec_host', 'appsec_method', 'kind']) {
       expect(cols).toContain(col);
     }
-    expect(APPSEC_ALTER_STATEMENTS).toHaveLength(5);
+    expect(APPSEC_ALTER_STATEMENTS).toHaveLength(6);
 
     await expect(ensureAppsecColumns(sequelize as never)).resolves.toBeUndefined();
   });

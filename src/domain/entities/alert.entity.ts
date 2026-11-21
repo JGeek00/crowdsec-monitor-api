@@ -19,6 +19,7 @@ export interface Alert<T extends MetaData> {
   meta: T[];
   events: Alert_EventData<T>[];
   is_appsec?: boolean;
+  kind?: string | null;
   appsec_rule?: string | null;
   appsec_uri?: string | null;
   appsec_host?: string | null;
