@@ -80,6 +80,11 @@ export const alertQueryValidators: ValidationChain[] = [
 
   query('is_appsec').optional().isBoolean().withMessage('is_appsec must be a boolean (true or false)').toBoolean(),
 
+  query('alert_type')
+    .optional()
+    .isIn(['all', 'appsec', 'logs'])
+    .withMessage('alert_type must be one of: all, appsec, logs'),
+
   query('appsec_rule')
     .optional()
     .custom((value) => {

@@ -65,6 +65,10 @@ export class SequelizeAlertRepository implements AlertRepositoryPort {
       where.is_appsec = String(filters.is_appsec) === 'true';
     }
 
+    if (filters.alert_type !== undefined && filters.alert_type !== 'all') {
+      where.is_appsec = filters.alert_type === 'appsec';
+    }
+
     const appsecRules = asArray(filters.appsec_rule);
     if (appsecRules.length > 0) {
       where.appsec_rule = {

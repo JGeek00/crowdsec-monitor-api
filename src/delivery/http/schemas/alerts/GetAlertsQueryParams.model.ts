@@ -9,6 +9,7 @@ export interface GetAlertsQueryParams {
   ip_owner?: string;
   target?: string;
   is_appsec?: string;
+  alert_type?: 'all' | 'appsec' | 'logs';
   appsec_rule?: string;
   appsec_host?: string;
   /** `yyyy-MM-dd:hh:mm:ss` in UTC, inclusive; validated by the list use case. */

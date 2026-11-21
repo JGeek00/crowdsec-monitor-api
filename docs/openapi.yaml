@@ -242,9 +242,16 @@ paths:
           example: api.example.com
         - name: is_appsec
           in: query
-          description: Filter AppSec alerts (waf + bot-detection)
+          description: Filter AppSec alerts (waf + bot-detection). Mutually exclusive with alert_type.
           schema:
             type: boolean
+        - name: alert_type
+          in: query
+          description: Filter by alert kind (mutually exclusive with is_appsec).
+          schema:
+            type: string
+            enum: [all, appsec, logs]
+          example: appsec
         - name: appsec_rule
           in: query
           description: Filter by AppSec rule name (partial match, accepts multiple values)

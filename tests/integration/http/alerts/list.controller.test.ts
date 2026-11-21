@@ -229,6 +229,33 @@ describe('getAllAlerts', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Validation error');
     });
+
+    it('filters by alert_type (all/appsec/logs)', async () => {
+      await app.seedDb({ alerts: [makeAlert({ id: 1 }), wafAlert(2)] });
+      const appsec = await app.request.get('/api/v1/alerts?alert_type=appsec');
+      expect(appsec.status).toBe(200);
+      expect(appsec.body.items).toHaveLength(1);
+      expect(appsec.body.items[0].is_appsec).toBe(true);
+
+      const logs = await app.request.get('/api/v1/alerts?alert_type=logs');
+      expect(logs.status).toBe(200);
+      expect(logs.body.items).toHaveLength(1);
+      expect(logs.body.items[0].is_appsec).toBe(false);
+
+      const all = await app.request.get('/api/v1/alerts?alert_type=all');
+      expect(all.status).toBe(200);
+      expect(all.body.items).toHaveLength(2);
+    });
+
+    it('returns 400 for an invalid alert_type or a conflict with is_appsec', async () => {
+      const invalid = await app.request.get('/api/v1/alerts?alert_type=waf');
+      expect(invalid.status).toBe(400);
+      expect(invalid.body.error).toBe('Validation error');
+
+      const conflict = await app.request.get('/api/v1/alerts?alert_type=appsec&is_appsec=false');
+      expect(conflict.status).toBe(400);
+      expect(conflict.body.error).toBe('Validation error');
+    });
   });
 
   it('returns every timestamp field in canonical format (events and date-typed fields)', async () => {

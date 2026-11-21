@@ -249,7 +249,8 @@ Retrieve all alerts with optional filtering and pagination.
 | `country` | string/array | No | - | Filter by source country (2-letter ISO code). Accepts single or multiple values |
 | `ip_owner` | string/array | No | - | Filter by IP owner/organization name (partial match). Accepts single or multiple values |
 | `target` | string/array | No | - | Filter by target FQDN. Accepts single or multiple values |
-| `is_appsec` | boolean | No | - | Filter AppSec alerts (`waf` + `bot-detection`) |
+| `is_appsec` | boolean | No | - | Filter AppSec alerts (`waf` + `bot-detection`). Mutually exclusive with `alert_type` |
+| `alert_type` | string | No | `all` | Filter by alert kind: `all` (no filtering), `appsec` (only WAF + bot-detection) or `logs` (only log-based alerts). Mutually exclusive with `is_appsec` |
 | `appsec_rule` | string/array | No | - | Filter by AppSec rule name (partial match). Accepts single or multiple values |
 | `appsec_host` | string/array | No | - | Filter by AppSec target host (partial match). Accepts single or multiple values |
 | `start_timestamp` | string | No | - | Inclusive lower bound for filtering by the alert creation timestamp (`crowdsec_created_at`). **The value is always interpreted as UTC**. Format: `yyyy-MM-dd:hh:mm:ss` |
@@ -286,6 +287,7 @@ curl "http://localhost:3000/api/v1/alerts?target=api.example.com"
 curl "http://localhost:3000/api/v1/alerts?target=api.example.com&target=web.example.com"
 
 # AppSec (waf + bot-detection)
+curl "http://localhost:3000/api/v1/alerts?alert_type=appsec"
 curl "http://localhost:3000/api/v1/alerts?is_appsec=true"
 curl "http://localhost:3000/api/v1/alerts?is_appsec=true&appsec_rule=vpatch-env-access"
 curl "http://localhost:3000/api/v1/alerts?is_appsec=true&appsec_host=linkwarden.jgeek00.com"

@@ -14,6 +14,8 @@ export interface AlertFilters {
   ip_owner?: string | string[];
   target?: string | string[];
   is_appsec?: boolean | string;
+  /** Tri-state alert-kind filter: all (no filtering), appsec (waf + bot-detection) or logs. */
+  alert_type?: 'all' | 'appsec' | 'logs';
   appsec_rule?: string | string[];
   appsec_host?: string | string[];
   /** `yyyy-MM-dd:hh:mm:ss` (UTC) on the wire; the list use case normalizes it to a Date. */

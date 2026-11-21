@@ -1,4 +1,5 @@
 import type { AlertRepository } from '@/application/ports/alert-repository.port';
+import { ValidationError } from '@/domain/errors';
 import { parseTimestampRange } from '@/shared/utils/timestamp-range';
 
 // Called by: delivery/http controllers (alerts list endpoint) and the MCP `list_alerts` tool
@@ -6,6 +7,9 @@ export class ListAlertsUseCase {
   constructor(private readonly deps: { alertRepository: AlertRepository }) {}
 
   execute(query: Parameters<AlertRepository['findWithFilters']>[0]) {
+    if (query.alert_type !== undefined && query.is_appsec !== undefined) {
+      throw new ValidationError('Invalid parameters: alert_type and is_appsec are mutually exclusive');
+    }
     const range = parseTimestampRange(query);
     return this.deps.alertRepository.findWithFilters({
       ...query,

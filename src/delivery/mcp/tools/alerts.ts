@@ -31,7 +31,7 @@ export const alertTools: McpToolDefinition[] = [
   {
     name: 'list_alerts',
     description:
-      'List alerts with filtering and pagination (scenario, simulated, IP, country, IP owner, target, timestamp range).',
+      'List alerts with filtering and pagination (scenario, simulated, IP, country, IP owner, target, AppSec, timestamp range).',
     inputSchema: {
       limit: z.number().int().positive().optional().describe('Items to return (default 100)'),
       offset: z.number().int().nonnegative().optional().describe('Starting index (default 0)'),
@@ -43,6 +43,10 @@ export const alertTools: McpToolDefinition[] = [
       ip_owner: stringOrStringArray.describe('Filter by IP owner/organization name (partial match)'),
       target: stringOrStringArray.describe('Filter by target FQDN'),
       is_appsec: z.union([z.boolean(), z.string()]).optional().describe('Filter AppSec (waf + bot-detection) alerts'),
+      alert_type: z
+        .enum(['all', 'appsec', 'logs'])
+        .optional()
+        .describe('Filter by alert kind: all alerts, only AppSec (waf + bot-detection), or only log-based alerts'),
       appsec_rule: stringOrStringArray.describe('Filter by AppSec rule name (partial match)'),
       appsec_host: stringOrStringArray.describe('Filter by AppSec target host (partial match)'),
       ...timestampRangeFields,

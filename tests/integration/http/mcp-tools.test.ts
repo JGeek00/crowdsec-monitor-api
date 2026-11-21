@@ -80,6 +80,11 @@ describe('MCP tools/call', () => {
     expect(byRule.items).toHaveLength(1);
     const byHost = textOf(await callTool(app, 'list_alerts', { appsec_host: 'linkwarden' }));
     expect(byHost.items).toHaveLength(1);
+    const byType = textOf(await callTool(app, 'list_alerts', { alert_type: 'appsec' }));
+    expect(byType.items).toHaveLength(1);
+    const logsOnly = textOf(await callTool(app, 'list_alerts', { alert_type: 'logs' }));
+    expect(logsOnly.items).toHaveLength(1);
+    expect(logsOnly.items[0].is_appsec).toBe(false);
     const stats = textOf(await callTool(app, 'get_alerts_stats'));
     expect(stats.appsecTotal).toBe(1);
     expect(stats.topAppsecRules).toEqual([{ rule: 'crowdsecurity/vpatch-env-access', count: 1 }]);
