@@ -86,6 +86,10 @@ export default {
   down: async () => {
     await sequelize.query('DROP TABLE IF EXISTS metrics_rollups').catch(() => {});
     await sequelize.query('DROP TABLE IF EXISTS metrics_snapshots').catch(() => {});
+    // SQLite/Postgres refuse to drop an indexed column: drop our indexes first.
+    for (const idx of ['idx_alerts_is_appsec', 'idx_alerts_appsec_rule']) {
+      await sequelize.query(`DROP INDEX IF EXISTS ${idx}`).catch(() => {});
+    }
     for (const col of ['is_appsec', 'appsec_rule', 'appsec_uri', 'appsec_host', 'appsec_method']) {
       await sequelize.query(`ALTER TABLE alerts DROP COLUMN ${col}`).catch(() => {});
     }

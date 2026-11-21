@@ -60,6 +60,32 @@ describe('MCP tools/call', () => {
     expect(unpaged.total).toBe(1);
   });
 
+  it('list_alerts filters AppSec and get_alerts_stats reports AppSec tops', async () => {
+    await app.seedDb({
+      alerts: [
+        makeAlert({ id: 1 }),
+        makeAlert({
+          id: 2,
+          scenario: 'crowdsecurity/vpatch-env-access',
+          is_appsec: true,
+          appsec_rule: 'crowdsecurity/vpatch-env-access',
+          appsec_host: 'linkwarden.jgeek00.com',
+        }),
+      ],
+    });
+    const onlyAppsec = textOf(await callTool(app, 'list_alerts', { is_appsec: true }));
+    expect(onlyAppsec.items).toHaveLength(1);
+    expect(onlyAppsec.items[0].appsec_rule).toBe('crowdsecurity/vpatch-env-access');
+    const byRule = textOf(await callTool(app, 'list_alerts', { appsec_rule: 'vpatch-env' }));
+    expect(byRule.items).toHaveLength(1);
+    const byHost = textOf(await callTool(app, 'list_alerts', { appsec_host: 'linkwarden' }));
+    expect(byHost.items).toHaveLength(1);
+    const stats = textOf(await callTool(app, 'get_alerts_stats'));
+    expect(stats.appsecTotal).toBe(1);
+    expect(stats.topAppsecRules).toEqual([{ rule: 'crowdsecurity/vpatch-env-access', count: 1 }]);
+    expect(stats.topAppsecHosts).toEqual([{ host: 'linkwarden.jgeek00.com', count: 1 }]);
+  });
+
   it('list_alerts rejects an offset beyond the total as a JSON-RPC error', async () => {
     await app.seedDb({ alerts: [makeAlert()] });
     const res = await app.request

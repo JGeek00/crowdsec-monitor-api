@@ -160,6 +160,77 @@ describe('getAllAlerts', () => {
     });
   });
 
+  describe('AppSec alerts (waf + bot-detection)', () => {
+    const wafAlert = (id: number, overrides: Record<string, unknown> = {}) =>
+      makeAlert({
+        id,
+        scenario: 'crowdsecurity/vpatch-env-access',
+        is_appsec: true,
+        appsec_rule: 'crowdsecurity/vpatch-env-access',
+        appsec_uri: '/.env',
+        appsec_host: 'linkwarden.jgeek00.com',
+        appsec_method: 'GET',
+        ...overrides,
+      });
+
+    it('filters by is_appsec flag', async () => {
+      await app.seedDb({ alerts: [makeAlert({ id: 1 }), wafAlert(2)] });
+      const onlyAppsec = await app.request.get('/api/v1/alerts?is_appsec=true');
+      expect(onlyAppsec.status).toBe(200);
+      expect(onlyAppsec.body.items).toHaveLength(1);
+      expect(onlyAppsec.body.items[0].is_appsec).toBe(true);
+
+      const classic = await app.request.get('/api/v1/alerts?is_appsec=false');
+      expect(classic.status).toBe(200);
+      expect(classic.body.items).toHaveLength(1);
+      expect(classic.body.items[0].is_appsec).toBe(false);
+    });
+
+    it('filters by appsec_rule and appsec_host with partial match', async () => {
+      await app.seedDb({
+        alerts: [
+          makeAlert({ id: 1 }),
+          wafAlert(2),
+          wafAlert(3, {
+            scenario: 'crowdsecurity/vpatch-CVE-2023-42793',
+            appsec_rule: 'crowdsecurity/vpatch-CVE-2023-42793',
+            appsec_host: 'other.example.com',
+          }),
+        ],
+      });
+      const byRule = await app.request.get('/api/v1/alerts?appsec_rule=vpatch-env');
+      expect(byRule.status).toBe(200);
+      expect(byRule.body.items).toHaveLength(1);
+
+      const byHost = await app.request.get('/api/v1/alerts?appsec_host=linkwarden');
+      expect(byHost.status).toBe(200);
+      expect(byHost.body.items).toHaveLength(1);
+
+      const none = await app.request.get('/api/v1/alerts?is_appsec=true&appsec_rule=no-such-rule');
+      expect(none.status).toBe(200);
+      expect(none.body.items).toHaveLength(0);
+    });
+
+    it('exposes the AppSec summary in list items', async () => {
+      await app.seedDb({ alerts: [wafAlert(2)] });
+      const res = await app.request.get('/api/v1/alerts?is_appsec=true');
+      expect(res.status).toBe(200);
+      expect(res.body.items[0]).toMatchObject({
+        is_appsec: true,
+        appsec_rule: 'crowdsecurity/vpatch-env-access',
+        appsec_uri: '/.env',
+        appsec_host: 'linkwarden.jgeek00.com',
+        appsec_method: 'GET',
+      });
+    });
+
+    it('returns 400 for an invalid is_appsec value', async () => {
+      const res = await app.request.get('/api/v1/alerts?is_appsec=maybe');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Validation error');
+    });
+  });
+
   it('returns every timestamp field in canonical format (events and date-typed fields)', async () => {
     await app.seedDb({
       alerts: [
