@@ -178,7 +178,7 @@ class BlocklistOpsService {
 
       return { refreshed: 1, totalIps: pushed, errors: emptyErrors() };
     } catch (err) {
-      log.error(`Single sync failed for "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+      log.error(`Single sync failed for "${blocklist.name}":`, err);
       await this.updateRefreshOutcome(blocklist, false);
       statusBlocklistService.completeProcess(processId, false, PROCESS_ERRORS.blocklistSingleRefresh.failed);
       return { refreshed: 0, totalIps: 0, errors: emptyErrors() };

@@ -34,7 +34,7 @@ export class RefreshSingleBlocklistUseCase {
     }
 
     void ops.refreshBlocklists(blocklist).catch((err: unknown) => {
-      logger.error(`Error refreshing blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`);
+      logger.error(`Error refreshing blocklist "${blocklist.name}":`, err);
     });
   }
 }

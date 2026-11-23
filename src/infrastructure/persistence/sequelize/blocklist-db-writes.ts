@@ -84,16 +84,18 @@ class BlocklistDbService {
 
   /**
    * Update the refresh metadata on a blocklist row (acquires write lock).
+   * Uses a static update by id: callers pass domain entities (plain objects),
+   * not Sequelize instances, so instance `.update()` is not available.
    */
   public async updateRefreshMetadata(
-    blocklist: BlocklistsTable,
+    blocklist: Pick<BlocklistsTable, 'id'>,
     payload: {
       last_refresh_attempt: Date;
       last_successful_refresh?: Date;
       last_refresh_failed: boolean;
     },
   ): Promise<void> {
-    await lock.acquire(() => blocklist.update(payload));
+    await lock.acquire(() => BlocklistsTable.update(payload, { where: { id: blocklist.id } }));
   }
 }
 

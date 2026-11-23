@@ -8,7 +8,9 @@ vi.mock('@/infrastructure/persistence/sequelize/models', () => ({
     bulkCreate: vi.fn(),
     col: { blocklistId: 'blocklist_id', id: 'id' },
   },
-  BlocklistsTable: {},
+  BlocklistsTable: {
+    update: vi.fn(),
+  },
 }));
 
 vi.mock('@/config/database', () => ({
@@ -61,16 +63,20 @@ describe('BlocklistDbService', () => {
     expect(result).toBe(2);
   });
 
-  it('updateRefreshMetadata calls blocklist.update', async () => {
-    const { blocklistDbService } = await import('@/infrastructure/persistence/sequelize/blocklist-db-writes');
-    const mockUpdate = vi.fn().mockResolvedValue(undefined);
-    const blocklist = { id: 1, name: 'test', update: mockUpdate } as any;
+  it('updateRefreshMetadata updates by id without requiring a model instance', async () => {
+    const { BlocklistsTable } = await import('@/infrastructure/persistence/sequelize/models');
+    vi.mocked(BlocklistsTable.update).mockResolvedValue([1] as any);
 
-    await blocklistDbService.updateRefreshMetadata(blocklist, {
+    const { blocklistDbService } = await import('@/infrastructure/persistence/sequelize/blocklist-db-writes');
+    // plain domain entity: no instance `.update()` method (this is what endpoints pass)
+    await blocklistDbService.updateRefreshMetadata({ id: 1 } as any, {
       last_refresh_attempt: new Date(),
       last_refresh_failed: false,
     });
 
-    expect(mockUpdate).toHaveBeenCalled();
+    expect(BlocklistsTable.update).toHaveBeenCalledWith(
+      expect.objectContaining({ last_refresh_failed: false }),
+      { where: { id: 1 } },
+    );
   });
 });

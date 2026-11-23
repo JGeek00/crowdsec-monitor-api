@@ -70,9 +70,7 @@ export class CreateBlocklistUseCase {
       .then(() => tracker.completeProcess(processId, true))
       .catch((err: unknown) => {
         tracker.completeProcess(processId, false, err instanceof Error ? err.message : null);
-        logger.error(
-          `Error during initial activation of blocklist "${blocklist.name}": ${err instanceof Error ? err.message : err}`,
-        );
+        logger.error(`Error during initial activation of blocklist "${blocklist.name}":`, err);
       });
 
     return blocklist;
