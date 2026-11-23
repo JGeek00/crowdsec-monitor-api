@@ -15,31 +15,19 @@ pnpm dev
 
 ## Production Build
 
-The production build process compiles TypeScript and obfuscates the resulting JavaScript code for enhanced security:
+The production build compiles TypeScript to plain JavaScript (no obfuscation — the project is open source, so stack traces stay readable):
 
 ```bash
-pnpm build:prod
+pnpm build
 ```
 
-This command performs two steps:
-1. **Compilation**: TypeScript is compiled to JavaScript (without source maps or type declarations)
-2. **Obfuscation**: JavaScript code is minified and obfuscated using advanced techniques:
-   - Control flow flattening
-   - Dead code injection
-   - String array encoding (base64)
-   - Identifier renaming (hexadecimal)
-   - Self-defending code
-   - String splitting and rotation
-
-The resulting code in the `dist/` directory is ready for production deployment.
+This compiles TypeScript to JavaScript (without source maps or type declarations). The resulting code in the `dist/` directory is ready for production deployment.
 
 ## Build Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm build` | Full build: compile + obfuscate |
-| `pnpm build:compile` | Compile TypeScript only (no obfuscation) |
-| `pnpm build:obfuscate` | Obfuscate existing compiled code |
+| `pnpm build` | Compile TypeScript for production (no obfuscation) |
 | `pnpm start` | Run production build from dist directory |
 
 ## Version Bump Scripts
@@ -184,7 +172,7 @@ To manually trigger migrations (e.g., during development):
 
 ```bash
 # After building the application
-pnpm build:prod
+pnpm build
 pnpm start
 ```
 

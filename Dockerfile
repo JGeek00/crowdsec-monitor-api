@@ -30,7 +30,7 @@ COPY src ./src
 COPY scripts ./scripts
 
 # Build application
-RUN pnpm run build:prod
+RUN pnpm run build
 
 # Prune to production-only dependencies (the production stage copies
 # node_modules directly, so it doesn't need pnpm or the build toolchain)

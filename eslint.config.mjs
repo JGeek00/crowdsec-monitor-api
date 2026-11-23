@@ -44,6 +44,6 @@ export default tseslint.config(
   prettierRecommended,
 
   {
-    ignores: ['dist/', 'node_modules/', 'scripts/', 'dist-obfuscated/'],
+    ignores: ['dist/', 'node_modules/', 'scripts/'],
   },
 );

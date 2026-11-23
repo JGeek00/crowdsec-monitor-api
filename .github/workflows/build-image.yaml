@@ -151,7 +151,7 @@ jobs:
       - name: Production build
         run: |
           corepack enable
-          pnpm run build:prod
+          pnpm run build
 
       - name: Generate dist integrity checksum
         run: |
